@@ -1,0 +1,5 @@
+rootProject.name = 'Crafter'
+include(":WurmTestingHelper")
+project(":WurmTestingHelper").projectDir = file("../WurmTestingHelper")
+include(":BMLBuilder")
+project(":BMLBuilder").projectDir = file("../BMLBuilder")

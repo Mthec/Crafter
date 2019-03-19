@@ -1,0 +1,85 @@
+import org.apache.tools.ant.filters.*
+
+plugins {
+    id 'java'
+}
+
+group 'mod.wurmunlimited.npcs.crafter'
+version '0.3-beta'
+
+sourceCompatibility = 1.8
+def $shortName = 'crafter'
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    provided
+    provided.extendsFrom(implementation)
+}
+
+sourceSets {
+    main {
+        compileClasspath += configurations.provided
+    }
+    test {
+        compileClasspath += configurations.provided
+    }
+}
+
+dependencies {
+    testImplementation project(':WurmTestingHelper')
+    provided fileTree(dir: 'E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/', includes: ["modlauncher.jar", "javassist.jar", "server.jar"])
+    implementation project(':BMLBuilder')
+}
+
+jar {
+    doLast {
+        copy {
+            from jar
+            into 'E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/mods/crafter/'
+        }
+        copy {
+            from $shortName + '.properties'
+            into 'E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/mods/'
+            expand(output: 'print')
+            filter(FixCrLfFilter, eol: FixCrLfFilter.CrLf.newInstance('crlf'))
+        }
+    }
+    
+    from {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+    }
+    exclude 'Trade.class'
+    exclude 'TradeHandler.class'
+    exclude 'TradingWindow.class'
+    includeEmptyDirs false
+    archiveName $shortName + '.jar'
+
+    manifest {
+        attributes('Implementation-Version': version)
+    }
+}.dependsOn(test)
+
+test {
+    useJUnitPlatform()
+
+    doLast {
+        delete fileTree('.') {
+            include 'worker*.log'
+        }
+    }
+}
+
+task zip(type: Zip) {
+    into($shortName) {
+        from jar
+    }
+    from($shortName + '.properties') {
+        expand(output: 'save')
+        filter(FixCrLfFilter, eol: FixCrLfFilter.CrLf.newInstance('crlf'))
+    }
+
+    archiveName = $shortName + '.zip'
+}

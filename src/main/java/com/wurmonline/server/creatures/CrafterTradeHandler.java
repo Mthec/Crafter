@@ -206,7 +206,7 @@ public class CrafterTradeHandler extends TradeHandler {
         TradingWindow offerWindow = trade.getTradingWindow(2);
         TradingWindow myWindow = trade.getCreatureTwoRequestWindow();
         for (Item item : offerWindow.getItems()) {
-            if (item.isCoin() || donating || (item.getQualityLevel() < getTargetQL(item) && !item.isNoImprove() && !item.isNewbieItem() && !item.isChallengeNewbieItem())) {
+            if (item.isCoin() || donating || (item.getQualityLevel() < getTargetQL(item) && !item.isNoImprove() && item.isRepairable() && !item.isNewbieItem() && !item.isChallengeNewbieItem())) {
                 offerWindow.removeItem(item);
                 myWindow.addItem(item);
             } else if (item.isWeaponBow() && targetQLs.keySet().contains(SkillList.GROUP_BOWYERY)) {

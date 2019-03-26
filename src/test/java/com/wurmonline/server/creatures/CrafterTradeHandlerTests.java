@@ -3,6 +3,8 @@ package com.wurmonline.server.creatures;
 import com.google.common.collect.BiMap;
 import com.wurmonline.server.Items;
 import com.wurmonline.server.NoSuchItemException;
+import com.wurmonline.server.behaviours.Actions;
+import com.wurmonline.server.behaviours.BehaviourDispatcher;
 import com.wurmonline.server.behaviours.MethodsItems;
 import com.wurmonline.server.economy.Change;
 import com.wurmonline.server.economy.Economy;
@@ -779,6 +781,23 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         handler.balance();
 
         assertThat(player, didNotReceiveMessageContaining("unstring"));
+        assertThat(player, receivedMessageContaining("cannot improve"));
+    }
+
+    @Test
+    void testStoneBrickNotAccepted() {
+        crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.STONECUTTING), 50);
+        Item brick = factory.createNewItem(ItemList.stoneBrick);
+        player.getInventory().insertItem(brick);
+
+        makeNewCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+        selectOption("Improve to 20");
+        trade.getTradingWindow(2).addItem(brick);
+        handler.balance();
+
+        assertEquals(0, trade.getTradingWindow(4).getItems().length);
         assertThat(player, receivedMessageContaining("cannot improve"));
     }
 }

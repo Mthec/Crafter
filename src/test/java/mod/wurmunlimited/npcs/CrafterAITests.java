@@ -12,9 +12,13 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
-import java.util.logging.Level;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
+import static mod.wurmunlimited.Assert.didNotReceiveMessageContaining;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CrafterAITests extends CrafterTest {
@@ -238,5 +242,19 @@ class CrafterAITests extends CrafterTest {
             data.sendNextAction();
             assertEquals((int)item.getKey(), BehaviourDispatcher.getLastDispatchSubject().getTemplateId());
         }
+    }
+
+    @Test
+    void testStoneBrickDoesNotBlockCrafting() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.STONECUTTING), 50);
+        data = (CrafterAIData)crafter.getCreatureAIData();
+        Item brick = factory.createNewItem(ItemList.stoneBrick);
+        WorkBook.getWorkBookFromWorker(crafter).addJob(player.getWurmId(), brick, 30, false, 100);
+        crafter.getInventory().insertItem(brick);
+
+        data.sendNextAction();
+        assertFalse(BehaviourDispatcher.wasDispatched(brick, Actions.IMPROVE));
+        assertThat(crafter, didNotReceiveMessageContaining("cannot improve"));
+        assertTrue(brick.isMailed());
     }
 }

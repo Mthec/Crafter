@@ -222,6 +222,22 @@ public class CrafterAIData extends CreatureAIData {
         for (Job job : workbook) {
             if (!job.isDone()) {
                 Item item = job.item;
+                if (!item.isRepairable()) {
+                    if (forge != null && forge.getItems().contains(item))
+                        crafter.getInventory().insertItem(item);
+                    logger.info(item.getName() + " was not supposed to be accepted.  Returning and refunding.");
+                    job.mailToCustomer();
+                    try {
+                        job.refundCustomer();
+                    } catch (NoSuchTemplateException | FailedException e) {
+                        logger.warning("Could not create refund package while dismissing Crafter, customers were not compensated.");
+                        e.printStackTrace();
+                    }
+                    workbook.setDone(job);
+                    workbook.removeJob(item);
+                    continue;
+                }
+
                 if (item.getQualityLevel() >= job.targetQL || (job.isDonation() && (!workbook.getCrafterType().hasSkillToImprove(item) || item.getQualityLevel() >= workbook.getSkillCap()))) {
                     workbook.setDone(job);
                     if (forge != null && forge.getItems().contains(item))

@@ -223,18 +223,8 @@ public class CrafterAIData extends CreatureAIData {
             if (!job.isDone()) {
                 Item item = job.item;
                 if (!item.isRepairable()) {
-                    if (forge != null && forge.getItems().contains(item))
-                        crafter.getInventory().insertItem(item);
                     logger.info(item.getName() + " was not supposed to be accepted.  Returning and refunding.");
-                    job.mailToCustomer();
-                    try {
-                        job.refundCustomer();
-                    } catch (NoSuchTemplateException | FailedException e) {
-                        logger.warning("Could not create refund package while dismissing Crafter, customers were not compensated.");
-                        e.printStackTrace();
-                    }
-                    workbook.setDone(job);
-                    workbook.removeJob(item);
+                    returnErrorJob(job);
                     continue;
                 }
 
@@ -251,7 +241,7 @@ public class CrafterAIData extends CreatureAIData {
                     } catch (NoSuchPlayerException | NoSuchCreatureException | NoSuchItemException | NoSuchBehaviourException | NoSuchWallException | FailedException e) {
                         logger.warning(crafter.getName() + " (" + crafter.getWurmId() + ") could not repair " + item.getName() + " (" + item.getWurmId() + ").  Reason follows:");
                         e.printStackTrace();
-                        workbook.setDone(job);
+                        returnErrorJob(job);
                     }
                     return;
                 } else if (item.isMetal()) {
@@ -321,11 +311,27 @@ public class CrafterAIData extends CreatureAIData {
                 } catch (NoSuchPlayerException | NoSuchCreatureException | NoSuchItemException | NoSuchBehaviourException | NoSuchWallException | FailedException e) {
                     logger.warning(crafter.getName() + " (" + crafter.getWurmId() + ") could not improve " + item.getName() + " (" + item.getWurmId() + ") with " + tool.getName() + " (" + tool.getWurmId() + ").  Reason follows:");
                     e.printStackTrace();
+                    returnErrorJob(job);
                     continue;
                 }
                 return;
             }
         }
+    }
+
+    private void returnErrorJob(Job job) {
+        Item item = job.item;
+        if (forge != null && forge.getItems().contains(item))
+            crafter.getInventory().insertItem(item);
+        job.mailToCustomer();
+        try {
+            job.refundCustomer();
+        } catch (NoSuchTemplateException | FailedException e) {
+            logger.warning("Could not create refund package while dismissing Crafter, customers were not compensated.");
+            e.printStackTrace();
+        }
+        workbook.setDone(job);
+        workbook.removeJob(item);
     }
 
     public static Creature createNewCrafter(Creature owner, String name, byte sex, CrafterType crafterType, float skillCap, float priceModifier) throws Exception {

@@ -59,6 +59,7 @@ public class Job {
     }
 
     private void mailToCustomer(Item itemToMail) {
+        itemToMail.setBusy(false);
         WurmMail mail = new WurmMail(WurmMail.MAIL_TYPE_PREPAID, itemToMail.getWurmId(), 1, customerId, 0, System.currentTimeMillis() + TimeConstants.MINUTE_MILLIS, System.currentTimeMillis() + (Servers.isThisATestServer() ? 3600000L : 14515200000L), Servers.localServer.id, false, false);
         WurmMail.addWurmMail(mail);
         mail.createInDatabase();
@@ -72,7 +73,7 @@ public class Job {
     }
 
     public void refundCustomer() throws NoSuchTemplateException, FailedException {
-        Item box = ItemFactory.createItem(ItemList.giftBox, 99, "");
+        Item box = ItemFactory.createItem(ItemList.jarPottery, 1, "");
         Item[] coins = Economy.getEconomy().getCoinsFor(priceCharged);
         for (Item coin : coins) {
             box.insertItem(coin, true);

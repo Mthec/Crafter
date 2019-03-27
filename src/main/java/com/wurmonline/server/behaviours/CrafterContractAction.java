@@ -54,6 +54,7 @@ public class CrafterContractAction implements ModAction, ActionPerformer, Behavi
                 try {
                     new CrafterManagementQuestion(performer, Creatures.getInstance().getCreature(target.getData())).sendQuestion();
                 } catch (NoSuchCreatureException e) {
+                    performer.getCommunicator().sendNormalServerMessage("You attempt to manage the crafter, but they don't exist for some reason.");
                     logger.warning("Could not get crafter creature for some reason.");
                     e.printStackTrace();
                 }

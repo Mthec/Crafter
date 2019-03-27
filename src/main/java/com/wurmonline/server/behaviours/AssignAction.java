@@ -25,6 +25,7 @@ public class AssignAction implements ModAction, BehaviourProvider, ActionPerform
     public AssignAction(int contractTemplateId) {
         this.contractTemplateId = contractTemplateId;
         actionId = (short)ModActions.getNextActionId();
+        ModActions.registerAction(new ActionEntry(actionId, "Assign", "Assigning"));
     }
 
     @Override

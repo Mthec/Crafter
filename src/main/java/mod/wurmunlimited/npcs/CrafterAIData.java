@@ -54,7 +54,7 @@ public class CrafterAIData extends CreatureAIData {
         if (workbook != null && workbook.isForgeAssigned()) {
             float x = workbook.forge.getPosX();
             float y = workbook.forge.getPosY();
-            crafter.turnTowardsPoint(x, y);
+            crafter.turnTo((float)(Math.toDegrees(Math.atan2(y - crafter.getPosY(), x - crafter.getPosX())) + 90.0f));
         }
     }
 

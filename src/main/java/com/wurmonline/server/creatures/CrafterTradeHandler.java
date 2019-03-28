@@ -91,7 +91,7 @@ public class CrafterTradeHandler extends TradeHandler {
                     addOption("Improve to " + current + "ql", template, current);
                     current += 10;
                 }
-                if (current > skillCap && current - 10 != skillCap)
+                if (current > skillCap && (float)current - 10.0f != skillCap)
                     addOption(String.format("Improve to %.1fql", skillCap), template, current);
             }
 
@@ -180,11 +180,11 @@ public class CrafterTradeHandler extends TradeHandler {
     private int getPriceForImproveOption(Item item, float ql) {
         float basePrice = CrafterMod.getBasePriceForSkill(MethodsItems.getImproveSkill(item)) * priceModifier;
         float itemQL = item.getQualityLevel();
-        double current = itemQL >= 70 ? basePrice * priceCalculation(basePrice * itemQL) : basePrice * priceCalculationSub70(itemQL);
-        double target = ql >= 70 ? basePrice * priceCalculation(basePrice * ql) : basePrice * priceCalculationSub70(ql);
+        double current = itemQL >= 70 ? basePrice * priceCalculation(itemQL) : basePrice * priceCalculationSub70(itemQL);
+        double target = ql >= 70 ? basePrice * priceCalculation(ql) : basePrice * priceCalculationSub70(ql);
 
         if (item.isDragonArmour())
-            return (int)(target - current) * CrafterMod.getBasePriceForSkill(-1);
+            return (int)((target - current) * CrafterMod.getBasePriceForSkill(-1));
 
         return (int)(target - current);
     }

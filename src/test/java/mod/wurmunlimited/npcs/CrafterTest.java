@@ -25,7 +25,7 @@ public class CrafterTest {
     void setUp() throws Exception {
         factory = new CrafterObjectsFactory();
         BehaviourDispatcher.reset();
-        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("skillCap"), 100);
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("skillCap"), 99.99999f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 1);
         player = factory.createNewPlayer();
         tool = factory.createNewItem(ItemList.pickAxe);

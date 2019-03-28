@@ -32,7 +32,7 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
     void test70QLCrossoverMatches() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         crafter = factory.createNewCrafter(owner, crafterType, 70);
         create(70);
-        int basePrice = CrafterMod.getBasePriceForSkill(SkillList.SMITHING_BLACKSMITHING) * 70;
+        int basePrice = (int)(CrafterMod.getBasePriceForSkill(SkillList.SMITHING_BLACKSMITHING) * 70);
         assertEquals(
                 ReflectionUtil.callPrivateMethod(handler, CrafterTradeHandler.class.getDeclaredMethod("priceCalculationSub70", float.class), basePrice),
                 ReflectionUtil.callPrivateMethod(handler, CrafterTradeHandler.class.getDeclaredMethod("priceCalculation", float.class), basePrice)
@@ -52,7 +52,7 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
         create(20);
 
         long last = Long.MAX_VALUE;
-        for (int i = 1; i < 11; i++) {
+        for (int i = 1; i < 99; i++) {
             tool.setQualityLevel(i);
             long current = handler.getTraderBuyPriceForItem(tool);
             assertTrue(current + " not less than " + last, current < last);
@@ -73,5 +73,59 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
 
         int armourPrice = handler.getTraderBuyPriceForItem(armour);
         assertEquals(armourPrice * 10, handler.getTraderBuyPriceForItem(dragonArmour));
+    }
+
+    @Test
+    void testAllValuesAtHalfModifier() throws NoSuchFieldException, IllegalAccessException {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), 100);
+        assert CrafterMod.getSkillCap() != 100.0f;
+        makeNewCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+        tool = factory.createNewItem(factory.getIsBlacksmithingId());
+        tool.setQualityLevel(1);
+        handler.balance();
+
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 0.5f);
+        for (Item op : trade.getTradingWindow(1).getItems()) {
+            if (op.getName().startsWith("Mail") || op.getName().startsWith("Donate")) {
+                trade.getTradingWindow(1).removeItem(op);
+                continue;
+            }
+            trade.getTradingWindow(1).removeItem(op);
+            trade.getTradingWindow(3).addItem(op);
+            handler.balance();
+            int price = handler.getTraderBuyPriceForItem(tool);
+            System.out.println(String.format("%s - %s", op.getName(), price));
+            assertTrue(price > 0);
+            trade.getTradingWindow(3).removeItem(op);
+        }
+    }
+
+    @Test
+    void testAllValuesAt50Modifier() throws NoSuchFieldException, IllegalAccessException {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), 100);
+        assert CrafterMod.getSkillCap() != 100.0f;
+        makeNewCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+        tool = factory.createNewItem(factory.getIsBlacksmithingId());
+        tool.setQualityLevel(1);
+        handler.balance();
+
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 50);
+        for (Item op : trade.getTradingWindow(1).getItems()) {
+            if (op.getName().startsWith("Mail") || op.getName().startsWith("Donate")) {
+                trade.getTradingWindow(1).removeItem(op);
+                continue;
+            }
+            trade.getTradingWindow(1).removeItem(op);
+            trade.getTradingWindow(3).addItem(op);
+            handler.balance();
+            int price = handler.getTraderBuyPriceForItem(tool);
+            System.out.println(String.format("%s - %s", op.getName(), price));
+            assertTrue(price < Integer.MAX_VALUE);
+            trade.getTradingWindow(3).removeItem(op);
+        }
     }
 }

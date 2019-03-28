@@ -22,10 +22,12 @@ public class CrafterObjectsFactory extends WurmObjectsFactory {
 
     public Creature createNewCrafter(Creature owner, CrafterType type, float skillCap) {
         try {
+            final double finalSkillCap = Math.min(skillCap, 99.999999d);
+            assert finalSkillCap < 100.0d;
             Creature crafter = CrafterAIData.createNewCrafter(owner, "Crafter" + (creatures.size() + 1), (byte)0, type, skillCap, 1.0f);
             creatures.put(crafter.getWurmId(), crafter);
             attachFakeCommunicator(crafter);
-            type.getSkillsFor(crafter).forEach(skill -> skill.setKnowledge(skillCap, true));
+            type.getSkillsFor(crafter).forEach(skill -> skill.setKnowledge(finalSkillCap, false));
 
             return crafter;
         } catch (Exception e) {

@@ -164,12 +164,12 @@ public class WorkBook implements Iterable<Job> {
 
     private WorkBook(CrafterType crafterType, float skillCap) throws NoSuchTemplateException, FailedException {
         this.crafterType = crafterType;
-        this.skillCap = skillCap;
+        this.skillCap = Math.min(skillCap, CrafterMod.getSkillCap());
         workBookItem = ItemFactory.createItem(ItemList.book, 10.0f, "");
         workBookItem.setDescription(workBookDescription);
         workBookItem.setHasNoDecay(true);
         Item page = getNewPage("Contents");
-        page.setInscription(Joiner.on("\n").join(skillCap, -10, (Object[])crafterType.getAllTypes()), "");
+        page.setInscription(Joiner.on("\n").join(this.skillCap, -10, (Object[])crafterType.getAllTypes()), "");
     }
 
     private Item getNewPage(String description) throws NoSuchTemplateException, FailedException {

@@ -335,6 +335,7 @@ public class CrafterAIData extends CreatureAIData {
     }
 
     public static Creature createNewCrafter(Creature owner, String name, byte sex, CrafterType crafterType, float skillCap, float priceModifier) throws Exception {
+        skillCap = Math.min(skillCap, CrafterMod.getSkillCap());
         VolaTile tile = owner.getCurrentTile();
         Creature crafter = Creature.doNew(CrafterTemplate.getTemplateId(), (float)(tile.getTileX() << 2) + 2.0F, (float)(tile.getTileY() << 2) + 2.0F, 180.0F, owner.getLayer(), name, sex, owner.getKingdomId());
 

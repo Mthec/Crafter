@@ -47,7 +47,8 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private static float basePrice = 1.0f;
     private static int mailPrice = MonetaryConstants.COIN_COPPER;
     private static Map<Integer, Float> skillPrices = new HashMap<>();
-    private static float skillCap = 100;
+    // Do not set at 100.  Skill.setKnowledge will not set the skill level if so.
+    private static float skillCap = 99.99999f;
     private static float startingSkill = 20;
     private static OutputOption output = OutputOption.none;
     private static final Map<Creature, Logger> crafterLoggers = new HashMap<>();
@@ -81,8 +82,8 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         return canLearn;
     }
 
-    public static int getBasePriceForSkill(int skill) {
-        return (int)(basePrice * skillPrices.getOrDefault(skill, 1.0f));
+    public static float getBasePriceForSkill(int skill) {
+        return basePrice * skillPrices.getOrDefault(skill, 1.0f);
     }
 
     public static int mailPrice() {
@@ -173,7 +174,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         basePrice = getOption("base_price", basePrice);
         mailPrice = getOption("mail_price", mailPrice);
         startingSkill = getOption("starting_skill", startingSkill);
-        skillCap = getOption("max_skill", skillCap);
+        skillCap = Math.min(getOption("max_skill", skillCap), skillCap);
         if (startingSkill > skillCap) {
             logger.warning("starting_skill should not be higher than max_skill, capping value.");
             startingSkill = (int)skillCap;

@@ -15,7 +15,7 @@ public class Donation extends Job {
 
     @Override
     public String toString() {
-        return Long.toString(item.getWurmId());
+        return item.getWurmId() + "\n";
     }
 
     @Override

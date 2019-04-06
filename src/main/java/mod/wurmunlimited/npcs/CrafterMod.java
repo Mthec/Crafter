@@ -12,10 +12,7 @@ import com.wurmonline.server.players.Player;
 import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.shared.constants.IconConstants;
 import com.wurmonline.shared.constants.ItemMaterials;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtNewConstructor;
-import javassist.Modifier;
+import javassist.*;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.gotti.wurmunlimited.modloader.classhooks.HookManager;
 import org.gotti.wurmunlimited.modloader.interfaces.*;
@@ -316,7 +313,6 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
 
     @Override
     public void preInit() {
-        // Needed?
         try {
             ClassPool pool = HookManager.getInstance().getClassPool();
             // Remove final from TradeHandler and TradingWindow.
@@ -332,6 +328,17 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
             tradingWindow.setModifiers(Modifier.clear(tradingWindow.getModifiers(), Modifier.FINAL));
             if (tradingWindow.getConstructors().length == 1)
                 tradingWindow.addConstructor(CtNewConstructor.make(tradingWindow.getSimpleName() + "(){}", tradingWindow));
+
+            // Add empty constructor.
+            CtClass trade = pool.get("com.wurmonline.server.items.Trade");
+            trade.defrost();
+            if (trade.getConstructors().length == 1)
+                trade.addConstructor(CtNewConstructor.make(trade.getSimpleName() + "(){}", trade));
+            // Remove final from public fields.
+            CtField creatureOne = trade.getDeclaredField("creatureOne");
+            creatureOne.setModifiers(Modifier.clear(creatureOne.getModifiers(), Modifier.FINAL));
+            CtField creatureTwo = trade.getDeclaredField("creatureTwo");
+            creatureTwo.setModifiers(Modifier.clear(creatureTwo.getModifiers(), Modifier.FINAL));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

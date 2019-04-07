@@ -58,9 +58,12 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                                  .newLine()
                                  .text("Current jobs - " + workBook.todo())
                                  .text("Awaiting collection - " + workBook.done())
-                                 .If(workBook.isForgeAssigned(),
-                                         b -> b.text("Forge - Assigned"),
-                                         b -> b.text("Forge - Not Assigned").error())
+                                 .If(!workBook.getCrafterType().needsForge(),
+                                         b -> b.text("Forge - Not needed"),
+                                         b -> b.If(workBook.isForgeAssigned(),
+                                                 b2 -> b2.text("Forge - Assigned"),
+                                                 b2 -> b2.text("Forge - Not Assigned").error())
+                                         )
                                  .If(CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.for_owner,
                                          b -> b.text("Money to collect - " + (shop.getMoney() == 0 ? "Nothing" : new Change(shop.getMoney()).getChangeShortString())))
                                  .harray(b -> b.label("Price Modifier: ").entry("price_modifier", Float.toString(shop.getPriceModifier()), 4))

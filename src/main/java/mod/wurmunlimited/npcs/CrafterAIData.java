@@ -105,12 +105,12 @@ public class CrafterAIData extends CreatureAIData {
         Item item;
 
         if (ItemTemplateFactory.getInstance().getTemplate(templateId).isLiquid()) {
-            Item barrel = ItemFactory.createItem(ItemList.barrelSmall, skillLevel + 10, "");
+            Item barrel = ItemFactory.createItem(ItemList.barrelSmall, skillLevel, "");
             item = ItemFactory.createItem(ItemList.water, 99.0f, "");
             barrel.insertItem(item);
             crafter.getInventory().insertItem(barrel);
         } else {
-            item = ItemFactory.createItem(templateId, skillLevel + 10, "");
+            item = ItemFactory.createItem(templateId, skillLevel, "");
             crafter.getInventory().insertItem(item);
         }
 

@@ -40,6 +40,11 @@ public class CrafterType {
         return skills.toArray(new Integer[0]);
     }
 
+    public boolean needsForge() {
+        List<Integer> metal = Arrays.asList(allMetal);
+        return skills.stream().anyMatch(metal::contains);
+    }
+
     @Override
     public boolean equals(Object obj) {
         return obj instanceof CrafterType && ((CrafterType)obj).skills.equals(skills);

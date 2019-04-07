@@ -34,7 +34,9 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
             String.valueOf(SkillList.GROUP_BOWYERY),
             String.valueOf(SkillList.LEATHERWORKING),
             String.valueOf(SkillList.CLOTHTAILORING),
-            String.valueOf(SkillList.STONECUTTING)
+            String.valueOf(SkillList.STONECUTTING),
+            String.valueOf(SkillList.SMITHING_SHIELDS),
+            String.valueOf(SkillList.POTTERY)
     };
 
     public CrafterHireQuestion(Creature aResponder, long contract) {
@@ -177,8 +179,10 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
                             new int[] { SkillList.SMITHING_BLACKSMITHING, SkillList.CARPENTRY, SkillList.LEATHERWORKING },
                             new int[] { SkillList.GROUP_SMITHING_WEAPONSMITHING, SkillList.CARPENTRY_FINE, SkillList.CLOTHTAILORING },
                             new int[] { SkillList.SMITHING_GOLDSMITHING, SkillList.GROUP_FLETCHING, SkillList.STONECUTTING },
-                            new int[] { SkillList.SMITHING_ARMOUR_CHAIN, SkillList.GROUP_BOWYERY, 0 },
-                            new int[] { SkillList.SMITHING_ARMOUR_PLATE, 0, 0 }
+                            new int[] { SkillList.SMITHING_ARMOUR_CHAIN, SkillList.GROUP_BOWYERY, SkillList.POTTERY },
+                            new int[] { SkillList.SMITHING_ARMOUR_PLATE, 0, 0 },
+                            new int[] { SkillList.SMITHING_SHIELDS, 0, 0 }
+
                         ),
                         (row, bml1) -> bml1.forEach(Arrays.stream(row).boxed().collect(Collectors.toList()), (skill, b) -> {
                             if (skill != 0)

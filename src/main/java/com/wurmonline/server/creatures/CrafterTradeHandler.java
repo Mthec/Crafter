@@ -138,6 +138,8 @@ public class CrafterTradeHandler extends TradeHandler {
             skillIcons.put(SkillList.LEATHERWORKING, factory.getTemplate(ItemList.leather));
             skillIcons.put(SkillList.CLOTHTAILORING, factory.getTemplate(ItemList.clothYard));
             skillIcons.put(SkillList.STONECUTTING, factory.getTemplate(ItemList.grindstone));
+            skillIcons.put(SkillList.SMITHING_SHIELDS, factory.getTemplate(ItemList.shieldMedium));
+            skillIcons.put(SkillList.POTTERY, factory.getTemplate(ItemList.bowlClay));
         } catch (NoSuchTemplateException e) {
             logger.severe("Error when loading ItemTemplates.  This shouldn't happen.");
             e.printStackTrace();

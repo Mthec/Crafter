@@ -2,9 +2,11 @@ package mod.wurmunlimited.npcs;
 
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
+import com.wurmonline.server.behaviours.MethodsItems;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
+import com.wurmonline.server.items.NoSpaceException;
 import com.wurmonline.server.skills.NoSuchSkillException;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
@@ -210,12 +212,13 @@ class CrafterAITests extends CrafterTest {
         Set<Integer> skills = new HashSet<>();
         WorkBook.getWorkBookFromWorker(crafter).getCrafterType().getSkillsFor(crafter).forEach(s -> skills.add(s.getNumber()));
 
-        assertEquals(5, skills.size());
+        assertEquals(6, skills.size());
         assertTrue(skills.contains(SkillList.SMITHING_BLACKSMITHING));
         assertTrue(skills.contains(SkillList.SMITHING_GOLDSMITHING));
         assertTrue(skills.contains(SkillList.GROUP_SMITHING_WEAPONSMITHING));
         assertTrue(skills.contains(SkillList.SMITHING_ARMOUR_CHAIN));
         assertTrue(skills.contains(SkillList.SMITHING_ARMOUR_PLATE));
+        assertTrue(skills.contains(SkillList.SMITHING_SHIELDS));
 
         Skill goldSmithing = null;
         for (Skill skill : WorkBook.getWorkBookFromWorker(crafter).getCrafterType().getSkillsFor(crafter))
@@ -256,5 +259,31 @@ class CrafterAITests extends CrafterTest {
         assertFalse(BehaviourDispatcher.wasDispatched(brick, Actions.IMPROVE));
         assertThat(crafter, didNotReceiveMessageContaining("cannot improve"));
         assertTrue(brick.isMailed());
+    }
+
+    // Clay items
+
+    @Test
+    void testToolNotRepairedIfDamagedAndBodyPart() throws NoSpaceException, WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.POTTERY), 30);
+        Item clayBowl = factory.createNewItem(ItemList.bowlClay);
+        clayBowl.creationState = 1;
+        WorkBook.getWorkBookFromWorker(crafter).addJob(123, clayBowl, 20, false, 1);
+        Item tool = crafter.getBody().getBodyPart(13);
+        tool.setDamage(50);
+
+        data.sendNextAction();
+        assertEquals(50, tool.getDamage());
+    }
+
+    @Test
+    void testToolImprovedWithHand() throws NoSpaceException, WorkBook.WorkBookFull {
+        tool = factory.createNewItem(ItemList.bowlClay);
+        tool.creationState = 1;
+        workBook.removeJob(workBook.iterator().next().item);
+        workBook.addJob(player.getWurmId(), tool, 10, false, 1);
+        data.sendNextAction();
+        assertEquals(crafter.getBody().getBodyPart(13), BehaviourDispatcher.getLastDispatchSubject());
+        assertEquals(tool, BehaviourDispatcher.getLastDispatchTarget());
     }
 }

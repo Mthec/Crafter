@@ -19,7 +19,6 @@ import java.util.logging.Logger;
 public class CrafterAI extends CreatureAI {
     private static final Logger logger = Logger.getLogger(CrafterAI.class.getName());
     static final Set<Creature> allCrafters = new HashSet<>();
-    @SuppressWarnings("WeakerAccess")
     public static final Map<Creature, Item> assignedForges = new HashMap<>();
     private Field tradeHandler;
 

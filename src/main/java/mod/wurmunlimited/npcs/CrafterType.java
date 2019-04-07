@@ -10,7 +10,7 @@ import com.wurmonline.server.skills.Skills;
 import java.util.*;
 
 public class CrafterType {
-    public static final Integer[] allMetal = new Integer[] { SkillList.SMITHING_BLACKSMITHING, SkillList.GROUP_SMITHING_WEAPONSMITHING, SkillList.SMITHING_GOLDSMITHING, SkillList.SMITHING_ARMOUR_CHAIN, SkillList.SMITHING_ARMOUR_PLATE };
+    public static final Integer[] allMetal = new Integer[] { SkillList.SMITHING_BLACKSMITHING, SkillList.GROUP_SMITHING_WEAPONSMITHING, SkillList.SMITHING_GOLDSMITHING, SkillList.SMITHING_ARMOUR_CHAIN, SkillList.SMITHING_ARMOUR_PLATE, SkillList.SMITHING_SHIELDS };
     public static final Integer[] allWood = new Integer[] { SkillList.CARPENTRY, SkillList.CARPENTRY_FINE, SkillList.GROUP_FLETCHING, SkillList.GROUP_BOWYERY };
     public static final Integer[] allArmour = new Integer[] { SkillList.SMITHING_ARMOUR_CHAIN, SkillList.SMITHING_ARMOUR_PLATE, SkillList.LEATHERWORKING, SkillList.CLOTHTAILORING };
 

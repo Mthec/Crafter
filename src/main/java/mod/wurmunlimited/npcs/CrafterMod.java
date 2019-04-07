@@ -189,6 +189,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         skillPrices.put(SkillList.LEATHERWORKING, getOption("leatherworking", 1.0f));
         skillPrices.put(SkillList.CLOTHTAILORING, getOption("clothtailoring", 1.0f));
         skillPrices.put(SkillList.STONECUTTING, getOption("stonecutting", 1.0f));
+        skillPrices.put(SkillList.SMITHING_SHIELDS, getOption("shieldsmithing", 1.0f));
         skillPrices.put(-1, getOption("dragon_armour", 10.0f));
     }
 

@@ -35,7 +35,9 @@ class CrafterHireQuestionTests {
             String.valueOf(SkillList.GROUP_BOWYERY),
             String.valueOf(SkillList.LEATHERWORKING),
             String.valueOf(SkillList.CLOTHTAILORING),
-            String.valueOf(SkillList.STONECUTTING)
+            String.valueOf(SkillList.STONECUTTING),
+            String.valueOf(SkillList.SMITHING_SHIELDS),
+            String.valueOf(SkillList.POTTERY)
     };
     private CrafterObjectsFactory factory;
     private Player owner;

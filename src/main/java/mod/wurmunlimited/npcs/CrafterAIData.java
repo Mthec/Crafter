@@ -3,10 +3,8 @@ package mod.wurmunlimited.npcs;
 import com.wurmonline.math.TilePos;
 import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.*;
-import com.wurmonline.server.behaviours.Actions;
-import com.wurmonline.server.behaviours.BehaviourDispatcher;
-import com.wurmonline.server.behaviours.MethodsItems;
-import com.wurmonline.server.behaviours.NoSuchBehaviourException;
+import com.wurmonline.server.behaviours.*;
+import com.wurmonline.server.bodys.Body;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.CreatureTemplateIds;
 import com.wurmonline.server.creatures.NoSuchCreatureException;
@@ -91,10 +89,19 @@ public class CrafterAIData extends CreatureAIData {
 
             tools.put(item.getTemplateId(), item);
         }
+
+        try {
+            Item hand = crafter.getBody().getBodyPart(13);
+            tools.put(hand.getTemplateId(), hand);
+        } catch (NoSpaceException e) {
+            logger.warning("Could not find hand item.");
+        }
     }
 
     Item createMissingItem(int templateId) throws NoSuchTemplateException, FailedException {
         float skillLevel = workbook.getSkillCap();
+        if (skillLevel > 100)
+            skillLevel = 100;
         Item item;
 
         if (ItemTemplateFactory.getInstance().getTemplate(templateId).isLiquid()) {
@@ -119,9 +126,11 @@ public class CrafterAIData extends CreatureAIData {
     }
 
     private void repairTool(Item item) {
+        if (item.isBodyPart())
+            return;
         if (item.getDamage() != 0)
             item.setDamage(0);
-        if (item.getQualityLevel() < workbook.getSkillCap())
+        if (item.getQualityLevel() < workbook.getSkillCap() || item.getQualityLevel() > 100)
             item.setQualityLevel(workbook.getSkillCap());
         item.setWeight(item.getTemplate().getWeightGrams(), false);
     }
@@ -245,6 +254,7 @@ public class CrafterAIData extends CreatureAIData {
                     }
                     return;
                 } else if (item.isMetal()) {
+                    // TODO - Baking pottery items?
                     if (forge == null)
                         continue;
 
@@ -285,9 +295,16 @@ public class CrafterAIData extends CreatureAIData {
                 Item tool = tools.get(toolTemplateId);
                 if (tool == null) {
                     try {
-                        tool = createMissingItem(toolTemplateId);
+                        if (toolTemplateId == ItemList.bodyHand)
+                            throw new NoSpaceException("Hand was null.");
+                        else
+                            tool = createMissingItem(toolTemplateId);
                     } catch (NoSuchTemplateException | FailedException e) {
                         logger.warning("Could not create required improving item (template id - " + toolTemplateId + ").  Reason follows:");
+                        e.printStackTrace();
+                        continue;
+                    } catch (NoSpaceException e) {
+                        logger.warning("Could not get hand item for improving.  Reason follows:");
                         e.printStackTrace();
                         continue;
                     }

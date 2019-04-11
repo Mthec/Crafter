@@ -47,6 +47,8 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     // Do not set at 100.  Skill.setKnowledge will not set the skill level if so.
     private static float skillCap = 99.99999f;
     private static float startingSkill = 20;
+    private static boolean usePriceModifier = true;
+    private static float minimumPriceModifier = 0.0000001f;
     private static OutputOption output = OutputOption.none;
     private static final Map<Creature, Logger> crafterLoggers = new HashMap<>();
     private Properties properties;
@@ -81,6 +83,14 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
 
     public static float getBasePriceForSkill(int skill) {
         return basePrice * skillPrices.getOrDefault(skill, 1.0f);
+    }
+
+    public static boolean canUsePriceModifier() {
+        return usePriceModifier;
+    }
+
+    public static float getMinimumPriceModifier() {
+        return minimumPriceModifier;
     }
 
     public static int mailPrice() {
@@ -176,6 +186,8 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
             logger.warning("starting_skill should not be higher than max_skill, capping value.");
             startingSkill = (int)skillCap;
         }
+        usePriceModifier = getOption("use_owner_price_modifier", usePriceModifier);
+        minimumPriceModifier = getOption("minimum_price_modifier", minimumPriceModifier);
 
         skillPrices.put(SkillList.SMITHING_BLACKSMITHING, getOption("blacksmithing", 1.0f));
         skillPrices.put(SkillList.GROUP_SMITHING_WEAPONSMITHING, getOption("weaponsmithing", 1.0f));

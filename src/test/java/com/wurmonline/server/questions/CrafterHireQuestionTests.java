@@ -49,6 +49,7 @@ class CrafterHireQuestionTests {
         BehaviourDispatcher.reset();
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("skillCap"), 99.99999f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 1);
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("minimumPriceModifier"), 0.0000001f);
         owner = factory.createNewPlayer();
         factory.createVillageFor(owner);
         contract = factory.createNewItem(CrafterMod.getContractTemplateId());
@@ -161,7 +162,7 @@ class CrafterHireQuestionTests {
         new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
 
         assertEquals(1, getCrafterCount());
-        assertThat(owner, receivedMessageContaining("was too low"));
+        assertThat(owner, receivedMessageContaining("cap was too low"));
         assertEquals(20, WorkBook.getWorkBookFromWorker(getNewlyCreatedCrafter()).getSkillCap());
     }
 
@@ -185,6 +186,29 @@ class CrafterHireQuestionTests {
 
         assertEquals(0, getCrafterCount());
         assertThat(owner, receivedMessageContaining("was invalid"));
+    }
+
+    @Test
+    void testPriceModifierProperlySet() {
+        float priceModifier = 0.5f;
+        Properties properties = generateProperties();
+        properties.setProperty("price_modifier", Float.toString(priceModifier));
+        new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
+
+        assertEquals(priceModifier, getNewlyCreatedCrafter().getShop().getPriceModifier());
+    }
+
+    @Test
+    void testPriceModifierTooLow() throws NoSuchFieldException, IllegalAccessException {
+        float priceModifier = 0.5f;
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("minimumPriceModifier"), priceModifier + 0.1f);
+        Properties properties = generateProperties();
+        properties.setProperty("price_modifier", Float.toString(priceModifier));
+        new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
+
+        assertEquals(1, getCrafterCount());
+        assertThat(owner, receivedMessageContaining("modifier was too low"));
+        assertEquals(CrafterMod.getMinimumPriceModifier(), getNewlyCreatedCrafter().getShop().getPriceModifier());
     }
 
     @Test

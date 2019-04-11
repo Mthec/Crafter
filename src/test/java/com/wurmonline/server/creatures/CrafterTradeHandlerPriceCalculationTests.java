@@ -128,4 +128,37 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
             trade.getTradingWindow(3).removeItem(op);
         }
     }
+
+    @Test
+    void testPriceModifierIsUsedInCalculation() {
+        factory.getShop(crafter).setPriceModifier(1.0f);
+        create(20);
+        int standardPrice = handler.getTraderBuyPriceForItem(tool);
+
+        factory.getShop(crafter).setPriceModifier(1.1f);
+        create(20);
+        int higherPrice = handler.getTraderBuyPriceForItem(tool);
+
+        assertTrue(standardPrice < higherPrice);
+        assertEquals(standardPrice / 1.0f, higherPrice / 1.1f, 0.1f);
+    }
+
+    @Test
+    void testPriceModifierIsNotUsedInCalculationIfDisabled() throws NoSuchFieldException, IllegalAccessException {
+        try {
+            ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("usePriceModifier"), false);
+
+            factory.getShop(crafter).setPriceModifier(1.0f);
+            create(20);
+            int standardPrice = handler.getTraderBuyPriceForItem(tool);
+
+            factory.getShop(crafter).setPriceModifier(1.1f);
+            create(20);
+            int higherPrice = handler.getTraderBuyPriceForItem(tool);
+
+            assertEquals(standardPrice, higherPrice);
+        } finally {
+            ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("usePriceModifier"), true);
+        }
+    }
 }

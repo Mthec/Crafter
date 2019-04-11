@@ -31,11 +31,16 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
         String val = properties.getProperty("price_modifier");
         if (val != null && val.length() > 0) {
             try {
-                float modifier = Float.parseFloat(val);
-                if (modifier <= 0)
+                float priceModifier = Float.parseFloat(val);
+                if (priceModifier <= 0)
                     getResponder().getCommunicator().sendSafeServerMessage("Price modifier must be positive.");
-                else
-                    shop.setPriceModifier(modifier);
+                else {
+                    if (priceModifier < CrafterMod.getMinimumPriceModifier()) {
+                        getResponder().getCommunicator().sendSafeServerMessage("Price modifier was too low, setting minimum value.");
+                        priceModifier = CrafterMod.getMinimumPriceModifier();
+                    }
+                    shop.setPriceModifier(priceModifier);
+                }
             } catch (NumberFormatException e) {
                 getResponder().getCommunicator().sendSafeServerMessage("Price modifier must be a number.");
             }
@@ -64,9 +69,11 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                                                  b2 -> b2.text("Forge - Assigned"),
                                                  b2 -> b2.text("Forge - Not Assigned").error())
                                          )
+                                 // TODO - Not working.  Shop money is zero but some money is waiting.
                                  .If(CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.for_owner,
                                          b -> b.text("Money to collect - " + (shop.getMoney() == 0 ? "Nothing" : new Change(shop.getMoney()).getChangeShortString())))
-                                 .harray(b -> b.label("Price Modifier: ").entry("price_modifier", Float.toString(shop.getPriceModifier()), 4))
+                                 .If(CrafterMod.canUsePriceModifier(),
+                                         b -> b.harray(b2 -> b2.label("Price Modifier: ").entry("price_modifier", Float.toString(shop.getPriceModifier()), 4)))
                                  .newLine()
                                  .harray(b -> b.button("Send").spacer().button("dismiss", "Dismiss").confirm("You are about to dismiss " + crafter.getName() + ".", "Do you really want to do that?"))
                                  .build();

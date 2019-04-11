@@ -72,6 +72,10 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
         }
 
         float priceModifier = getFloatOrDefault("price_modifier", 1.0f);
+        if (priceModifier < CrafterMod.getMinimumPriceModifier()) {
+            responder.getCommunicator().sendSafeServerMessage("Price modifier was too low, setting minimum value.");
+            priceModifier = CrafterMod.getMinimumPriceModifier();
+        }
 
         Set<Integer> skills = new HashSet<>();
         if (wasSelected("all_metal"))
@@ -194,7 +198,7 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
                         b -> b.harray(b2 -> b2.label("Skill Cap: ").entry("skill_cap", Float.toString(CrafterMod.getSkillCap()), 3).text("Max: " + CrafterMod.getSkillCap()).italic()),
                         b -> b.harray(b2 -> b2.label("Skill Cap: ").text(Float.toString(CrafterMod.getSkillCap())))
                         )
-                .harray(b -> b.label("Price Modifier: ").entry("price_modifier", "1.0", 4))
+                .If(CrafterMod.canUsePriceModifier(), b -> b.harray(b2 -> b2.label("Price Modifier: ").entry("price_modifier", "1.0", 4)))
                 .newLine()
                 .harray(b -> b.label("Crafter name:").entry("name", 20))
                 .text("Leave blank for a random name.").italic()

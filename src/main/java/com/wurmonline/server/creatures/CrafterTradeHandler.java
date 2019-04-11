@@ -41,7 +41,10 @@ public class CrafterTradeHandler extends TradeHandler {
         workBook = _trade.getWorkBook();
         skillCap = workBook.getSkillCap();
         Shop shop = Economy.getEconomy().getShop(crafter);
-        priceModifier = shop.getPriceModifier();
+        if (CrafterMod.canUsePriceModifier())
+            priceModifier = shop.getPriceModifier();
+        else
+            priceModifier = 1.0f;
         ownerTrade = shop.getOwnerId() == trade.creatureOne.getWurmId();
         if (ownerTrade) {
             trade.creatureOne.getCommunicator().sendSafeServerMessage(crafter.getName() + " says, 'Welcome back, " + trade.creatureOne.getName() + "!'");

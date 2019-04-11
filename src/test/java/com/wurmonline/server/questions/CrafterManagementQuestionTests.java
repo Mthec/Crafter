@@ -33,6 +33,7 @@ class CrafterManagementQuestionTests {
         BehaviourDispatcher.reset();
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("skillCap"), 99.99999f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 1);
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("minimumPriceModifier"), 0.0000001f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("paymentOption"), CrafterMod.PaymentOption.for_owner);
         owner = factory.createNewPlayer();
         crafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allMetal), 50);
@@ -158,6 +159,18 @@ class CrafterManagementQuestionTests {
         new CrafterManagementQuestion(owner, crafter).answer(properties);
 
         assertEquals(1.3f, Economy.getEconomy().getShop(crafter).getPriceModifier());
+    }
+
+    @Test
+    void testPriceModifierTooLow() throws NoSuchFieldException, IllegalAccessException {
+        float priceModifier = 0.01f;
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("minimumPriceModifier"), priceModifier + 0.1f);
+        Properties properties = new Properties();
+        properties.setProperty("price_modifier", Float.toString(priceModifier));
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        assertThat(owner, receivedMessageContaining("modifier was too low"));
+        assertEquals(CrafterMod.getMinimumPriceModifier(), crafter.getShop().getPriceModifier());
     }
 
     @Test

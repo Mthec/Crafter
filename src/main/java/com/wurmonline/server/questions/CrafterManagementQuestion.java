@@ -69,9 +69,8 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                                                  b2 -> b2.text("Forge - Assigned"),
                                                  b2 -> b2.text("Forge - Not Assigned").error())
                                          )
-                                 // TODO - Not working.  Shop money is zero but some money is waiting.
                                  .If(CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.for_owner,
-                                         b -> b.text("Money to collect - " + (shop.getMoney() == 0 ? "Nothing" : new Change(shop.getMoney()).getChangeShortString())))
+                                         b -> b.text("Money to collect - " + (workBook.getMoneyToCollect() == 0 ? "Nothing" : new Change((long)(workBook.getMoneyToCollect() * 0.9f)).getChangeShortString())))
                                  .If(CrafterMod.canUsePriceModifier(),
                                          b -> b.harray(b2 -> b2.label("Price Modifier: ").entry("price_modifier", Float.toString(shop.getPriceModifier()), 4)))
                                  .newLine()

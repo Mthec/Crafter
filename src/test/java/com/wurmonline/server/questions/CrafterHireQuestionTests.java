@@ -227,4 +227,12 @@ class CrafterHireQuestionTests {
         Creature newCrafter = getNewlyCreatedCrafter();
         assertNull(newCrafter.citizenVillage);
     }
+
+    @Test
+    void testHiringWithoutPriceModifier() {
+        Properties properties = generateProperties();
+        properties.remove("price_modifier");
+
+        assertDoesNotThrow(() -> new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties));
+    }
 }

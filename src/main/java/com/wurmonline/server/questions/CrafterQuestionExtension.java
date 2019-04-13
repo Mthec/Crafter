@@ -14,10 +14,13 @@ abstract class CrafterQuestionExtension extends Question {
 
     float getFloatOrDefault(String id, float _default) {
         String f = getAnswer().getProperty(id);
-        try {
-            return Float.parseFloat(f);
-        } catch (NumberFormatException e) {
-            return _default;
+        if (f != null) {
+            try {
+                return Float.parseFloat(f);
+            } catch (NumberFormatException e) {
+                return _default;
+            }
         }
+        return _default;
     }
 }

@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.*;
 import java.util.stream.Collectors;
 
-public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configurable, ItemTemplatesCreatedListener, ServerStartedListener {
+public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configurable, ItemTemplatesCreatedListener, ServerStartedListener, PlayerMessageListener {
     private static final Logger logger = Logger.getLogger(CrafterMod.class.getName());
     private static final Random faceRandom = new Random();
     private static int contractTemplateId;
@@ -264,11 +264,6 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 "stopLoggers",
                 "()V",
                 () -> this::stopLoggers);
-
-        manager.registerHook("com.wurmonline.server.creatures.Communicator",
-                "reallyHandle_CMD_MESSAGE",
-                "(Ljava/nio/ByteBuffer;)V",
-                () -> this::serverCommand);
 
         manager.registerHook("com.wurmonline.server.items.TradingWindow",
                 "swapOwners",
@@ -507,25 +502,21 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         return handler;
     }
 
-    Object serverCommand(Object o, Method method, Object[] args) throws Throwable {
-        Player player = ((Communicator)o).getPlayer();
+    @Override
+    public MessagePolicy onPlayerMessage(Communicator communicator, String message, String title) {
+        Player player = communicator.getPlayer();
 
-        if (player != null) {
-            ByteBuffer byteBuffer = ((ByteBuffer)args[0]).duplicate();
-            byte[] tempStringArr = new byte[byteBuffer.get() & 255];
-            byteBuffer.get(tempStringArr);
-            String message = new String(tempStringArr, StandardCharsets.UTF_8);
-            if (message.equals("/crafters")) {
-                CrafterAI.sendCrafterStatusTo(player);
-                return null;
-            }
+        if (player != null && message.equals("/crafters")) {
+            CrafterAI.sendCrafterStatusTo(player);
+            return MessagePolicy.DISCARD;
         }
 
-        try {
-            return method.invoke(o, args);
-        } catch (InvocationTargetException e) {
-            throw e.getCause();
-        }
+        return MessagePolicy.PASS;
+    }
+
+    @Override
+    public boolean onPlayerMessage(Communicator communicator, String message) {
+        return false;
     }
 
     Object swapOwners(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {

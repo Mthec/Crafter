@@ -6,10 +6,7 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.NoSuchTemplateException;
 import com.wurmonline.server.skills.Skill;
 import mod.wurmunlimited.bml.BMLBuilder;
-import mod.wurmunlimited.npcs.CrafterMod;
-import mod.wurmunlimited.npcs.CrafterType;
-import mod.wurmunlimited.npcs.Job;
-import mod.wurmunlimited.npcs.WorkBook;
+import mod.wurmunlimited.npcs.*;
 
 import java.util.*;
 
@@ -95,8 +92,12 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
 
             try {
                 for (Job refund : toRefund) {
+                    if (!crafter.getInventory().getItems().contains(refund.getItem()))
+                        crafter.getInventory().insertItem(refund.getItem());
+
                     refund.mailToCustomer();
                     refund.refundCustomer();
+                    workBook.removeJob(refund.getItem());
                 }
             } catch (NoSuchTemplateException | FailedException e) {
                 logger.warning("Could not create refund package while changing Crafter skills, customers were not compensated.");
@@ -144,6 +145,7 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
 
         String bml = CrafterHireQuestion.addSkillsBML(builder, crafterType)
                 .checkbox("Remove unneeded donation items", "rd")
+                .checkbox("Refund items if skill removed", "refund")
                 .harray(b -> b.button("Save").spacer().button("cancel", "Cancel"))
                 .build();
 

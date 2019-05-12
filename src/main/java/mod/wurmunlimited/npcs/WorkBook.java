@@ -160,6 +160,12 @@ public class WorkBook implements Iterable<Job> {
                 saveWorkBook();
             } catch (WorkBookFull ignored) {}
         }
+
+        // To catch any missed ones, such as when I forgot to implement it.
+        for (Job job : jobs.toArray(new Job[0])) {
+            if (job.isDone() && job.mailWhenDone())
+                job.mailToCustomer();
+        }
     }
 
     private WorkBook(CrafterType crafterType, float skillCap) throws NoSuchTemplateException, FailedException {

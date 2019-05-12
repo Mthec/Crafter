@@ -4,7 +4,6 @@ import com.wurmonline.math.TilePos;
 import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.*;
 import com.wurmonline.server.behaviours.*;
-import com.wurmonline.server.bodys.Body;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.CreatureTemplateIds;
 import com.wurmonline.server.creatures.NoSuchCreatureException;
@@ -246,6 +245,10 @@ public class CrafterAIData extends CreatureAIData {
                     if (forge != null && forge.getItems().contains(item))
                         crafter.getInventory().insertItem(item);
                     logger.info(item.getName() + " is done.");
+                    if (job.mailWhenDone()) {
+                        job.mailToCustomer();
+                        logger.info("Mailing " + item.getName() + " to customer.");
+                    }
                     continue;
                 } else if (item.getDamage() > 0.0f) {
                     try {

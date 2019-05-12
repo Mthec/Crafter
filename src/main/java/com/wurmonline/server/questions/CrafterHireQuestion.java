@@ -13,6 +13,7 @@ import com.wurmonline.server.villages.Village;
 import com.wurmonline.server.villages.VillageRole;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.shared.util.StringUtilities;
+import mod.wurmunlimited.bml.BML;
 import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.CrafterAIData;
 import mod.wurmunlimited.npcs.CrafterMod;
@@ -22,7 +23,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class CrafterHireQuestion extends CrafterQuestionExtension {
-    private static final String[] allCrafterTypes = new String[] {
+    static final String[] allCrafterTypes = new String[] {
             String.valueOf(SkillList.SMITHING_BLACKSMITHING),
             String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING),
             String.valueOf(SkillList.SMITHING_GOLDSMITHING),
@@ -157,7 +158,7 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
     public void sendQuestion() {
         Creature responder = getResponder();
 
-        String bml = new BMLBuilder(id)
+        BML builder = new BMLBuilder(id)
                 .text("Hire Crafter:").bold()
                 .text("Use this contract to hire a Crafter.")
                 .text("The crafter will improve items for customers for a price.")
@@ -170,34 +171,9 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
                         b -> b.text("Under current laws the crafter will contribute" + CrafterMod.getUpkeepPercentage() + "% of each order to village upkeep.  The rest will go to the King."))
                 .If(CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.all_tax,
                         b -> b.text("Under current laws all proceeds will go to the King."))
-                .newLine()
-                .text("General crafter options will override specialisations if selected.  Other specialisations are not affected.").italic()
-                .text("General crafters:")
-                .harray(b -> b
-                             .checkbox("All Metal", "all_metal")
-                             .checkbox("All Wood", "all_wood")
-                             .checkbox("All Armour", "all_armour"))
-                .text("Specialists:")
-                .table(new String[] { "Metal", "Wood", "Misc."},
-                        Arrays.asList(
-                            new int[] { SkillList.SMITHING_BLACKSMITHING, SkillList.CARPENTRY, SkillList.LEATHERWORKING },
-                            new int[] { SkillList.GROUP_SMITHING_WEAPONSMITHING, SkillList.CARPENTRY_FINE, SkillList.CLOTHTAILORING },
-                            new int[] { SkillList.SMITHING_GOLDSMITHING, SkillList.GROUP_FLETCHING, SkillList.STONECUTTING },
-                            new int[] { SkillList.SMITHING_ARMOUR_CHAIN, SkillList.GROUP_BOWYERY, SkillList.POTTERY },
-                            new int[] { SkillList.SMITHING_ARMOUR_PLATE, 0, 0 },
-                            new int[] { SkillList.SMITHING_SHIELDS, 0, 0 }
+                .newLine();
 
-                        ),
-                        (row, bml1) -> bml1.forEach(Arrays.stream(row).boxed().collect(Collectors.toList()), (skill, b) -> {
-                            if (skill != 0)
-                                return b.checkbox(SkillSystem.getNameFor(skill), Integer.toString(skill));
-                            return b.label(" ");
-                        }))
-                .newLine()
-                .If(CrafterMod.canLearn(),
-                        b -> b.harray(b2 -> b2.label("Skill Cap: ").entry("skill_cap", Float.toString(CrafterMod.getSkillCap()), 3).text("Max: " + CrafterMod.getSkillCap()).italic()),
-                        b -> b.harray(b2 -> b2.label("Skill Cap: ").text(Float.toString(CrafterMod.getSkillCap())))
-                        )
+        String bml = addSkillsBML(builder)
                 .If(CrafterMod.canUsePriceModifier(), b -> b.harray(b2 -> b2.label("Price Modifier: ").entry("price_modifier", "1.0", 4)))
                 .newLine()
                 .harray(b -> b.label("Crafter name:").entry("name", 20))
@@ -209,5 +185,39 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
                 .build();
 
         getResponder().getCommunicator().sendBml(500, 400, true, true, bml, 200, 200, 200, title);
+    }
+
+    private static BML addSkillsBML(BML bml) {
+        return addSkillsBML(bml, new CrafterType());
+    }
+
+    static BML addSkillsBML(BML bml, CrafterType crafterType) {
+        return bml.text("General crafter options will override specialisations if selected.  Other specialisations are not affected.").italic()
+                 .text("General crafters:")
+                 .harray(b -> b
+                                      .checkbox("All Metal", "all_metal", crafterType.hasAllMetal())
+                                      .checkbox("All Wood", "all_wood", crafterType.hasAllWood())
+                                      .checkbox("All Armour", "all_armour", crafterType.hasAllArmour()))
+                 .text("Specialists:")
+                 .table(new String[] { "Metal", "Wood", "Misc."},
+                         Arrays.asList(
+                                 new int[] { SkillList.SMITHING_BLACKSMITHING, SkillList.CARPENTRY, SkillList.LEATHERWORKING },
+                                 new int[] { SkillList.GROUP_SMITHING_WEAPONSMITHING, SkillList.CARPENTRY_FINE, SkillList.CLOTHTAILORING },
+                                 new int[] { SkillList.SMITHING_GOLDSMITHING, SkillList.GROUP_FLETCHING, SkillList.STONECUTTING },
+                                 new int[] { SkillList.SMITHING_ARMOUR_CHAIN, SkillList.GROUP_BOWYERY, SkillList.POTTERY },
+                                 new int[] { SkillList.SMITHING_ARMOUR_PLATE, 0, 0 },
+                                 new int[] { SkillList.SMITHING_SHIELDS, 0, 0 }
+
+                         ),
+                         (row, bml1) -> bml1.forEach(Arrays.stream(row).boxed().collect(Collectors.toList()), (skill, b) -> {
+                             if (skill != 0)
+                                 return b.checkbox(SkillSystem.getNameFor(skill), Integer.toString(skill), crafterType.hasSkill(skill));
+                             return b.label(" ");
+                         }))
+                 .newLine()
+                 .If(CrafterMod.canLearn(),
+                         b -> b.harray(b2 -> b2.label("Skill Cap: ").entry("skill_cap", Float.toString(CrafterMod.getSkillCap()), 3).text("Max: " + CrafterMod.getSkillCap()).italic()),
+                         b -> b.harray(b2 -> b2.label("Skill Cap: ").text(Float.toString(CrafterMod.getSkillCap())))
+                 );
     }
 }

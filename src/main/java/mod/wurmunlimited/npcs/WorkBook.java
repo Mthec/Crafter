@@ -24,7 +24,7 @@ public class WorkBook implements Iterable<Job> {
     @SuppressWarnings("WeakerAccess")
     public final Item workBookItem;
     Item forge;
-    private final CrafterType crafterType;
+    private CrafterType crafterType;
     private float skillCap;
     private final List<Job> jobs = new ArrayList<>();
     private final Map<Item, Job> jobItems = new HashMap<>();
@@ -275,6 +275,12 @@ public class WorkBook implements Iterable<Job> {
         jobItems.put(item, jobs.get(jobs.size() - 1));
         if (save)
             saveWorkBook();
+    }
+
+    public void updateSkillsSettings(CrafterType newCrafterType, float newSkillCap) throws WorkBookFull {
+        crafterType = newCrafterType;
+        skillCap = newSkillCap;
+        saveWorkBook();
     }
 
     private void saveWorkBook() throws WorkBookFull {

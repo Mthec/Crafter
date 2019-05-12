@@ -45,6 +45,30 @@ public class CrafterType {
         return skills.stream().anyMatch(metal::contains);
     }
 
+    public boolean hasSkill(int skill) {
+        return skills.contains(skill);
+    }
+
+    private boolean hasAll(Integer[] skillsArray) {
+        for (int skill : skillsArray) {
+            if (!skills.contains(skill))
+                return false;
+        }
+        return true;
+    }
+
+    public boolean hasAllMetal() {
+        return hasAll(allMetal);
+    }
+
+    public boolean hasAllWood() {
+        return hasAll(allWood);
+    }
+
+    public boolean hasAllArmour() {
+        return hasAll(allArmour);
+    }
+
     @Override
     public boolean equals(Object obj) {
         return obj instanceof CrafterType && ((CrafterType)obj).skills.equals(skills);

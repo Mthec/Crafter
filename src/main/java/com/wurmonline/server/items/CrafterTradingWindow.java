@@ -30,11 +30,11 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
     private final boolean offer;
     private final long wurmId;
     private Set<Item> items;
-    private final Trade trade;
+    private final CrafterTrade trade;
     private static final Logger logger = Logger.getLogger(CrafterTradingWindow.class.getName());
     private static final Map<String, Logger> loggers = new HashMap<>();
 
-    CrafterTradingWindow(Creature aOwner, Creature aWatcher, boolean aOffer, long aWurmId, Trade aTrade) {
+    CrafterTradingWindow(Creature aOwner, Creature aWatcher, boolean aOffer, long aWurmId, CrafterTrade aTrade) {
         this.windowOwner = aOwner;
         this.watcher = aWatcher;
         this.offer = aOffer;
@@ -416,7 +416,6 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
             CrafterTradeHandler handler;
             WorkBook workBook;
             Shop shop;
-            int moneyAdded = 0;
             int moneyLost = 0;
             try {
                 if (CrafterTemplate.isCrafter(windowOwner)) {
@@ -465,12 +464,7 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
                     if (!(this.watcher instanceof Player)) {
                         if (coin) {
                             getLogger(shop.getWurmId()).log(Level.INFO, this.watcher.getName() + " received " + MaterialUtilities.getMaterialString(item.getMaterial()) + " " + item.getName() + ", id: " + item.getWurmId() + ", QL: " + item.getQualityLevel());
-                            if (this.windowOwner.getWurmId() == shop.getOwnerId()) {
-                                inventory.insertItem(item);
-                                moneyAdded += Economy.getValueFor(item.getTemplateId());
-                            } else {
-                                Economy.getEconomy().returnCoin(item, "CrafterTrade");
-                            }
+                            Economy.getEconomy().returnCoin(item, "CrafterTrade");
                         } else {
                             try {
                                 if (!handler.isDonating()) {
@@ -506,9 +500,9 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
             this.windowOwner.getCommunicator().sendNormalServerMessage("The trade was completed successfully.");
 
             if (CrafterTemplate.isCrafter(windowOwner)) {
-                int diff = moneyAdded - moneyLost;
+                long diff = trade.getMoneyAdded() - trade.getOrderTotal() - moneyLost;
                 if (diff != 0) {
-                    shop.setMoney(shop.getMoney() + (long)diff);
+                    shop.setMoney(shop.getMoney() + diff);
                 }
             } else {
                 long forCrafter = 0;
@@ -517,24 +511,19 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
 
                 switch (CrafterMod.getPaymentOption()) {
                     case all_tax:
-                        forKing = this.trade.getMoneyAdded();
+                        forKing = this.trade.getOrderTotal();
                         break;
                     case tax_and_upkeep:
-                        forUpkeep = (long)(this.trade.getMoneyAdded() * CrafterMod.getUpkeepPercentage());
-                        forKing = trade.getMoneyAdded() - forUpkeep;
+                        forUpkeep = (long)(this.trade.getOrderTotal() * CrafterMod.getUpkeepPercentage());
+                        forKing = trade.getOrderTotal() - forUpkeep;
                         break;
                     case for_owner:
-                        forCrafter = (long)((float)this.trade.getMoneyAdded() * 0.9F);
-                        forKing = this.trade.getMoneyAdded() - forCrafter;
+                        forCrafter = (long)((float)this.trade.getOrderTotal() * 0.9F);
+                        forKing = this.trade.getOrderTotal() - forCrafter;
                         break;
                 }
 
                 if (forCrafter != 0L) {
-                    for (Item coin : Economy.getEconomy().getCoinsFor(forCrafter)) {
-                        inventory.insertItem(coin, true);
-                    }
-
-                    shop.setMoney(shop.getMoney() + forCrafter);
                     shop.addMoneyEarned(forCrafter);
                 }
                 if (forUpkeep != 0L) {

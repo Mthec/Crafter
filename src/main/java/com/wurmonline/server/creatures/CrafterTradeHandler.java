@@ -119,7 +119,7 @@ public class CrafterTradeHandler extends TradeHandler {
         }
 
         if (ownerTrade && CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.for_owner) {
-            for (Item coin : Economy.getEconomy().getCoinsFor((long)(workBook.getMoneyToCollect() * 0.9f))) {
+            for (Item coin : Economy.getEconomy().getCoinsFor(creature.getShop().getMoney())) {
                 offerWindow.addItem(coin);
                 coinsToCollect.add(coin);
             }
@@ -211,6 +211,7 @@ public class CrafterTradeHandler extends TradeHandler {
         TradingWindow offerWindow = trade.getTradingWindow(2);
         TradingWindow myWindow = trade.getCreatureTwoRequestWindow();
         for (Item item : offerWindow.getItems()) {
+            // TODO - Donating objects of correct type.
             if (item.isCoin() || donating || (item.getQualityLevel() < getTargetQL(item) && !item.isNoImprove() && item.isRepairable() && !item.isNewbieItem() && !item.isChallengeNewbieItem())) {
                 offerWindow.removeItem(item);
                 myWindow.addItem(item);
@@ -308,7 +309,7 @@ public class CrafterTradeHandler extends TradeHandler {
                 }
             }
 
-            if (!donating || ownerTrade) {
+            if (!donating) {
                 int cost = 0;
                 int money = 0;
                 for (Item item : playerWindow.getItems()) {
@@ -333,7 +334,8 @@ public class CrafterTradeHandler extends TradeHandler {
                         jobDetailsWindow.addItem(coin);
                     }
                 }
-                trade.setMoneyAdded(cost);
+                trade.setMoneyAdded(money);
+                trade.setOrderTotal(cost);
                 trade.setSatisfied(creature, true, trade.getCurrentCounter());
                 balanced = true;
             } else if (donating) {

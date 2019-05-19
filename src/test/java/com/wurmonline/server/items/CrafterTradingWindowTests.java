@@ -118,10 +118,10 @@ class CrafterTradingWindowTests extends CrafterTradingTest {
         int craftersCut = (int)(price * 0.9f);
         int kingsCut = price - craftersCut;
 
-        assertTrue(crafter.getInventory().getItemCount() - crafterStartingItems > 1);
-        assertThat(crafter, hasCoinsOfValue(craftersCut));
+        assertEquals(1, crafter.getInventory().getItemCount() - crafterStartingItems);
+        assertThat(crafter, hasCoinsOfValue(0));
         assertEquals(0, player.getInventory().getItemCount());
-        assertEquals(craftersCut, factory.getShop(crafter).getMoney());
+        assertEquals(0, factory.getShop(crafter).getMoney());
         assertEquals(0, crafter.getCitizenVillage().plan.moneyLeft);
         assertEquals(kingsCut, Economy.getEconomy().getKingsShop().getMoney());
     }

@@ -376,7 +376,7 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         setSatisfied(player);
 
         long finalPrice = afterTax(price);
-        assertEquals(finalPrice, factory.getShop(crafter).getMoney());
+        assertEquals(finalPrice, factory.getShop(crafter).getMoneyEarnedLife());
         assertTrue(crafter.getInventory().getItems().contains(item));
         assertFalse(player.getInventory().getItems().contains(item));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
@@ -461,9 +461,7 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         handler.balance();
         setSatisfied(player);
 
-        long finalPrice = afterTax(price);
-        assertThat(crafter, hasCoinsOfValue(finalPrice));
-        assertEquals(finalPrice, factory.getShop(crafter).getMoney());
+        assertThat(crafter, hasCoinsOfValue(0));
         assertTrue(crafter.getInventory().getItems().contains(item));
         assertFalse(player.getInventory().getItems().contains(item));
         assertEquals(1, WorkBook.getWorkBookFromWorker(crafter).todo());
@@ -846,4 +844,37 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
 //            System.out.println(s);
 //        }
 //    }
+
+    @Test
+    void testCrafterMoneyNotAffectedByTrade() throws WorkBook.NoWorkBookOnWorker {
+        int startingMoney = 100;
+        crafter = factory.createNewCrafter(owner, crafterType, 50);
+        assert WorkBook.getWorkBookFromWorker(crafter).todo() == 0;
+        factory.getShop(crafter).setMoney(startingMoney);
+
+        Item item = player.getInventory().getFirstContainedItem();
+        item.setQualityLevel(1);
+
+        makeNewCrafterTrade();
+        makeHandler();
+
+        handler.addItemsToTrade();
+
+        selectOption("Improve to 20ql");
+        trade.getTradingWindow(2).addItem(item);
+        handler.balance();
+        int price = handler.getTraderBuyPriceForItem(item);
+        Arrays.stream(Economy.getEconomy().getCoinsFor(price)).forEach(player.getInventory()::insertItem);
+        player.getInventory().getItems().forEach(trade.getTradingWindow(2)::addItem);
+
+        setNotBalanced();
+        handler.balance();
+        setSatisfied(player);
+
+        assertEquals(startingMoney, factory.getShop(crafter).getMoney());
+        assertTrue(crafter.getInventory().getItems().contains(item));
+        assertFalse(player.getInventory().getItems().contains(item));
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        assertEquals(1, workBook.todo());
+    }
 }

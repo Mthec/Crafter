@@ -53,6 +53,14 @@ public class CrafterAIData extends CreatureAIData {
             float y = workbook.forge.getPosY();
             crafter.turnTo((float)(Math.toDegrees(Math.atan2(y - crafter.getPosY(), x - crafter.getPosX())) + 90.0f));
         }
+
+        // Fix for silly error.
+        if (crafter.getShop().getMoney() < 0) {
+            if (CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.for_owner)
+                crafter.getShop().setMoney((long)(workbook.getMoneyToCollect() * 0.9f));
+            else
+                crafter.getShop().setMoney(0);
+        }
     }
 
     private void assignItems() {
@@ -242,6 +250,8 @@ public class CrafterAIData extends CreatureAIData {
 
                 if (item.getQualityLevel() >= job.targetQL || (job.isDonation() && (!workbook.getCrafterType().hasSkillToImprove(item) || item.getQualityLevel() >= workbook.getSkillCap()))) {
                     workbook.setDone(job);
+                    if (CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.for_owner)
+                        crafter.getShop().setMoney((long)(job.getPriceCharged() * 0.9f));
                     if (forge != null && forge.getItems().contains(item))
                         crafter.getInventory().insertItem(item);
                     logger.info(item.getName() + " is done.");

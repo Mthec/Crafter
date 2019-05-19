@@ -40,7 +40,7 @@ class CrafterAITests extends CrafterTest {
         super.setUp();
         data = (CrafterAIData)crafter.getCreatureAIData();
         workBook = data.getWorkBook();
-        workBook.addJob(player.getWurmId(), tool, 10, false, 1);
+        workBook.addJob(player.getWurmId(), tool, 10, false, 100);
         job = workBook.iterator().next();
         lump = data.createMissingItem(ItemList.ironBar);
         hammer = data.createMissingItem(ItemList.hammerMetal);
@@ -68,6 +68,7 @@ class CrafterAITests extends CrafterTest {
         data.sendNextAction();
         assertEquals(0, workBook.todo());
         assertEquals(1, workBook.done());
+        assertEquals(job.getPriceCharged() * 0.9f, crafter.getShop().getMoney());
     }
 
     @Test

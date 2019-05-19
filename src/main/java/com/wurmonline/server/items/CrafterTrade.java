@@ -33,6 +33,7 @@ public class CrafterTrade extends Trade {
     private int currentCounter = -1;
     private long moneyAdded;
     private WorkBook workBook;
+    private long orderTotal;
 
     public CrafterTrade(Creature player, Creature crafter) throws WorkBook.NoWorkBookOnWorker {
         workBook = WorkBook.getWorkBookFromWorker(crafter);
@@ -62,6 +63,14 @@ public class CrafterTrade extends Trade {
     @Override
     long getMoneyAdded() {
         return moneyAdded;
+    }
+
+    public void setOrderTotal(long cost) {
+        orderTotal = cost;
+    }
+
+    public long getOrderTotal() {
+        return orderTotal;
     }
 
     @Override

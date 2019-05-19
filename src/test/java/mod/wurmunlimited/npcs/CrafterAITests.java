@@ -286,4 +286,17 @@ class CrafterAITests extends CrafterTest {
         assertEquals(crafter.getBody().getBodyPart(13), BehaviourDispatcher.getLastDispatchSubject());
         assertEquals(tool, BehaviourDispatcher.getLastDispatchTarget());
     }
+
+    // Donations
+
+    @Test
+    void testDonationImproveActionDispatched() throws WorkBook.WorkBookFull {
+        warmUp();
+
+        workBook.removeJob(tool);
+        workBook.addDonation(tool);
+
+        data.sendNextAction();
+        assertTrue(BehaviourDispatcher.wasDispatched(tool, Actions.IMPROVE));
+    }
 }

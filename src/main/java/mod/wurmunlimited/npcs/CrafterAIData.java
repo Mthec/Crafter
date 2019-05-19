@@ -224,7 +224,7 @@ public class CrafterAIData extends CreatureAIData {
     }
 
     void sendNextAction() {
-        if (workbook.todo() == 0) {
+        if (workbook.todo() == 0 && workbook.donationsTodo() == 0) {
             if (workbook.isForgeAssigned() && forge.isOnFire()) {
                 forge.setTemperature((short)0);
             }

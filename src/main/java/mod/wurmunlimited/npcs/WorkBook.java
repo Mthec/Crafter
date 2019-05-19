@@ -235,6 +235,10 @@ public class WorkBook implements Iterable<Job> {
         return (int)jobs.stream().filter(job -> !job.done && !job.isDonation()).count();
     }
 
+    public int donationsTodo() {
+        return (int)jobs.stream().filter(Job::isDonation).count();
+    }
+
     public int done() {
         return (int)jobs.stream().filter(job -> job.done).count();
     }

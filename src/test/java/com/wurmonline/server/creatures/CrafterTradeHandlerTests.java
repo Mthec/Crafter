@@ -12,6 +12,7 @@ import com.wurmonline.server.items.ItemTemplate;
 import com.wurmonline.server.items.TradingWindow;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.npcs.*;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.Test;
@@ -876,5 +877,38 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         assertFalse(player.getInventory().getItems().contains(item));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
         assertEquals(1, workBook.todo());
+    }
+
+    @Test
+    void testOnlyAcceptsDonationsThatCanBeUsed() throws WorkBook.NoWorkBookOnWorker {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), 50);
+        assert WorkBook.getWorkBookFromWorker(crafter).donationsTodo() == 0;
+
+        Item item1 = factory.createNewItem(factory.getIsBlacksmithingId());
+        Item item2 = factory.createNewItem(factory.getIsJewellerysmithingId());
+        item2.setMaterial(ItemMaterials.MATERIAL_GOLD);
+        player.getInventory().insertItem(item1);
+        player.getInventory().insertItem(item2);
+
+
+        makeNewCrafterTrade();
+        makeHandler();
+
+        handler.addItemsToTrade();
+
+        selectOption("Donate");
+        trade.getTradingWindow(2).addItem(item1);
+        trade.getTradingWindow(2).addItem(item2);
+
+        handler.balance();
+        setSatisfied(player);
+
+        assertEquals(0, factory.getShop(crafter).getMoney());
+        assertTrue(crafter.getInventory().getItems().contains(item1));
+        assertFalse(player.getInventory().getItems().contains(item1));
+        assertFalse(crafter.getInventory().getItems().contains(item2));
+        assertTrue(player.getInventory().getItems().contains(item2));
+        assertEquals(0, WorkBook.getWorkBookFromWorker(crafter).iterator().next().getPriceCharged());
+        assertTrue(WorkBook.getWorkBookFromWorker(crafter).iterator().next() instanceof Donation);
     }
 }

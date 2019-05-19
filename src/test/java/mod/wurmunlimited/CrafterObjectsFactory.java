@@ -48,6 +48,6 @@ public class CrafterObjectsFactory extends WurmObjectsFactory {
     }
 
     public int getIsJewellerysmithingId() {
-        return ItemList.statuette;
+        return ItemList.statuetteMagranon;
     }
 }

@@ -161,7 +161,7 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
 
     @Test
     void testMoneyNotGivenForDonations() {
-        crafter = factory.createNewCrafter(owner, crafterType, 50);
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_GOLDSMITHING), 50);
         crafter.getShop().setPriceModifier(9999);
 
         Item item = factory.createNewItem(ItemList.statuetteMagranon);
@@ -186,6 +186,7 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
 
     @Test
     void testCanDonateAndCollectMoney() throws WorkBook.NoWorkBookOnWorker {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_GOLDSMITHING), 50);
         int done = 100;
         addDoneJobToWorkBook(100);
 

@@ -61,6 +61,13 @@ public class CrafterAIData extends CreatureAIData {
             else
                 crafter.getShop().setMoney(0);
         }
+
+        // Clear up empty barrels.
+        for (Item item : crafter.getInventory().getItemsAsArray()) {
+            if (item.getTemplateId() == ItemList.barrelSmall && item.getItemCount() == 0 && !workbook.isJobItem(item)) {
+                Items.destroyItem(item.getWurmId());
+            }
+        }
     }
 
     private void assignItems() {
@@ -139,7 +146,10 @@ public class CrafterAIData extends CreatureAIData {
             item.setDamage(0);
         if (item.getQualityLevel() < workbook.getSkillCap() || item.getQualityLevel() > 100)
             item.setQualityLevel(workbook.getSkillCap());
-        item.setWeight(item.getTemplate().getWeightGrams(), false);
+        if (item.isLiquid())
+            item.setWeight(5000, false);
+        else
+            item.setWeight(item.getTemplate().getWeightGrams(), false);
     }
 
     private void capSkills() {

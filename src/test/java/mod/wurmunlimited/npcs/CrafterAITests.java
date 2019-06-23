@@ -300,4 +300,18 @@ class CrafterAITests extends CrafterTest {
         data.sendNextAction();
         assertTrue(BehaviourDispatcher.wasDispatched(tool, Actions.IMPROVE));
     }
+
+    // Large anvil
+
+    @Test
+    void testLargeAnvilImproveActionDispatched() throws WorkBook.WorkBookFull {
+        workBook.removeJob(tool);
+        tool = factory.createNewItem(ItemList.anvilLarge);
+        workBook.addJob(player.getWurmId(), tool, 20, false, 1);
+
+        warmUp();
+        data.sendNextAction();
+
+        assertTrue(BehaviourDispatcher.wasDispatched(tool, Actions.IMPROVE));
+    }
 }

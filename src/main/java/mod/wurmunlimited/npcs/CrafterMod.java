@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.*;
@@ -34,6 +32,7 @@ import java.util.stream.Collectors;
 public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configurable, ItemTemplatesCreatedListener, ServerStartedListener, PlayerMessageListener {
     private static final Logger logger = Logger.getLogger(CrafterMod.class.getName());
     private static final Random faceRandom = new Random();
+    static final byte MAIL_TYPE_CRAFTER = 30;
     private static int contractTemplateId;
     private static int contractPrice = 10000;
     private static PaymentOption paymentOption = PaymentOption.for_owner;
@@ -49,6 +48,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private static float startingSkill = 20;
     private static boolean usePriceModifier = true;
     private static float minimumPriceModifier = 0.0000001f;
+    private static boolean mailCommand = false;
     private static OutputOption output = OutputOption.none;
     private static final Map<Creature, Logger> crafterLoggers = new HashMap<>();
     private Properties properties;
@@ -188,6 +188,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         }
         usePriceModifier = getOption("use_owner_price_modifier", usePriceModifier);
         minimumPriceModifier = getOption("minimum_price_modifier", minimumPriceModifier);
+        mailCommand = getOption("mail_command", mailCommand);
 
         skillPrices.put(SkillList.SMITHING_BLACKSMITHING, getOption("blacksmithing", 1.0f));
         skillPrices.put(SkillList.GROUP_SMITHING_WEAPONSMITHING, getOption("weaponsmithing", 1.0f));
@@ -506,9 +507,54 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     public MessagePolicy onPlayerMessage(Communicator communicator, String message, String title) {
         Player player = communicator.getPlayer();
 
-        if (player != null && message.equals("/crafters")) {
-            CrafterAI.sendCrafterStatusTo(player);
-            return MessagePolicy.DISCARD;
+        if (player != null) {
+            if (mailCommand && message.replace(" ", "").equals("/crafterscollect")) {
+                int collected = 0;
+                for (WurmMail mail : WurmMail.getMailsFor(player.getWurmId()).toArray(new WurmMail[0])) {
+                    if (mail.type == MAIL_TYPE_CRAFTER) {
+                        Item item;
+                        try {
+                            item = Items.getItem(mail.getItemId());
+                        } catch (NoSuchItemException e) {
+                            logger.log(Level.INFO, " NO SUCH ITEM");
+                            WurmMail.deleteMail(mail.itemId);
+                            continue;
+                        }
+
+                        Item inventory = player.getInventory();
+                        if (!inventory.testInsertItem(item) || (player.getPower() <= 0 && 1 + inventory.getNumItemsNotCoins() > 99)) {
+                            player.getCommunicator().sendSafeServerMessage("You do not have enough space for any more items.");
+                            break;
+                        }
+                        if (!player.canCarry(item.getFullWeight())) {
+                            player.getCommunicator().sendSafeServerMessage("You cannot carry any more.");
+                            break;
+                        }
+
+                        for (Item i : item.getAllItems(true)) {
+                            i.setMailed(false);
+                            i.setLastOwnerId(player.getWurmId());
+                        }
+
+                        WurmMail.removeMail(item.getWurmId());
+                        inventory.insertItem(item, true);
+                        item.setLastOwnerId(player.getWurmId());
+                        item.setMailed(false);
+                        logger.log(Level.INFO, player.getName() + " received " + item.getName() + " " + item.getWurmId());
+                        collected += 1;
+                    }
+                }
+
+                if (collected == 0)
+                    player.getCommunicator().sendNormalServerMessage("There are no mail items to collect.");
+                else
+                    player.getCommunicator().sendNormalServerMessage(String.format("You receive " + collected + " item%s.", collected == 1 ? "" : "s"));
+
+                return MessagePolicy.DISCARD;
+            } else if (message.equals("/crafters")) {
+                CrafterAI.sendCrafterStatusTo(player);
+                return MessagePolicy.DISCARD;
+            }
         }
 
         return MessagePolicy.PASS;

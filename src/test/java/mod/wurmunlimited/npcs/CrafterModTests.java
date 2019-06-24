@@ -3,6 +3,7 @@ package mod.wurmunlimited.npcs;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.creatures.CrafterTradeHandler;
 import com.wurmonline.server.creatures.Creature;
+import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.kingdom.Kingdom;
 import com.wurmonline.server.players.Player;
@@ -349,7 +350,7 @@ class CrafterModTests {
     @Test
     void testJobItemsRemovedFromInventoryDuringWearItems() throws Throwable {
         CrafterMod crafterMod = new CrafterMod();
-        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), crafterType, 50);
+        com.wurmonline.server.creatures.Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), crafterType, 50);
         Item job = factory.createNewItem();
         crafter.getInventory().insertItem(job);
         WorkBook.getWorkBookFromWorker(crafter).addJob(1, job, 10, false, 1);

@@ -33,6 +33,8 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private static final Logger logger = Logger.getLogger(CrafterMod.class.getName());
     private static final Random faceRandom = new Random();
     static final byte MAIL_TYPE_CRAFTER = 30;
+    public static final int DRAGON_ARMOUR = -1;
+    public static final int MOON_METAL = -2;
     private static int contractTemplateId;
     private static int contractPrice = 10000;
     private static PaymentOption paymentOption = PaymentOption.for_owner;
@@ -203,7 +205,8 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         skillPrices.put(SkillList.CLOTHTAILORING, getOption("clothtailoring", 1.0f));
         skillPrices.put(SkillList.STONECUTTING, getOption("stonecutting", 1.0f));
         skillPrices.put(SkillList.SMITHING_SHIELDS, getOption("shieldsmithing", 1.0f));
-        skillPrices.put(-1, getOption("dragon_armour", 10.0f));
+        skillPrices.put(DRAGON_ARMOUR, getOption("dragon_armour", 10.0f));
+        skillPrices.put(MOON_METAL, getOption("moon_metal", 1.0f));
     }
 
     @Override

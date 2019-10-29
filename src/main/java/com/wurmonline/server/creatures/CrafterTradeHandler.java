@@ -189,7 +189,10 @@ public class CrafterTradeHandler extends TradeHandler {
         double target = ql >= 70 ? basePrice * priceCalculation(ql) : basePrice * priceCalculationSub70(ql);
 
         if (item.isDragonArmour())
-            return (int)((target - current) * CrafterMod.getBasePriceForSkill(-1));
+            return (int)((target - current) * CrafterMod.getBasePriceForSkill(CrafterMod.DRAGON_ARMOUR));
+
+        if (item.isMoonMetal())
+            return (int)((target - current) * CrafterMod.getBasePriceForSkill(CrafterMod.MOON_METAL));
 
         return (int)(target - current);
     }

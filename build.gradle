@@ -2,11 +2,10 @@ import org.apache.tools.ant.filters.*
 
 plugins {
     id 'java'
-    id 'idea'
 }
 
 group = 'mod.wurmunlimited.npcs.crafter'
-version = '0.3.12-beta'
+version = '0.3.13-beta'
 
 sourceCompatibility = 1.8
 def $shortName = 'crafter'
@@ -15,28 +14,9 @@ repositories {
     mavenCentral()
 }
 
-idea {
-    module {
-        iml {
-            beforeMerged {
-                module -> module.dependences.add(configurations.provided)
-            }
-        }
-    }
-}
-
-configurations {
-    provided
-
-    sourceSets.main.compileClasspath += configurations.provided
-    sourceSets.main.runtimeClasspath += configurations.provided
-    sourceSets.test.compileClasspath += configurations.provided
-    sourceSets.test.runtimeClasspath += configurations.provided
-}
-
 dependencies {
     testImplementation project(':WurmTestingHelper')
-    provided fileTree(dir: 'E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/', includes: ["modlauncher.jar", "javassist.jar", "server.jar"])
+    implementation fileTree(dir: 'E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/', includes: ["modlauncher.jar", "javassist.jar", "server.jar"])
     implementation project(':BMLBuilder')
 }
 

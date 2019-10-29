@@ -3,6 +3,7 @@ package com.wurmonline.server.creatures;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterTradingTest;
 import mod.wurmunlimited.npcs.CrafterType;
@@ -64,7 +65,7 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
     @Test
     void testDragonArmourAddsAnotherModifier() throws NoSuchFieldException, IllegalAccessException {
         //noinspection unchecked
-        ((Map<Integer, Float>)ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("skillPrices"))).put(-1, 10.0f);
+        ((Map<Integer, Float>)ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("skillPrices"))).put(CrafterMod.DRAGON_ARMOUR, 10.0f);
         crafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allArmour), 70);
         create(20);
 
@@ -73,6 +74,43 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
 
         int armourPrice = handler.getTraderBuyPriceForItem(armour);
         assertEquals(armourPrice * 10, handler.getTraderBuyPriceForItem(dragonArmour));
+    }
+
+    @Test
+    void testDragonArmourModifierWithDifferentBasePrice() throws NoSuchFieldException, IllegalAccessException {
+        //noinspection unchecked
+        ((Map<Integer, Float>)ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("skillPrices"))).put(CrafterMod.DRAGON_ARMOUR, 10.0f);
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 2.5f);
+        crafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allArmour), 70);
+        create(20);
+
+        Item armour = factory.createNewItem(ItemList.chainJacket);
+        Item dragonArmour = factory.createNewItem(ItemList.dragonScaleJacket);
+
+        int armourPrice = handler.getTraderBuyPriceForItem(armour);
+        assertEquals(armourPrice * 10, handler.getTraderBuyPriceForItem(dragonArmour));
+    }
+
+    @Test
+    void testMoonMetalModifierAddsAnotherModifier() throws NoSuchFieldException, IllegalAccessException {
+        //noinspection unchecked
+        ((Map<Integer, Float>)ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("skillPrices"))).put(CrafterMod.MOON_METAL, 10.0f);
+        crafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allMetal), 70);
+        create(20);
+
+        Item pickaxe = factory.createNewItem(ItemList.pickAxe);
+        pickaxe.setMaterial(ItemMaterials.MATERIAL_IRON);
+        Item adamantinePickaxe = factory.createNewItem(ItemList.pickAxe);
+        adamantinePickaxe.setMaterial(ItemMaterials.MATERIAL_ADAMANTINE);
+        Item glimmerPickaxe = factory.createNewItem(ItemList.pickAxe);
+        glimmerPickaxe.setMaterial(ItemMaterials.MATERIAL_GLIMMERSTEEL);
+        Item seryll = factory.createNewItem(ItemList.pickAxe);
+        seryll.setMaterial(ItemMaterials.MATERIAL_SERYLL);
+
+        int normalPrice = handler.getTraderBuyPriceForItem(pickaxe);
+        assertEquals(normalPrice * 10, handler.getTraderBuyPriceForItem(adamantinePickaxe));
+        assertEquals(normalPrice * 10, handler.getTraderBuyPriceForItem(glimmerPickaxe));
+        assertEquals(normalPrice * 10, handler.getTraderBuyPriceForItem(seryll));
     }
 
     @Test

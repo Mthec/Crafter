@@ -144,8 +144,8 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
         }
 
         String bml = CrafterHireQuestion.addSkillsBML(builder, crafterType)
-                .checkbox("Remove unneeded donation items", "rd")
-                .checkbox("Refund items if skill removed", "refund")
+                .checkbox("rd", "Remove unneeded donation items")
+                .checkbox("refund", "Refund items if skill removed")
                 .harray(b -> b.button("Save").spacer().button("cancel", "Cancel"))
                 .build();
 

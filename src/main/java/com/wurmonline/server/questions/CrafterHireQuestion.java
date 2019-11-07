@@ -211,7 +211,7 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
                          ),
                          (row, bml1) -> bml1.forEach(Arrays.stream(row).boxed().collect(Collectors.toList()), (skill, b) -> {
                              if (skill != 0)
-                                 return b.checkbox(SkillSystem.getNameFor(skill), Integer.toString(skill), crafterType.hasSkill(skill));
+                                 return b.checkbox(Integer.toString(skill), SkillSystem.getNameFor(skill), crafterType.hasSkill(skill));
                              return b.label(" ");
                          }))
                  .newLine()

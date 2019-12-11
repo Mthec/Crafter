@@ -9,7 +9,9 @@ import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.players.Player;
+import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.server.skills.Skills;
 import com.wurmonline.shared.constants.IconConstants;
 import com.wurmonline.shared.constants.ItemMaterials;
 import javassist.*;
@@ -48,6 +50,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     // Do not set at 100.  Skill.setKnowledge will not set the skill level if so.
     private static float skillCap = 99.99999f;
     private static float startingSkill = 20;
+    private static float crafterSkillGainRate = 1;
     private static boolean usePriceModifier = true;
     private static float minimumPriceModifier = 0.0000001f;
     private static boolean mailCommand = false;
@@ -188,6 +191,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
             logger.warning("starting_skill should not be higher than max_skill, capping value.");
             startingSkill = (int)skillCap;
         }
+        crafterSkillGainRate = getOption("crafter_skill_gain_rate", crafterSkillGainRate);
         usePriceModifier = getOption("use_owner_price_modifier", usePriceModifier);
         minimumPriceModifier = getOption("minimum_price_modifier", minimumPriceModifier);
         mailCommand = getOption("mail_command", mailCommand);
@@ -293,6 +297,11 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 "wearItems",
                 "()V",
                 () -> this::wearItems);
+
+        manager.registerHook("com.wurmonline.server.skills.Skill",
+                "alterSkill",
+                "(DZFZD)V",
+                () -> this::alterSkill);
 
         ModCreatures.init();
         ModCreatures.addCreature(new CrafterTemplate());
@@ -625,6 +634,24 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 args[17] = true;
             }
         }
+        return method.invoke(o, args);
+    }
+
+    Object alterSkill(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        if (crafterSkillGainRate != 1f) {
+            Skill skill = (Skill)o;
+            Creature creature = Server.getInstance().getCreatureOrNull(
+                    ((Skills)ReflectionUtil.getPrivateField(skill, Skill.class.getDeclaredField("parent"))).getId());
+
+            if (creature != null && CrafterTemplate.isCrafter(creature)) {
+                double advanceMultiplicator = (double)args[0];
+                float times = (float)args[2];
+                advanceMultiplicator /= times * Servers.localServer.getSkillGainRate();
+                advanceMultiplicator *= times * crafterSkillGainRate;
+                args[0] = advanceMultiplicator;
+            }
+        }
+
         return method.invoke(o, args);
     }
 }

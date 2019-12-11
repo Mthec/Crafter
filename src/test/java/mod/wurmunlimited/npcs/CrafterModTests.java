@@ -1,12 +1,17 @@
 package mod.wurmunlimited.npcs;
 
+import com.wurmonline.server.Server;
+import com.wurmonline.server.ServerEntry;
+import com.wurmonline.server.Servers;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.creatures.CrafterTradeHandler;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.Creature;
+import com.wurmonline.server.creatures.CreatureTemplateIds;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.kingdom.Kingdom;
 import com.wurmonline.server.players.Player;
+import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
@@ -369,5 +374,73 @@ class CrafterModTests {
 
         assertNull(handler.invoke(crafter, method, args));
         verify(method, times(1)).invoke(crafter, args);
+    }
+
+    @Test
+    void testCrafterSkillGainRateApplied() throws Throwable {
+        CrafterMod crafterMod = new CrafterMod();
+        ReflectionUtil.setPrivateField(crafterMod, CrafterMod.class.getDeclaredField("crafterSkillGainRate"), 5f);
+        when(Servers.localServer.getSkillGainRate()).thenReturn(1f);
+        Creature creature = factory.createNewCrafter(factory.createNewPlayer(), crafterType, 50);
+
+        InvocationHandler handler = crafterMod::alterSkill;
+        Skill skill = creature.getSkills().getSkill(SkillList.SMITHING_BLACKSMITHING);
+        Method method = mock(Method.class);
+        Object[] args = new Object[] { 2d, false, 2f, false, 0d };
+        Object[] expectedArgs = new Object[] { 10d, false, 2f, false, 0d };
+
+        assertNull(handler.invoke(skill, method, args));
+        verify(method, times(1)).invoke(skill, expectedArgs);
+    }
+
+    @Test
+    void testCrafterSkillGainRateNotAppliedIfNotSet() throws Throwable {
+        CrafterMod crafterMod = new CrafterMod();
+        ReflectionUtil.setPrivateField(crafterMod, CrafterMod.class.getDeclaredField("crafterSkillGainRate"), 1f);
+        when(Servers.localServer.getSkillGainRate()).thenReturn(2f);
+        Creature creature = factory.createNewCrafter(factory.createNewPlayer(), crafterType, 50);
+
+        InvocationHandler handler = crafterMod::alterSkill;
+        Skill skill = creature.getSkills().getSkill(SkillList.SMITHING_BLACKSMITHING);
+        Method method = mock(Method.class);
+        Object[] args = new Object[] { 2d, false, 1f, false, 0d };
+        Object[] expectedArgs = new Object[] { 2d, false, 1f, false, 0d };
+
+        assertNull(handler.invoke(skill, method, args));
+        verify(method, times(1)).invoke(skill, expectedArgs);
+    }
+
+    @Test
+    void testNormalSkillGainRateNotAppliedToCraftersIfCrafterSkillGainRateIsSet() throws Throwable {
+        CrafterMod crafterMod = new CrafterMod();
+        ReflectionUtil.setPrivateField(crafterMod, CrafterMod.class.getDeclaredField("crafterSkillGainRate"), 1f);
+        when(Servers.localServer.getSkillGainRate()).thenReturn(10f);
+        Creature creature = factory.createNewCrafter(factory.createNewPlayer(), crafterType, 50);
+
+        InvocationHandler handler = crafterMod::alterSkill;
+        Skill skill = creature.getSkills().getSkill(SkillList.SMITHING_BLACKSMITHING);
+        Method method = mock(Method.class);
+        Object[] args = new Object[] { 1d, false, 1f, false, 0d };
+        Object[] expectedArgs = new Object[] { 1d, false, 1f, false, 0d };
+
+        assertNull(handler.invoke(skill, method, args));
+        verify(method, times(1)).invoke(skill, expectedArgs);
+    }
+
+    @Test
+    void testCrafterSkillGainRateNotAppliedToOtherCreatures() throws Throwable {
+        CrafterMod crafterMod = new CrafterMod();
+        ReflectionUtil.setPrivateField(crafterMod, CrafterMod.class.getDeclaredField("crafterSkillGainRate"), 5f);
+        when(Servers.localServer.getSkillGainRate()).thenReturn(2f);
+        Creature creature = factory.createNewCreature(CreatureTemplateIds.HORSE_CID);
+
+        InvocationHandler handler = crafterMod::alterSkill;
+        Skill skill = creature.getSkills().getSkill(SkillList.SMITHING_BLACKSMITHING);
+        Method method = mock(Method.class);
+        Object[] args = new Object[] { 2d, false, 1f, false, 0d };
+        Object[] expectedArgs = new Object[] { 2d, false, 1f, false, 0d };
+
+        assertNull(handler.invoke(skill, method, args));
+        verify(method, times(1)).invoke(skill, expectedArgs);
     }
 }

@@ -8,7 +8,10 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.items.*;
 
+import java.util.logging.Logger;
+
 public class Job {
+    private static final Logger logger = Logger.getLogger(Job.class.getName());
     final long customerId;
     final Item item;
     final float targetQL;
@@ -59,6 +62,8 @@ public class Job {
     }
 
     private void mailToCustomer(Item itemToMail) {
+        if (done)
+            logger.warning("Trying to mail when job already done.");
         itemToMail.setBusy(false);
         WurmMail mail = new WurmMail(CrafterMod.MAIL_TYPE_CRAFTER, itemToMail.getWurmId(), 1, customerId, 0, System.currentTimeMillis() + TimeConstants.MINUTE_MILLIS, System.currentTimeMillis() + (Servers.isThisATestServer() ? 3600000L : 14515200000L), Servers.localServer.id, false, false);
         WurmMail.addWurmMail(mail);

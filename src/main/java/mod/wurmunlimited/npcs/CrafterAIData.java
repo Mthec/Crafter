@@ -259,16 +259,16 @@ public class CrafterAIData extends CreatureAIData {
                 }
 
                 if (item.getQualityLevel() >= job.targetQL || (job.isDonation() && (!workbook.getCrafterType().hasSkillToImprove(item) || item.getQualityLevel() >= workbook.getSkillCap()))) {
-                    workbook.setDone(job);
                     if (CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.for_owner)
                         crafter.getShop().setMoney((long)(job.getPriceCharged() * 0.9f));
                     if (forge != null && forge.getItems().contains(item))
                         crafter.getInventory().insertItem(item);
-                    logger.info(item.getName() + " is done.");
                     if (job.mailWhenDone()) {
                         job.mailToCustomer();
                         logger.info("Mailing " + item.getName() + " to customer.");
                     }
+                    workbook.setDone(job);
+                    logger.info(item.getName() + " is done.");
                     continue;
                 } else if (item.getDamage() > 0.0f) {
                     try {

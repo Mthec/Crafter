@@ -7,6 +7,7 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.items.NoSpaceException;
+import com.wurmonline.server.items.WurmMail;
 import com.wurmonline.server.skills.NoSuchSkillException;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
@@ -313,5 +314,38 @@ class CrafterAITests extends CrafterTest {
         data.sendNextAction();
 
         assertTrue(BehaviourDispatcher.wasDispatched(tool, Actions.IMPROVE));
+    }
+
+    @Test
+    void testMailedWhenJobDone() throws NoSuchFieldException, IllegalAccessException {
+        crafter.getInventory().insertItem(tool);
+        tool.setQualityLevel(11);
+        ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("targetQL"), 10);
+        ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("mailWhenDone"), true);
+
+        data.sendNextAction();
+        assertEquals(0, workBook.todo());
+        assertEquals(1, workBook.done());
+        assertTrue(WurmMail.allMail.stream().anyMatch(m -> m.itemId == tool.getWurmId()));
+        assertEquals(job.getPriceCharged() * 0.9f, crafter.getShop().getMoney());
+    }
+
+    @Test
+    void testNotMailedMultipleTimesWhenJobDone() throws NoSuchFieldException, IllegalAccessException {
+        crafter.getInventory().insertItem(tool);
+        tool.setQualityLevel(11);
+        ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("targetQL"), 10);
+        ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("mailWhenDone"), true);
+
+        data.sendNextAction();
+        assertEquals(0, workBook.todo());
+        assertEquals(1, workBook.done());
+        assertTrue(WurmMail.allMail.stream().anyMatch(m -> m.itemId == tool.getWurmId()));
+        assertEquals(job.getPriceCharged() * 0.9f, crafter.getShop().getMoney());
+
+        WurmMail.allMail.clear();
+
+        data.sendNextAction();
+        assertFalse(WurmMail.allMail.stream().anyMatch(m -> m.itemId == tool.getWurmId()));
     }
 }

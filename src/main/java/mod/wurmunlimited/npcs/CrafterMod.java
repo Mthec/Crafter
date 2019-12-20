@@ -387,7 +387,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
             if (contractsOnTraders) {
                 for (Shop shop : Economy.getTraders()) {
                     Creature creature = Creatures.getInstance().getCreatureOrNull(shop.getWurmId());
-                    if (!shop.isPersonal() && creature != null && creature.getInventory().getItems().stream().noneMatch(i -> i.getTemplateId() == contractTemplateId)) {
+                    if (!shop.isPersonal() && creature != null && creature.isSalesman() && creature.getInventory().getItems().stream().noneMatch(i -> i.getTemplateId() == contractTemplateId)) {
                         try {
                             creature.getInventory().insertItem(Creature.createItem(contractTemplateId, (float) (10 + Server.rand.nextInt(80))));
                             shop.setMerchantData(shop.getNumberOfItems() + 1);

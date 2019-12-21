@@ -2,7 +2,6 @@ package mod.wurmunlimited.npcs;
 
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
-import com.wurmonline.server.behaviours.MethodsItems;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
@@ -64,12 +63,14 @@ class CrafterAITests extends CrafterTest {
     void testJobDone() throws NoSuchFieldException, IllegalAccessException {
         crafter.getInventory().insertItem(tool);
         tool.setQualityLevel(11);
+        long price = 111L;
         ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("targetQL"), 10);
+        ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("priceCharged"), price);
 
         data.sendNextAction();
         assertEquals(0, workBook.todo());
         assertEquals(1, workBook.done());
-        assertEquals(job.getPriceCharged() * 0.9f, crafter.getShop().getMoney());
+        assertEquals((long)(price * 0.9f), crafter.getShop().getMoney());
     }
 
     @Test
@@ -320,28 +321,32 @@ class CrafterAITests extends CrafterTest {
     void testMailedWhenJobDone() throws NoSuchFieldException, IllegalAccessException {
         crafter.getInventory().insertItem(tool);
         tool.setQualityLevel(11);
+        long price = 111L;
         ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("targetQL"), 10);
         ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("mailWhenDone"), true);
+        ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("priceCharged"), price);
 
         data.sendNextAction();
         assertEquals(0, workBook.todo());
         assertEquals(0, workBook.done());
         assertTrue(WurmMail.allMail.stream().anyMatch(m -> m.itemId == tool.getWurmId()));
-        assertEquals(job.getPriceCharged() * 0.9f, crafter.getShop().getMoney());
+        assertEquals((long)(price * 0.9f), crafter.getShop().getMoney());
     }
 
     @Test
     void testNotMailedMultipleTimesWhenJobDone() throws NoSuchFieldException, IllegalAccessException {
         crafter.getInventory().insertItem(tool);
         tool.setQualityLevel(11);
+        long price = 111L;
         ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("targetQL"), 10);
         ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("mailWhenDone"), true);
+        ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("priceCharged"), price);
 
         data.sendNextAction();
         assertEquals(0, workBook.todo());
         assertEquals(0, workBook.done());
         assertTrue(WurmMail.allMail.stream().anyMatch(m -> m.itemId == tool.getWurmId()));
-        assertEquals(job.getPriceCharged() * 0.9f, crafter.getShop().getMoney());
+        assertEquals((long)(price * 0.9f), crafter.getShop().getMoney());
 
         WurmMail.allMail.clear();
 

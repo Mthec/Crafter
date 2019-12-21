@@ -1,7 +1,6 @@
 package com.wurmonline.server.creatures;
 
 import com.wurmonline.server.economy.Economy;
-import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.items.TradingWindow;
@@ -35,9 +34,10 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
             WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
             Item tool = factory.createNewItem();
             workBook.addJob(123, tool, 1, false, price);
+            crafter.getInventory().insertItem(tool);
             if (done) {
                 Job job = StreamSupport.stream(workBook.spliterator(), false).filter(j -> j.getItem() == tool).findFirst().orElseThrow(RuntimeException::new);
-                ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class), job);
+                ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class, Creature.class), job, crafter);
             }
         } catch (WorkBook.NoWorkBookOnWorker | NoSuchMethodException | IllegalAccessException | InvocationTargetException | WorkBook.WorkBookFull e) {
             throw new RuntimeException(e);
@@ -50,7 +50,6 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
 
     private void addDoneJobToWorkBook(int price) {
         addJobToWorkBook(price, true);
-        crafter.getShop().setMoney(crafter.getShop().getMoney() + afterTax(price));
     }
 
     @Test
@@ -150,13 +149,12 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
             trade.getTradingWindow(3).addItem(i);
         });
 
-        long jobPrice = handler.getTraderBuyPriceForItem(tool);
         handler.balance();
         setSatisfied(owner);
 
         assertTrue(crafter.getInventory().getItems().contains(tool));
         assertThat(owner, hasCoinsOfValue(afterTax(done)));
-        assertEquals(afterTax(jobPrice), crafter.getShop().getMoney());
+        assertEquals(0, crafter.getShop().getMoney());
         assertEquals(1, WorkBook.getWorkBookFromWorker(crafter).todo());
     }
 
@@ -230,7 +228,7 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
             while (jobs.hasNext())
                 lastJob = jobs.next();
             assert lastJob != null;
-            ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class), lastJob);
+            ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class, Creature.class), lastJob, crafter);
             crafter.getShop().setMoney(afterTax(price));
         } catch (IllegalAccessException | WorkBook.NoWorkBookOnWorker | NoSuchMethodException | InvocationTargetException | WorkBook.WorkBookFull e) {
             throw new RuntimeException(e);
@@ -302,12 +300,11 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
         Arrays.stream(Economy.getEconomy().getCoinsFor(price + 10)).forEach(owner.getInventory()::insertItem);
         owner.getInventory().getItems().forEach(trade.getTradingWindow(2)::addItem);
 
-        long jobPrice = handler.getTraderBuyPriceForItem(item);
         setNotBalanced();
         handler.balance();
         setSatisfied(owner);
 
-        assertEquals(startingMoney + afterTax(jobPrice), factory.getShop(crafter).getMoney());
+        assertEquals(startingMoney, factory.getShop(crafter).getMoney());
         assertTrue(crafter.getInventory().getItems().contains(item));
         assertFalse(owner.getInventory().getItems().contains(item));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
@@ -345,12 +342,11 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
             }
         }
 
-        long jobPrice = handler.getTraderBuyPriceForItem(item);
         setNotBalanced();
         handler.balance();
         setSatisfied(owner);
 
-        assertEquals(afterTax(jobPrice), factory.getShop(crafter).getMoney());
+        assertEquals(0, factory.getShop(crafter).getMoney());
         assertTrue(crafter.getInventory().getItems().contains(item));
         assertFalse(owner.getInventory().getItems().contains(item));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);

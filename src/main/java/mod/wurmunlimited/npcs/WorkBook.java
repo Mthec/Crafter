@@ -7,7 +7,10 @@ import com.wurmonline.server.NoSuchItemException;
 import com.wurmonline.server.WurmId;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.ai.CreatureAIData;
+import com.wurmonline.server.economy.Economy;
+import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
+import com.wurmonline.server.villages.Village;
 import com.wurmonline.shared.exceptions.WurmServerException;
 
 import javax.annotation.Nonnull;
@@ -350,12 +353,58 @@ public class WorkBook implements Iterable<Job> {
         }
     }
 
-    void setDone(Job job) {
+    void setDone(Job job, Creature crafter) {
         job.done = true;
+
+        Shop shop = crafter.getShop();
+
+        final long price = job.getPriceCharged();
+        long forCrafter = 0;
+        long forKing = 0;
+        long forUpkeep = 0;
+
+        switch (CrafterMod.getPaymentOption()) {
+            case all_tax:
+                forKing = price;
+                break;
+            case tax_and_upkeep:
+                forUpkeep = (long)(price * CrafterMod.getUpkeepPercentage());
+                forKing = price - forUpkeep;
+                break;
+            case for_owner:
+                forCrafter = (long)(price * 0.9F);
+                forKing = price - forCrafter;
+                break;
+        }
+
+        if (forCrafter != 0L) {
+            shop.setMoney(shop.getMoney() + forCrafter);
+            shop.addMoneyEarned(forCrafter);
+        }
+
+        if (forUpkeep != 0L) {
+            Village v = crafter.getCitizenVillage();
+            if (v == null)
+                forKing += forUpkeep;
+            else {
+                v.plan.addMoney(forUpkeep);
+                // Using MoneySpent to show how much upkeep is accumulated over time.
+                shop.addMoneySpent(forUpkeep);
+            }
+        }
+
+        if (forKing != 0L) {
+            Shop kingsMoney = Economy.getEconomy().getKingsShop();
+            kingsMoney.setMoney(kingsMoney.getMoney() + forKing);
+            shop.addTax(forKing);
+        }
+
+        shop.setLastPolled(System.currentTimeMillis());
 
         if (job.mailWhenDone()) {
             job.mailToCustomer();
             removeJob(job.item);
+            return;
         }
         try {
             saveWorkBook();

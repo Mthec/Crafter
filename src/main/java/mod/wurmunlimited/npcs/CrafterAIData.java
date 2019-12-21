@@ -3,7 +3,10 @@ package mod.wurmunlimited.npcs;
 import com.wurmonline.math.TilePos;
 import com.wurmonline.mesh.Tiles;
 import com.wurmonline.server.*;
-import com.wurmonline.server.behaviours.*;
+import com.wurmonline.server.behaviours.Actions;
+import com.wurmonline.server.behaviours.BehaviourDispatcher;
+import com.wurmonline.server.behaviours.MethodsItems;
+import com.wurmonline.server.behaviours.NoSuchBehaviourException;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.CreatureTemplateIds;
 import com.wurmonline.server.creatures.NoSuchCreatureException;
@@ -265,11 +268,9 @@ public class CrafterAIData extends CreatureAIData {
                 }
 
                 if (item.getQualityLevel() >= job.targetQL || (job.isDonation() && (!workbook.getCrafterType().hasSkillToImprove(item) || item.getQualityLevel() >= workbook.getSkillCap()))) {
-                    if (CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.for_owner)
-                        crafter.getShop().setMoney((long)(job.getPriceCharged() * 0.9f));
                     if (forge != null && forge.getItems().contains(item))
                         crafter.getInventory().insertItem(item);
-                    workbook.setDone(job);
+                    workbook.setDone(job, crafter);
                     logger.info(item.getName() + " is done.");
                     continue;
                 } else if (item.getDamage() > 0.0f) {
@@ -376,7 +377,6 @@ public class CrafterAIData extends CreatureAIData {
             logger.warning("Could not create refund package while dismissing Crafter, customers were not compensated.");
             e.printStackTrace();
         }
-        workbook.setDone(job);
         workbook.removeJob(item);
     }
 

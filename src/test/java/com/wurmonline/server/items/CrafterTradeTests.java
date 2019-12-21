@@ -1,7 +1,7 @@
 package com.wurmonline.server.items;
 
+import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.economy.Economy;
-import mod.wurmunlimited.npcs.CrafterAIData;
 import mod.wurmunlimited.npcs.CrafterTradingTest;
 import mod.wurmunlimited.npcs.Job;
 import mod.wurmunlimited.npcs.WorkBook;
@@ -9,7 +9,6 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import static mod.wurmunlimited.Assert.didNotReceiveMessageContaining;
@@ -113,8 +112,8 @@ class CrafterTradeTests extends CrafterTradingTest {
         Item item = factory.createNewItem();
         crafter.getInventory().insertItem(item);
         workBook.addJob(player.getWurmId(), item, 100, false, 1);
-        ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class),
-                workBook.iterator().next());
+        ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class, Creature.class),
+                workBook.iterator().next(), crafter);
 
         makeNewCrafterTrade();
         makeHandler();

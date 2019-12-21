@@ -86,7 +86,7 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
             while (jobs.hasNext())
                 lastJob = jobs.next();
             assert lastJob != null;
-            ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class), lastJob);
+            ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class, Creature.class), lastJob, crafter);
         } catch (IllegalAccessException | WorkBook.NoWorkBookOnWorker | NoSuchMethodException | InvocationTargetException | WorkBook.WorkBookFull e) {
             throw new RuntimeException(e);
         }
@@ -376,8 +376,6 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         handler.balance();
         setSatisfied(player);
 
-        long finalPrice = afterTax(price);
-        assertEquals(finalPrice, factory.getShop(crafter).getMoneyEarnedLife());
         assertTrue(crafter.getInventory().getItems().contains(item));
         assertFalse(player.getInventory().getItems().contains(item));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
@@ -868,12 +866,11 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         Arrays.stream(Economy.getEconomy().getCoinsFor(price)).forEach(player.getInventory()::insertItem);
         player.getInventory().getItems().forEach(trade.getTradingWindow(2)::addItem);
 
-        long jobPrice = handler.getTraderBuyPriceForItem(item);
         setNotBalanced();
         handler.balance();
         setSatisfied(player);
 
-        assertEquals(startingMoney + afterTax(jobPrice), factory.getShop(crafter).getMoney());
+        assertEquals(startingMoney, factory.getShop(crafter).getMoney());
         assertTrue(crafter.getInventory().getItems().contains(item));
         assertFalse(player.getInventory().getItems().contains(item));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);

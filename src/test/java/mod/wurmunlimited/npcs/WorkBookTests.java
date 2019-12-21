@@ -14,7 +14,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -368,9 +367,10 @@ class WorkBookTests {
     }
 
     @Test
-    void testTodoDone() throws WorkBook.WorkBookFull {
+    void testTodoDone() throws WorkBook.WorkBookFull, WorkBook.NoWorkBookOnWorker {
         Creature player = factory.createNewPlayer();
-        WorkBook workBook = createNewWorkbook(20);
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(CrafterType.allMetal), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
         workBook.addJob(123, factory.createNewItem(), 25.0f, false, 1);
         workBook.addJob(player.getWurmId(), factory.createNewItem(), 25.0f, false, 1);
         assert player.getWurmId() != 123;
@@ -378,7 +378,7 @@ class WorkBookTests {
         assertEquals(2, workBook.todo());
         assertEquals(0, workBook.done());
 
-        workBook.setDone(workBook.getJobsFor(player).get(0));
+        workBook.setDone(workBook.getJobsFor(player).get(0), crafter);
 
         assertEquals(1, workBook.todo());
         assertEquals(1, workBook.done());
@@ -462,24 +462,26 @@ class WorkBookTests {
     }
 
     @Test
-    void testSetDone() throws WorkBook.WorkBookFull {
-        WorkBook workBook = createNewWorkbook(20);
+    void testSetDone() throws WorkBook.WorkBookFull, WorkBook.NoWorkBookOnWorker {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(CrafterType.allMetal), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
         workBook.addJob(123, factory.createNewItem(), 24.0f, false, 1);
         assert workBook.todo() == 1;
 
         assertFalse(workBook.iterator().next().isDone());
-        workBook.setDone(workBook.iterator().next());
+        workBook.setDone(workBook.iterator().next(), crafter);
         assertTrue(workBook.iterator().next().isDone());
     }
 
     @Test
-    void testSetDoneWhenMailWhenDone() throws WorkBook.WorkBookFull {
-        WorkBook workBook = createNewWorkbook(20);
+    void testSetDoneWhenMailWhenDone() throws WorkBook.WorkBookFull, WorkBook.NoWorkBookOnWorker {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(CrafterType.allMetal), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
         workBook.addJob(123, factory.createNewItem(), 24.0f, true, 1);
         assert workBook.todo() == 1;
 
         assertFalse(workBook.iterator().next().isDone());
-        workBook.setDone(workBook.iterator().next());
+        workBook.setDone(workBook.iterator().next(), crafter);
         assertEquals(0, workBook.done());
     }
 

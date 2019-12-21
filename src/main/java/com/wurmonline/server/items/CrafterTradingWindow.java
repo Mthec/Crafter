@@ -6,14 +6,16 @@
 
 package com.wurmonline.server.items;
 
-import com.wurmonline.server.*;
+import com.wurmonline.server.Items;
+import com.wurmonline.server.MiscConstants;
+import com.wurmonline.server.NoSuchItemException;
 import com.wurmonline.server.creatures.CrafterTradeHandler;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.players.Player;
-import com.wurmonline.server.villages.*;
+import com.wurmonline.server.villages.VillageStatus;
 import com.wurmonline.shared.constants.CreatureTypes;
 import com.wurmonline.shared.util.MaterialUtilities;
 import mod.wurmunlimited.npcs.CrafterMod;
@@ -504,46 +506,6 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
                 if (diff != 0) {
                     shop.setMoney(shop.getMoney() + diff);
                 }
-            } else {
-                long forCrafter = 0;
-                long forKing = 0;
-                long forUpkeep = 0;
-
-                switch (CrafterMod.getPaymentOption()) {
-                    case all_tax:
-                        forKing = this.trade.getOrderTotal();
-                        break;
-                    case tax_and_upkeep:
-                        forUpkeep = (long)(this.trade.getOrderTotal() * CrafterMod.getUpkeepPercentage());
-                        forKing = trade.getOrderTotal() - forUpkeep;
-                        break;
-                    case for_owner:
-                        forCrafter = (long)((float)this.trade.getOrderTotal() * 0.9F);
-                        forKing = this.trade.getOrderTotal() - forCrafter;
-                        break;
-                }
-
-                if (forCrafter != 0L) {
-                    shop.setMoney(shop.getMoney() + forCrafter);
-                    shop.addMoneyEarned(forCrafter);
-                }
-                if (forUpkeep != 0L) {
-                    Village v = watcher.getCitizenVillage();
-                    if (v == null)
-                        forKing += forUpkeep;
-                    else {
-                        v.plan.addMoney(forUpkeep);
-                        // Using MoneySpent to show how much upkeep is accumulated over time.
-                        shop.addMoneySpent(forUpkeep);
-                    }
-                }
-                if (forKing != 0L) {
-                    Shop kingsMoney = Economy.getEconomy().getKingsShop();
-                    kingsMoney.setMoney(kingsMoney.getMoney() + forKing);
-                    shop.addTax(forKing);
-                }
-
-                shop.setLastPolled(System.currentTimeMillis());
             }
         } else {
             this.windowOwner.getCommunicator().sendAlertServerMessage("There is a bug in the trade system. This shouldn't happen. Please report.");

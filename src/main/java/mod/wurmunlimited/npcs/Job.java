@@ -18,6 +18,7 @@ public class Job {
     final boolean mailWhenDone;
     boolean done;
     private final long priceCharged;
+    private boolean hasBeenMailed = false;
 
     Job(long customerId, Item item, float targetQL, boolean mailWhenDone, long priceCharged, boolean done) {
         this.customerId = customerId;
@@ -62,7 +63,7 @@ public class Job {
     }
 
     private void mailToCustomer(Item itemToMail) {
-        if (done)
+        if (hasBeenMailed)
             logger.warning("Trying to mail when job already done.");
         itemToMail.setBusy(false);
         WurmMail mail = new WurmMail(CrafterMod.MAIL_TYPE_CRAFTER, itemToMail.getWurmId(), 1, customerId, 0, System.currentTimeMillis() + TimeConstants.MINUTE_MILLIS, System.currentTimeMillis() + (Servers.isThisATestServer() ? 3600000L : 14515200000L), Servers.localServer.id, false, false);
@@ -71,6 +72,8 @@ public class Job {
         itemToMail.putInVoid();
         itemToMail.setMailed(true);
         itemToMail.setMailTimes((byte)(itemToMail.getMailTimes() + 1));
+
+        hasBeenMailed = true;
     }
 
     public void mailToCustomer() {
@@ -78,13 +81,15 @@ public class Job {
     }
 
     public void refundCustomer() throws NoSuchTemplateException, FailedException {
-        // TODO - Exploitable, needs to come from crafter shop, but what if there isn't enough money?
-        Item box = ItemFactory.createItem(ItemList.jarPottery, 1, "");
-        Item[] coins = Economy.getEconomy().getCoinsFor(priceCharged);
-        for (Item coin : coins) {
-            box.insertItem(coin, true);
-        }
+        // Done Jobs shouldn't be refunded as there is no loss to compensate.
+        if (!done) {
+            Item box = ItemFactory.createItem(ItemList.jarPottery, 1, "");
+            Item[] coins = Economy.getEconomy().getCoinsFor(priceCharged);
+            for (Item coin : coins) {
+                box.insertItem(coin, true);
+            }
 
-        mailToCustomer(box);
+            mailToCustomer(box);
+        }
     }
 }

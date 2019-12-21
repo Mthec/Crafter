@@ -56,9 +56,15 @@ public class CrafterAIData extends CreatureAIData {
 
         // Fix for silly error.
         if (crafter.getShop().getMoney() < 0) {
-            if (CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.for_owner)
-                crafter.getShop().setMoney((long)(workbook.getMoneyToCollect() * 0.9f));
-            else
+            if (CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.for_owner) {
+                long jobPrices = 0;
+                if (workbook != null) {
+                    for (Job job : workbook) {
+                        jobPrices += job.getPriceCharged();
+                    }
+                }
+                crafter.getShop().setMoney((long)(jobPrices * 0.9f));
+            } else
                 crafter.getShop().setMoney(0);
         }
 
@@ -263,10 +269,6 @@ public class CrafterAIData extends CreatureAIData {
                         crafter.getShop().setMoney((long)(job.getPriceCharged() * 0.9f));
                     if (forge != null && forge.getItems().contains(item))
                         crafter.getInventory().insertItem(item);
-                    if (job.mailWhenDone()) {
-                        job.mailToCustomer();
-                        logger.info("Mailing " + item.getName() + " to customer.");
-                    }
                     workbook.setDone(job);
                     logger.info(item.getName() + " is done.");
                     continue;

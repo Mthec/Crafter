@@ -352,20 +352,15 @@ public class WorkBook implements Iterable<Job> {
 
     void setDone(Job job) {
         job.done = true;
+
+        if (job.mailWhenDone()) {
+            job.mailToCustomer();
+            removeJob(job.item);
+        }
         try {
             saveWorkBook();
         } catch (WorkBookFull ignored) {}
         // Exception should never happen as done is a single character for true or false.
-    }
-
-    public long getMoneyToCollect() {
-        long total = 0;
-        for (Job job : jobs) {
-            if (job.isDone())
-                total += job.getPriceCharged();
-        }
-
-        return total;
     }
 
     public boolean hasEnoughSpaceFor(List<String> lines) {

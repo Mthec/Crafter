@@ -74,7 +74,7 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                                                  b2 -> b2.text("Forge - Not Assigned").error())
                                          )
                                  .If(CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.for_owner,
-                                         b -> b.text("Money to collect - " + (workBook.getMoneyToCollect() == 0 ? "Nothing" : new Change((long)(workBook.getMoneyToCollect() * 0.9f)).getChangeShortString())))
+                                         b -> b.text("Money to collect - " + (crafter.getShop().getMoney() == 0 ? "Nothing" : new Change(crafter.getShop().getMoney()).getChangeShortString())))
                                  .If(CrafterMod.canUsePriceModifier(),
                                          b -> b.harray(b2 -> b2.label("Price Modifier: ").entry("price_modifier", Float.toString(shop.getPriceModifier()), 4)))
                                  .newLine()

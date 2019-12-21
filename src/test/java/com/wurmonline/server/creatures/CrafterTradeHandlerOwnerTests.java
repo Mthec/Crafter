@@ -150,12 +150,13 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
             trade.getTradingWindow(3).addItem(i);
         });
 
+        long jobPrice = handler.getTraderBuyPriceForItem(tool);
         handler.balance();
         setSatisfied(owner);
 
         assertTrue(crafter.getInventory().getItems().contains(tool));
         assertThat(owner, hasCoinsOfValue(afterTax(done)));
-        assertEquals(0, crafter.getShop().getMoney());
+        assertEquals(afterTax(jobPrice), crafter.getShop().getMoney());
         assertEquals(1, WorkBook.getWorkBookFromWorker(crafter).todo());
     }
 
@@ -245,13 +246,11 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
         item.setQualityLevel(ql);
         crafter.getInventory().insertItem(item);
         addDoneJob(item, ql);
-        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
-        long toCollect = afterTax(workBook.getMoneyToCollect());
+        long toCollect = crafter.getShop().getMoney();
 
         makeNewOwnerCrafterTrade();
         makeHandler();
-
-        handler.addItemsToTrade();
+        addItemsToTrade();
         assert Arrays.asList(trade.getTradingWindow(1).getItems()).contains(item);
 
         TradingWindow offerWindow = trade.getTradingWindow(1);
@@ -303,11 +302,12 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
         Arrays.stream(Economy.getEconomy().getCoinsFor(price + 10)).forEach(owner.getInventory()::insertItem);
         owner.getInventory().getItems().forEach(trade.getTradingWindow(2)::addItem);
 
+        long jobPrice = handler.getTraderBuyPriceForItem(item);
         setNotBalanced();
         handler.balance();
         setSatisfied(owner);
 
-        assertEquals(startingMoney, factory.getShop(crafter).getMoney());
+        assertEquals(startingMoney + afterTax(jobPrice), factory.getShop(crafter).getMoney());
         assertTrue(crafter.getInventory().getItems().contains(item));
         assertFalse(owner.getInventory().getItems().contains(item));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
@@ -345,11 +345,12 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
             }
         }
 
+        long jobPrice = handler.getTraderBuyPriceForItem(item);
         setNotBalanced();
         handler.balance();
         setSatisfied(owner);
 
-        assertEquals(0, factory.getShop(crafter).getMoney());
+        assertEquals(afterTax(jobPrice), factory.getShop(crafter).getMoney());
         assertTrue(crafter.getInventory().getItems().contains(item));
         assertFalse(owner.getInventory().getItems().contains(item));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);

@@ -316,36 +316,6 @@ class WorkBookTests {
     }
 
     @Test
-    void testWorkBookCorrectlyAddingMoneyToCollect() throws WorkBook.WorkBookFull {
-        WorkBook workBook = createNewWorkbook(20);
-        Item tool = factory.createNewItem();
-        workBook.addJob(123, tool, 1, false, 100);
-        workBook.addJob(123, tool, 1, false, 20);
-        workBook.addJob(123, tool, 1, false, 3);
-
-        for (Job job : workBook)
-            workBook.setDone(job);
-
-        assertEquals(123, workBook.getMoneyToCollect());
-    }
-
-    @Test
-    void testWorkBookCorrectlyLoadedMoneyToCollect() throws WorkBook.InvalidWorkBookInscription {
-        Item workBookItem = createBlankWorkbookItem();
-        workBookItem.getFirstContainedItem().setInscription(Joiner.on("\n").join(
-                "20", "-10", (Object[])crafterType.getAllTypes()), "");
-        Item tool = factory.createNewItem();
-        Item page1 = getOrCreatePageOne(workBookItem);
-        page1.setInscription(
-                        "123," + tool.getWurmId() + ",1.0,0,100,1\n" +
-                        "123," + tool.getWurmId() + ",1.0,0,20,1\n" +
-                        "123," + tool.getWurmId() + ",1.0,0,3,1\n",
-                        "");
-
-        assertEquals(123, new WorkBook(workBookItem).getMoneyToCollect());
-    }
-
-    @Test
     void testWorkBookLoadingInvalidHeader() {
         Item workBookItem = createBlankWorkbookItem();
         assertThrows(WorkBook.InvalidWorkBookInscription.class, () -> new WorkBook(workBookItem));
@@ -494,12 +464,23 @@ class WorkBookTests {
     @Test
     void testSetDone() throws WorkBook.WorkBookFull {
         WorkBook workBook = createNewWorkbook(20);
-        workBook.addJob(123, factory.createNewItem(), 24.0f, true, 1);
+        workBook.addJob(123, factory.createNewItem(), 24.0f, false, 1);
         assert workBook.todo() == 1;
 
         assertFalse(workBook.iterator().next().isDone());
         workBook.setDone(workBook.iterator().next());
         assertTrue(workBook.iterator().next().isDone());
+    }
+
+    @Test
+    void testSetDoneWhenMailWhenDone() throws WorkBook.WorkBookFull {
+        WorkBook workBook = createNewWorkbook(20);
+        workBook.addJob(123, factory.createNewItem(), 24.0f, true, 1);
+        assert workBook.todo() == 1;
+
+        assertFalse(workBook.iterator().next().isDone());
+        workBook.setDone(workBook.iterator().next());
+        assertEquals(0, workBook.done());
     }
 
     @Test

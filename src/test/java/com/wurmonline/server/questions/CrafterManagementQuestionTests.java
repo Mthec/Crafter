@@ -98,14 +98,12 @@ class CrafterManagementQuestionTests {
     }
 
     @Test
-    void testMoneyToCollectValueAddedCorrectlyToBML() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull, NoSuchFieldException, IllegalAccessException {
+    void testMoneyToCollectValueAddedCorrectlyToBML() {
         assert Economy.getEconomy().getShop(crafter).getMoney() == 0;
         new CrafterManagementQuestion(owner, crafter).sendQuestion();
         assertTrue(factory.getCommunicator(owner).lastBmlContent.contains("text{text=\"Money to collect - Nothing\"}"), factory.getCommunicator(owner).lastBmlContent);
 
-        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
-        workBook.addJob(1, contract, 1, false, 1122335);
-        ReflectionUtil.setPrivateField(workBook.iterator().next(), Job.class.getDeclaredField("done"), true);
+        factory.getShop(crafter).setMoney(1010101);
         new CrafterManagementQuestion(owner, crafter).sendQuestion();
         assertTrue(factory.getCommunicator(owner).lastBmlContent.contains("text{text=\"Money to collect - 1g, 1s, 1c, 1i\"}"), factory.getCommunicator(owner).lastBmlContent);
     }

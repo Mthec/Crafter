@@ -78,6 +78,7 @@ public class Job {
     }
 
     public void refundCustomer() throws NoSuchTemplateException, FailedException {
+        // TODO - Exploitable, needs to come from crafter shop, but what if there isn't enough money?
         Item box = ItemFactory.createItem(ItemList.jarPottery, 1, "");
         Item[] coins = Economy.getEconomy().getCoinsFor(priceCharged);
         for (Item coin : coins) {

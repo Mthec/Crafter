@@ -524,6 +524,7 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
                 }
 
                 if (forCrafter != 0L) {
+                    shop.setMoney(shop.getMoney() + forCrafter);
                     shop.addMoneyEarned(forCrafter);
                 }
                 if (forUpkeep != 0L) {
@@ -539,7 +540,7 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
                 if (forKing != 0L) {
                     Shop kingsMoney = Economy.getEconomy().getKingsShop();
                     kingsMoney.setMoney(kingsMoney.getMoney() + forKing);
-                    shop.addMoneySpent(forKing);
+                    shop.addTax(forKing);
                 }
 
                 shop.setLastPolled(System.currentTimeMillis());

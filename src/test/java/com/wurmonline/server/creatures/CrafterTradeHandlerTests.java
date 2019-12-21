@@ -868,11 +868,12 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         Arrays.stream(Economy.getEconomy().getCoinsFor(price)).forEach(player.getInventory()::insertItem);
         player.getInventory().getItems().forEach(trade.getTradingWindow(2)::addItem);
 
+        long jobPrice = handler.getTraderBuyPriceForItem(item);
         setNotBalanced();
         handler.balance();
         setSatisfied(player);
 
-        assertEquals(startingMoney, factory.getShop(crafter).getMoney());
+        assertEquals(startingMoney + afterTax(jobPrice), factory.getShop(crafter).getMoney());
         assertTrue(crafter.getInventory().getItems().contains(item));
         assertFalse(player.getInventory().getItems().contains(item));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);

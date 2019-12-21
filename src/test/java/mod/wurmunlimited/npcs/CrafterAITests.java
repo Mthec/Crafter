@@ -325,7 +325,7 @@ class CrafterAITests extends CrafterTest {
 
         data.sendNextAction();
         assertEquals(0, workBook.todo());
-        assertEquals(1, workBook.done());
+        assertEquals(0, workBook.done());
         assertTrue(WurmMail.allMail.stream().anyMatch(m -> m.itemId == tool.getWurmId()));
         assertEquals(job.getPriceCharged() * 0.9f, crafter.getShop().getMoney());
     }
@@ -339,7 +339,7 @@ class CrafterAITests extends CrafterTest {
 
         data.sendNextAction();
         assertEquals(0, workBook.todo());
-        assertEquals(1, workBook.done());
+        assertEquals(0, workBook.done());
         assertTrue(WurmMail.allMail.stream().anyMatch(m -> m.itemId == tool.getWurmId()));
         assertEquals(job.getPriceCharged() * 0.9f, crafter.getShop().getMoney());
 

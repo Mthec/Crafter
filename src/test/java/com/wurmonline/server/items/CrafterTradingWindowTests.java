@@ -5,6 +5,7 @@ import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterTradingTest;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.Properties;
 
 import static mod.wurmunlimited.Assert.hasCoinsOfValue;
@@ -121,7 +122,7 @@ class CrafterTradingWindowTests extends CrafterTradingTest {
         assertEquals(1, crafter.getInventory().getItemCount() - crafterStartingItems);
         assertThat(crafter, hasCoinsOfValue(0));
         assertEquals(0, player.getInventory().getItemCount());
-        assertEquals(0, factory.getShop(crafter).getMoney());
+        assertEquals(craftersCut, factory.getShop(crafter).getMoney());
         assertEquals(0, crafter.getCitizenVillage().plan.moneyLeft);
         assertEquals(kingsCut, Economy.getEconomy().getKingsShop().getMoney());
     }
@@ -175,5 +176,78 @@ class CrafterTradingWindowTests extends CrafterTradingTest {
         assertEquals(0, factory.getShop(crafter).getMoney());
         assertEquals(price, Economy.getEconomy().getKingsShop().getMoney());
         verify(Economy.getEconomy(), times(coinCount)).returnCoin(any(Item.class), eq("CrafterTrade"));
+    }
+
+    @Test
+    void testShopMoneyCollectedByOwner() {
+        CrafterMod mod = new CrafterMod();
+        Properties properties = new Properties();
+        properties.setProperty("payment", CrafterMod.PaymentOption.for_owner.name());
+        mod.configure(properties);
+
+        init();
+        int crafterStartingItems = crafter.getInventory().getItemCount();
+        long toCollect = 100L;
+        crafter.getShop().setMoney(toCollect);
+        Economy.getEconomy().getKingsShop().setMoney(0);
+
+        makeNewOwnerCrafterTrade();
+        makeHandler();
+        addItemsToTrade();
+
+        TradingWindow window = trade.getTradingWindow(1);
+        for (Item item : window.getItems()) {
+            if (item.isCoin()) {
+                window.removeItem(item);
+                trade.getTradingWindow(3).addItem(item);
+            }
+        }
+        handler.balance();
+        setSatisfied(owner);
+
+        assertEquals(0, crafter.getInventory().getItemCount() - crafterStartingItems);
+        assertThat(crafter, hasCoinsOfValue(0));
+        assertThat(owner, hasCoinsOfValue(toCollect));
+        assertEquals(0, factory.getShop(crafter).getMoney());
+    }
+
+    @Test
+    void testPartOfShopMoneyCollectedByOwner() {
+        CrafterMod mod = new CrafterMod();
+        Properties properties = new Properties();
+        properties.setProperty("payment", CrafterMod.PaymentOption.for_owner.name());
+        mod.configure(properties);
+
+        init();
+        int crafterStartingItems = crafter.getInventory().getItemCount();
+        long toCollect = 110L;
+        crafter.getShop().setMoney(toCollect);
+        Economy.getEconomy().getKingsShop().setMoney(0);
+
+        makeNewOwnerCrafterTrade();
+        makeHandler();
+        addItemsToTrade();
+
+        TradingWindow window = trade.getTradingWindow(1);
+        int ironCoins = 0;
+        for (Item item : window.getItems()) {
+            if (item.isCoin()) {
+                if (item.getTemplateId() == ItemList.coinCopper) {
+                    window.removeItem(item);
+                    trade.getTradingWindow(3).addItem(item);
+                } else if (item.getTemplateId() == ItemList.coinIronFive)
+                    ironCoins += 1;
+            }
+        }
+        assert Arrays.stream(window.getItems()).anyMatch(Item::isCoin);
+        assert ironCoins == 2;
+
+        handler.balance();
+        setSatisfied(owner);
+
+        assertEquals(0, crafter.getInventory().getItemCount() - crafterStartingItems);
+        assertThat(crafter, hasCoinsOfValue(0));
+        assertThat(owner, hasCoinsOfValue(100L));
+        assertEquals(10L, factory.getShop(crafter).getMoney());
     }
 }

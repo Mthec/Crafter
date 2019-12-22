@@ -10,7 +10,6 @@ import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
-import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.Job;
 import mod.wurmunlimited.npcs.WorkBook;
@@ -109,7 +108,6 @@ public class CrafterTradeHandler extends TradeHandler {
         TradingWindow offerWindow = trade.getTradingWindow(1);
 
         if (workBook.done() > 0) {
-            Set<Item> toRemove = new HashSet<>();
             for (Job job : workBook) {
                 if (job.isDonation())
                     break;

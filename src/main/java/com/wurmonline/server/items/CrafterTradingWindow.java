@@ -485,8 +485,11 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
                         }
                     // Window 3
                     } else {
-                        if (!handler.isOptionItem(item))
+                        if (!handler.isOptionItem(item)) {
+                            if (coin && item.isBanked())
+                                item.setBanked(false);
                             inventory.insertItem(item);
+                        }
                         if (coin) {
                             if (shop.getOwnerId() == this.watcher.getWurmId()) {
                                 moneyLost += Economy.getValueFor(item.getTemplateId());

@@ -354,6 +354,9 @@ public class WorkBook implements Iterable<Job> {
     }
 
     void setDone(Job job, Creature crafter) {
+        if (job.isDonation())
+            return;
+
         job.done = true;
 
         Shop shop = crafter.getShop();

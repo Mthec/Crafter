@@ -86,7 +86,7 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
             while (jobs.hasNext())
                 lastJob = jobs.next();
             assert lastJob != null;
-            ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class, Creature.class), lastJob, crafter);
+            setJobDone(workBook, lastJob);
         } catch (IllegalAccessException | WorkBook.NoWorkBookOnWorker | NoSuchMethodException | InvocationTargetException | WorkBook.WorkBookFull e) {
             throw new RuntimeException(e);
         }
@@ -583,7 +583,7 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
 
         handler.balance();
 
-        assertFalse(!containsCoinsOfValue(0).matches(Arrays.asList(trade.getCreatureOneRequestWindow().getItems())));
+        assertTrue(containsCoinsOfValue(0).matches(Arrays.asList(trade.getCreatureOneRequestWindow().getItems())));
         assertThat(player, receivedMessageContaining("I will need"));
     }
 
@@ -601,7 +601,7 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         player.getInventory().insertItem(factory.createNewItem(factory.getIsSmithingId()));
         player.getInventory().getItems().forEach(i -> trade.getTradingWindow(2).addItem(i));
 
-        assertFalse(!containsCoinsOfValue(0).matches(Arrays.asList(trade.getCreatureOneRequestWindow().getItems())));
+        assertTrue(containsCoinsOfValue(0).matches(Arrays.asList(trade.getCreatureOneRequestWindow().getItems())));
 
         handler.balance();
         assertThat(player, receivedMessageContaining("I will need"));
@@ -624,7 +624,7 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         player.getInventory().insertItem(factory.createNewItem(factory.getIsSmithingId()));
         player.getInventory().getItems().forEach(i -> trade.getTradingWindow(2).addItem(i));
 
-        assertFalse(!containsCoinsOfValue(0).matches(Arrays.asList(trade.getCreatureOneRequestWindow().getItems())));
+        assertTrue(containsCoinsOfValue(0).matches(Arrays.asList(trade.getCreatureOneRequestWindow().getItems())));
 
         handler.balance();
         assertThat(player, receivedMessageContaining("I will need"));
@@ -908,5 +908,61 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         assertTrue(player.getInventory().getItems().contains(item2));
         assertEquals(0, WorkBook.getWorkBookFromWorker(crafter).iterator().next().getPriceCharged());
         assertTrue(WorkBook.getWorkBookFromWorker(crafter).iterator().next() instanceof Donation);
+    }
+
+    @Test
+    void testItemNoLongerAvailableForCollectionIfMailWhenDone() throws WorkBook.NoWorkBookOnWorker, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), 50);
+
+        Item item1 = factory.createNewItem(factory.getIsBlacksmithingId());
+        Item item2 = factory.createNewItem(factory.getIsBlacksmithingId());
+
+        boolean mailedOne = false;
+        for (Item item : new Item[] { item1, item2 }) {
+            player.getInventory().insertItem(item);
+
+            makeNewCrafterTrade();
+            makeHandler();
+
+            handler.addItemsToTrade();
+
+            selectOption("Improve to 20ql");
+            long price = 0;
+            if (!mailedOne) {
+                selectOption("Mail");
+                mailedOne = true;
+                price += CrafterMod.mailPrice();
+            }
+            trade.getTradingWindow(2).addItem(item);
+
+            handler.balance();
+            price += handler.getTraderBuyPriceForItem(item);
+            Arrays.stream(Economy.getEconomy().getCoinsFor(price)).forEach(c -> {
+                player.getInventory().insertItem(c);
+                trade.getTradingWindow(2).addItem(c);
+            });
+
+            setNotBalanced();
+            handler.balance();
+            setSatisfied(player);
+        }
+
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        assertEquals(2, workBook.todo());
+
+        Iterator<Job> jobs = workBook.iterator();
+        Job job1 = jobs.next();
+        Job job2 = jobs.next();
+        assertTrue((job1.mailWhenDone() && !job2.mailWhenDone()) || (job2.mailWhenDone() && !job1.mailWhenDone()));
+        for (Job job : workBook.getJobsFor(player).toArray(new Job[0])) {
+            setJobDone(workBook, job);
+        }
+
+        makeNewCrafterTrade();
+        makeHandler();
+
+        handler.addItemsToTrade();
+
+        assertEquals(1, Arrays.stream(trade.getTradingWindow(1).getItems()).filter(i -> i.getTemplateId() == factory.getIsBlacksmithingId()).count());
     }
 }

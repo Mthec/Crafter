@@ -110,7 +110,7 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
                     toReturn = true;
                 }
             }
-        } else if (this.wurmId == 1L && !this.windowOwner.equals(creature) && window == 3L && this.watcher == creature && item.getOwnerId() == this.windowOwner.getWurmId()) {
+        } else if (this.wurmId == 1L && !this.windowOwner.equals(creature) && window == 3L && this.watcher == creature && (item.getOwnerId() == this.windowOwner.getWurmId() || item.isCoin())) {
             toReturn = true;
         }
 

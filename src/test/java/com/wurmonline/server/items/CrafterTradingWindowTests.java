@@ -11,6 +11,7 @@ import java.util.Properties;
 import static mod.wurmunlimited.Assert.hasCoinsOfValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CrafterTradingWindowTests extends CrafterTradingTest {
 
@@ -27,6 +28,21 @@ class CrafterTradingWindowTests extends CrafterTradingTest {
         window.swapOwners();
 
         assertEquals(0, player.getInventory().getItemCount());
+    }
+
+    @Test
+    void testMoneyCanBeMovedByOwner() {
+        init();
+        long toCollect = 100L;
+        crafter.getShop().setMoney(toCollect);
+
+        makeNewOwnerCrafterTrade();
+        makeHandler();
+        addItemsToTrade();
+
+        Item coin = Arrays.stream(trade.getTradingWindow(1).getItems()).filter(Item::isCoin).findAny().orElseThrow(RuntimeException::new);
+
+        assertTrue(trade.getTradingWindow(1).mayMoveItemToWindow(coin, owner, 3L));
     }
 
     @Test

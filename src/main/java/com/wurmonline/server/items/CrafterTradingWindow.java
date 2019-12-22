@@ -491,10 +491,8 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
                             inventory.insertItem(item);
                         }
                         if (coin) {
-                            if (shop.getOwnerId() == this.watcher.getWurmId()) {
-                                moneyLost += Economy.getValueFor(item.getTemplateId());
-                                getLogger(shop.getWurmId()).log(Level.INFO, this.watcher.getName() + " received " + MaterialUtilities.getMaterialString(item.getMaterial()) + " " + item.getName() + ", id: " + item.getWurmId() + ", QL: " + item.getQualityLevel());
-                            }
+                            moneyLost += Economy.getValueFor(item.getTemplateId());
+                            getLogger(shop.getWurmId()).log(Level.INFO, this.watcher.getName() + " received " + MaterialUtilities.getMaterialString(item.getMaterial()) + " " + item.getName() + ", id: " + item.getWurmId() + ", QL: " + item.getQualityLevel());
                         } else {
                             workBook.removeJob(item);
                         }

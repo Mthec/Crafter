@@ -965,4 +965,29 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
 
         assertEquals(1, Arrays.stream(trade.getTradingWindow(1).getItems()).filter(i -> i.getTemplateId() == factory.getIsBlacksmithingId()).count());
     }
+
+    @Test
+    void testChangeNotBeingAddedToCrafterShop() throws WorkBook.NoWorkBookOnWorker {
+        crafter = factory.createNewCrafter(owner, crafterType, 50);
+        assert factory.getShop(crafter).getMoney() == 0;
+
+        Item item = player.getInventory().getFirstContainedItem();
+        item.setQualityLevel(1);
+
+        makeNewCrafterTrade();
+        makeHandler();
+
+        handler.addItemsToTrade();
+
+        selectOption("Improve to 20ql");
+        Arrays.stream(Economy.getEconomy().getCoinsFor(MonetaryConstants.COIN_GOLD)).forEach(player.getInventory()::insertItem);
+        player.getInventory().getItems().forEach(trade.getTradingWindow(2)::addItem);
+
+        handler.balance();
+        setSatisfied(player);
+
+        assertEquals(0, factory.getShop(crafter).getMoney());
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        assertEquals(1, workBook.todo());
+    }
 }

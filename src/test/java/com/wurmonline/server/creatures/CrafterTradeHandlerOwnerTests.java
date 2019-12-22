@@ -10,7 +10,6 @@ import mod.wurmunlimited.npcs.CrafterTradingTest;
 import mod.wurmunlimited.npcs.CrafterType;
 import mod.wurmunlimited.npcs.Job;
 import mod.wurmunlimited.npcs.WorkBook;
-import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -37,7 +36,7 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
             crafter.getInventory().insertItem(tool);
             if (done) {
                 Job job = StreamSupport.stream(workBook.spliterator(), false).filter(j -> j.getItem() == tool).findFirst().orElseThrow(RuntimeException::new);
-                ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class, Creature.class), job, crafter);
+                setJobDone(workBook, job);
             }
         } catch (WorkBook.NoWorkBookOnWorker | NoSuchMethodException | IllegalAccessException | InvocationTargetException | WorkBook.WorkBookFull e) {
             throw new RuntimeException(e);
@@ -228,7 +227,7 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
             while (jobs.hasNext())
                 lastJob = jobs.next();
             assert lastJob != null;
-            ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class, Creature.class), lastJob, crafter);
+            setJobDone(workBook, lastJob);
             crafter.getShop().setMoney(afterTax(price));
         } catch (IllegalAccessException | WorkBook.NoWorkBookOnWorker | NoSuchMethodException | InvocationTargetException | WorkBook.WorkBookFull e) {
             throw new RuntimeException(e);

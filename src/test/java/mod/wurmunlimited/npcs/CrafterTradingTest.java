@@ -5,12 +5,11 @@ import com.wurmonline.server.creatures.CrafterTradeHandler;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.TradeHandler;
 import com.wurmonline.server.economy.Economy;
-import com.wurmonline.server.items.*;
+import com.wurmonline.server.items.CrafterTrade;
+import com.wurmonline.server.items.Item;
+import com.wurmonline.server.items.TradingWindow;
 import com.wurmonline.server.players.Player;
 import com.wurmonline.server.skills.SkillList;
-import com.wurmonline.server.villages.FakeVillage;
-import com.wurmonline.server.villages.GuardPlan;
-import com.wurmonline.server.villages.Village;
 import com.wurmonline.server.villages.Villages;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
@@ -22,8 +21,6 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static org.mockito.Mockito.*;
 
 public class CrafterTradingTest {
     protected CrafterObjectsFactory factory;
@@ -145,5 +142,13 @@ public class CrafterTradingTest {
 
     protected CrafterType getAllArmourType() {
         return new CrafterType(SkillList.SMITHING_BLACKSMITHING);
+    }
+
+    protected void setJobDone(WorkBook workBook) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        setJobDone(workBook, workBook.iterator().next());
+    }
+
+    protected void setJobDone(WorkBook workBook, Job job) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class, Creature.class), job, crafter);
     }
 }

@@ -272,7 +272,8 @@ public class CrafterAIData extends CreatureAIData {
                         crafter.getInventory().insertItem(item);
                     workbook.setDone(job, crafter);
                     logger.info(item.getName() + " is done.");
-                    continue;
+                    // In case a Job is removed at the wrong time.
+                    return;
                 } else if (item.getDamage() > 0.0f) {
                     try {
                         BehaviourDispatcher.action(crafter, crafter.getCommunicator(), -10, item.getWurmId(), Actions.REPAIR);

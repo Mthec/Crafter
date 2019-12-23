@@ -118,6 +118,7 @@ public class TradeAction implements ModAction, ActionPerformer, BehaviourProvide
                 }
                 return true;
             }
+            return true;
         }
         return false;
     }

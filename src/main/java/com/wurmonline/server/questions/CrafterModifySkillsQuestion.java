@@ -6,7 +6,10 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.NoSuchTemplateException;
 import com.wurmonline.server.skills.Skill;
 import mod.wurmunlimited.bml.BMLBuilder;
-import mod.wurmunlimited.npcs.*;
+import mod.wurmunlimited.npcs.CrafterMod;
+import mod.wurmunlimited.npcs.CrafterType;
+import mod.wurmunlimited.npcs.Job;
+import mod.wurmunlimited.npcs.WorkBook;
 
 import java.util.*;
 
@@ -57,8 +60,12 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
                 skillCap = CrafterMod.getSkillCap();
             }
         } catch (NumberFormatException e) {
-            responder.getCommunicator().sendNormalServerMessage("Skill cap value was invalid.");
-            return;
+            if (getStringProp("skill_cap").isEmpty()) {
+                skillCap = -1;
+            } else {
+                responder.getCommunicator().sendNormalServerMessage("Skill cap value was invalid.");
+                return;
+            }
         }
 
         boolean removeDonationItems = wasSelected("rd");
@@ -103,6 +110,9 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
                 logger.warning("Could not create refund package while changing Crafter skills, customers were not compensated.");
                 e.printStackTrace();
             }
+
+            if (skillCap == -1)
+                skillCap = workBook.getSkillCap();
 
             workBook.updateSkillsSettings(crafterType, skillCap);
 

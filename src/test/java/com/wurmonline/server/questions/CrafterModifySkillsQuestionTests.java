@@ -155,6 +155,41 @@ class CrafterModifySkillsQuestionTests {
     }
 
     @Test
+    void testEmptySkillCapUsesCurrent() throws WorkBook.NoWorkBookOnWorker {
+        float startingCap = WorkBook.getWorkBookFromWorker(crafter).getSkillCap();
+        Properties properties = generateProperties();
+        properties.setProperty("skill_cap", "");
+        new CrafterModifySkillsQuestion(owner, crafter).answer(properties);
+
+        assertThat(owner, didNotReceiveMessageContaining("was invalid"));
+        assertEquals(startingCap, WorkBook.getWorkBookFromWorker(crafter).getSkillCap());
+    }
+
+    @Test
+    void testCanLearnFalseSkillCapNotChangeable() {
+        Properties properties = new Properties();
+        properties.setProperty("can_learn", "false");
+        new CrafterMod().configure(properties);
+        new CrafterModifySkillsQuestion(owner, crafter).sendQuestion();
+
+        String bml = factory.getCommunicator(owner).lastBmlContent;
+        assertFalse(bml.contains("input{text=\"99.99999\";id=\"skill_cap\";"));
+        assertTrue(bml.contains("label{text=\"Skill Cap: \"};text{text="));
+    }
+
+    @Test
+    void testCanLearnTrueSkillCapChangeable() {
+        Properties properties = new Properties();
+        properties.setProperty("can_learn", "true");
+        new CrafterMod().configure(properties);
+        new CrafterModifySkillsQuestion(owner, crafter).sendQuestion();
+
+        String bml = factory.getCommunicator(owner).lastBmlContent;
+        assertTrue(bml.contains("input{text=\"99.99999\";id=\"skill_cap\";"));
+        assertFalse(bml.contains("label{text=\"Skill Cap: \"};text{text="));
+    }
+
+    @Test
     void testAppropriateCrafterSkillsAdded() throws NoSuchSkillException {
         new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties(String.valueOf(SkillList.SMITHING_ARMOUR_PLATE)));
 

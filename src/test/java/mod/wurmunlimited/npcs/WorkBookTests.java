@@ -581,4 +581,49 @@ class WorkBookTests {
         assertEquals(10, workBook.workBookItem.getItemCount());
         assertThrows(WorkBook.WorkBookFull.class, () -> workBook.addJob(123, tool, 1, false, 1));
     }
+
+    @Test
+    void testDonationsLastInIterator() throws NoSuchTemplateException, FailedException, WorkBook.WorkBookFull {
+        WorkBook workBook = WorkBook.createNewWorkBook(new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+
+        for (int i = 0; i < 10; i++) {
+            Item toolJob = factory.createNewItem();
+            Item toolDonation = factory.createNewItem();
+            workBook.addJob(123, toolJob, 100, false, 1);
+            workBook.addDonation(toolDonation);
+        }
+
+        Iterator<Job> jobs = workBook.iterator();
+        Job first = jobs.next();
+        assertFalse(first.isDonation());
+
+        while (!jobs.next().isDonation()) {}
+
+        jobs.forEachRemaining(job -> {
+            assertTrue(job.isDonation());
+        });
+
+    }
+
+    @Test
+    void testDonationsInIteratorLowestQLFirst() throws NoSuchTemplateException, FailedException, WorkBook.WorkBookFull {
+        WorkBook workBook = WorkBook.createNewWorkBook(new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+
+        float[] qls = new float[] { 10, 15, 5 };
+        float[] sortedQls = qls.clone();
+        Arrays.sort(sortedQls);
+
+
+        for (float i : qls) {
+            Item tool = factory.createNewItem();
+            tool.setQualityLevel(i);
+            workBook.addDonation(tool);
+        }
+
+        int idx = 0;
+        for (Job job : workBook) {
+            assertEquals(sortedQls[idx], job.item.getQualityLevel());
+            ++idx;
+        }
+    }
 }

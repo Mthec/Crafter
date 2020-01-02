@@ -188,10 +188,10 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
     }
 
     private static BML addSkillsBML(BML bml) {
-        return addSkillsBML(bml, new CrafterType());
+        return addSkillsBML(bml, new CrafterType(), CrafterMod.getSkillCap());
     }
 
-    static BML addSkillsBML(BML bml, CrafterType crafterType) {
+    static BML addSkillsBML(BML bml, CrafterType crafterType, float skillCap) {
         return bml.text("General crafter options will override specialisations if selected.  Other specialisations are not affected.").italic()
                  .text("General crafters:")
                  .harray(b -> b
@@ -216,7 +216,7 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
                          }))
                  .newLine()
                  .If(CrafterMod.canLearn(),
-                         b -> b.harray(b2 -> b2.label("Skill Cap: ").entry("skill_cap", Float.toString(CrafterMod.getSkillCap()), 3).text("Max: " + CrafterMod.getSkillCap()).italic()),
+                         b -> b.harray(b2 -> b2.label("Skill Cap: ").entry("skill_cap", Float.toString(skillCap), 5).text("Max: " + CrafterMod.getSkillCap()).italic()),
                          b -> b.harray(b2 -> b2.label("Skill Cap: ").text(Float.toString(CrafterMod.getSkillCap())))
                  );
     }

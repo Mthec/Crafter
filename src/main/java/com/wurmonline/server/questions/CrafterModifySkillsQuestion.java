@@ -28,6 +28,12 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
         setAnswer(answers);
         Creature responder = getResponder();
 
+        if (wasSelected("cancel"))
+            return;
+        else if (wasSelected("set") && responder.getPower() >= 2) {
+            new CrafterGMSetSkillLevelsQuestion(responder, crafter).sendQuestion();
+        }
+
         Set<Integer> skills = new HashSet<>();
         if (wasSelected("all_metal"))
             Collections.addAll(skills, CrafterType.allMetal);
@@ -129,7 +135,7 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
                 }
             }
 
-            responder.getCommunicator().sendNormalServerMessage("Crafter successfully updated.");
+            responder.getCommunicator().sendNormalServerMessage("Crafter successfully updated their workbook.");
         } catch (WorkBook.NoWorkBookOnWorker e) {
             logger.warning("Could not find workbook on crafter (" + crafter.getWurmId() + ").");
             responder.getCommunicator().sendNormalServerMessage(crafter.getName() + " seems to have misplaced their workbook");
@@ -144,8 +150,10 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
     public void sendQuestion() {
         BMLBuilder builder = new BMLBuilder(id);
         CrafterType crafterType;
+        WorkBook workBook;
         try {
-            crafterType = WorkBook.getWorkBookFromWorker(crafter).getCrafterType();
+            workBook = WorkBook.getWorkBookFromWorker(crafter);
+            crafterType = workBook.getCrafterType();
         } catch (WorkBook.NoWorkBookOnWorker e) {
             logger.warning("Could not find workbook on crafter (" + crafter.getWurmId() + ").");
             getResponder().getCommunicator().sendNormalServerMessage(crafter.getName() + " seems to have misplaced their workbook");
@@ -153,10 +161,12 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
             return;
         }
 
-        String bml = CrafterHireQuestion.addSkillsBML(builder, crafterType)
+        String bml = CrafterHireQuestion.addSkillsBML(builder, crafterType, workBook.getSkillCap())
                 .checkbox("rd", "Remove unneeded donation items")
                 .checkbox("refund", "Refund items if skill removed")
-                .harray(b -> b.button("Save").spacer().button("cancel", "Cancel"))
+                .harray(b -> b.button("Save").spacer()
+                                     .If(getResponder().getPower() >= 2, b2 -> b2.button("set", "Set Skill Levels").spacer())
+                                     .button("cancel", "Cancel"))
                 .build();
 
 

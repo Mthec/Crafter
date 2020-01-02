@@ -17,10 +17,11 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.Properties;
 
-import static mod.wurmunlimited.Assert.didNotReceiveMessageContaining;
-import static mod.wurmunlimited.Assert.receivedMessageContaining;
+import static mod.wurmunlimited.Assert.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,6 +53,7 @@ class CrafterModifySkillsQuestionTests {
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("skillCap"), 99.99999f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 1);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("minimumPriceModifier"), 0.0000001f);
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("canLearn"), true);
         owner = factory.createNewPlayer();
         crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.COOKING_BAKING), 50);
     }
@@ -111,6 +113,14 @@ class CrafterModifySkillsQuestionTests {
 
         assertEquals(crafterType, WorkBook.getWorkBookFromWorker(crafter).getCrafterType());
         assertThat(owner, receivedMessageContaining("You must select"));
+    }
+
+    @Test
+    void testSkillCapProperlyFilledWithDefault() throws WorkBook.NoWorkBookOnWorker {
+        float skillCap = WorkBook.getWorkBookFromWorker(crafter).getSkillCap();
+        new CrafterModifySkillsQuestion(owner, crafter).sendQuestion();
+
+        assertTrue(factory.getCommunicator(owner).lastBmlContent.contains("input{text=\"" + skillCap + "\";id=\"skill_cap\";"), factory.getCommunicator(owner).lastBmlContent + "\nExpected " + skillCap + "\n");
     }
 
     @Test
@@ -185,8 +195,8 @@ class CrafterModifySkillsQuestionTests {
         new CrafterModifySkillsQuestion(owner, crafter).sendQuestion();
 
         String bml = factory.getCommunicator(owner).lastBmlContent;
-        assertTrue(bml.contains("input{text=\"99.99999\";id=\"skill_cap\";"));
-        assertFalse(bml.contains("label{text=\"Skill Cap: \"};text{text="));
+        assertTrue(bml.contains("input{text=\"50.0\";id=\"skill_cap\";"), bml);
+        assertFalse(bml.contains("label{text=\"Skill Cap: \"};text{text="), bml);
     }
 
     @Test
@@ -281,5 +291,36 @@ class CrafterModifySkillsQuestionTests {
         assertFalse(crafter.getInventory().getItems().contains(jobItem));
         assertTrue(WurmMail.allMail.stream().anyMatch((m) -> m.itemId == jobItem.getWurmId() && m.ownerId == owner.getWurmId()));
         assertThat(owner, didNotReceiveMessageContaining("still has some jobs"));
+    }
+
+    @Test
+    void testPlayerDoesNotGetSetSkillsButton() {
+        assert owner.getPower() < 2;
+        new CrafterModifySkillsQuestion(owner, crafter).sendQuestion();
+
+        assertFalse(factory.getCommunicator(owner).lastBmlContent.contains("button{text=\"Set Skill Levels\";id=\"set\";"), factory.getCommunicator(owner).lastBmlContent);
+    }
+
+    @Test
+    void testGMDoesGetSetSkillsButton() throws IOException {
+        owner.setPower((byte)2);
+        new CrafterModifySkillsQuestion(owner, crafter).sendQuestion();
+
+        assertFalse(factory.getCommunicator(owner).lastBmlContent.contains("button{text=\"Set Skill Levels\";id=\"set\";"), factory.getCommunicator(owner).lastBmlContent);
+    }
+
+    @Test
+    void testSetSkillLevelsButtonOpensQuestion() throws IOException {
+        owner.setPower((byte)2);
+        Properties properties = new Properties();
+        properties.setProperty("set", "true");
+        new CrafterModifySkillsQuestion(owner, crafter).answer(properties);
+
+        String[] bml = factory.getCommunicator(owner).getBml();
+        assertEquals(1, bml.length);
+        new CrafterGMSetSkillLevelsQuestion(owner, crafter).sendQuestion();
+        bml = factory.getCommunicator(owner).getBml();
+        assertEquals(2, bml.length, Arrays.toString(factory.getCommunicator(owner).getBml()));
+        assertThat(owner, bmlEqual());
     }
 }

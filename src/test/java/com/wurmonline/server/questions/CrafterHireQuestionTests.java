@@ -6,16 +6,18 @@ import com.wurmonline.server.creatures.Creatures;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.players.Player;
 import com.wurmonline.server.skills.SkillList;
-import com.wurmonline.server.villages.Villages;
 import com.wurmonline.server.zones.Zones;
 import mod.wurmunlimited.CrafterObjectsFactory;
-import mod.wurmunlimited.npcs.*;
+import mod.wurmunlimited.bml.BML;
+import mod.wurmunlimited.bml.BMLBuilder;
+import mod.wurmunlimited.npcs.CrafterMod;
+import mod.wurmunlimited.npcs.CrafterTemplate;
+import mod.wurmunlimited.npcs.CrafterType;
+import mod.wurmunlimited.npcs.WorkBook;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.Properties;
 
 import static mod.wurmunlimited.Assert.receivedMessageContaining;
@@ -234,5 +236,18 @@ class CrafterHireQuestionTests {
         properties.remove("price_modifier");
 
         assertDoesNotThrow(() -> new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties));
+    }
+
+    @Test
+    void testGetSkillBMLUsesProvidedSkillCap() {
+        BML bml = new BMLBuilder(1);
+        float skillCap = 15;
+        bml = CrafterHireQuestion.addSkillsBML(bml, new CrafterType(CrafterType.allMetal), skillCap);
+        assertTrue(bml.build().contains("input{text=\"" + skillCap + "\";id=\"skill_cap\""));
+
+        bml = new BMLBuilder(1);
+        skillCap = 33;
+        bml = CrafterHireQuestion.addSkillsBML(bml, new CrafterType(CrafterType.allMetal), skillCap);
+        assertTrue(bml.build().contains("input{text=\"" + skillCap + "\";id=\"skill_cap\""));
     }
 }

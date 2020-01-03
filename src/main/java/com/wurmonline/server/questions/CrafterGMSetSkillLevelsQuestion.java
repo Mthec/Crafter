@@ -2,9 +2,12 @@ package com.wurmonline.server.questions;
 
 import com.wurmonline.server.FailedException;
 import com.wurmonline.server.Items;
+import com.wurmonline.server.behaviours.MethodsItems;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.NoSuchTemplateException;
+import com.wurmonline.server.skills.NoSuchSkillException;
 import com.wurmonline.server.skills.Skill;
+import com.wurmonline.server.skills.SkillSystem;
 import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.*;
 
@@ -59,18 +62,47 @@ public class CrafterGMSetSkillLevelsQuestion extends CrafterQuestionExtension {
                 List<Job> toRemove = new ArrayList<>();
                 List<Job> toRefund = new ArrayList<>();
 
+                if (skillCap == -1)
+                    skillCap = workBook.getSkillCap();
+
+                workBook.updateSkillsSettings(crafterType, skillCap);
+
+                for (Skill skill : crafterType.getSkillsFor(crafter)) {
+                    float newSkillLevel = getFloatOrDefault(String.valueOf(skill.getNumber()), (float)skill.getKnowledge());
+                    skill.setKnowledge(newSkillLevel, false);
+
+                    if (skill.getKnowledge() < CrafterMod.getStartingSkillLevel()) {
+                        skill.setKnowledge(CrafterMod.getStartingSkillLevel(), false);
+                    }
+                    if (skill.getKnowledge() > skillCap) {
+                        skill.setKnowledge(skillCap, false);
+                    }
+                    // Parent skills.
+                    for (int skillId : skill.getDependencies()) {
+                        crafter.getSkills().getSkillOrLearn(skillId);
+                    }
+                }
+
                 for (Job job : workBook) {
                     if (!job.isDone()) {
-                        if (!crafterType.hasSkillToImprove(job.getItem())) {
-                            if (job.isDonation()) {
-                                if (removeDonationItems)
+                        try {
+                            double knowledge = crafter.getSkills().getSkill(MethodsItems.getImproveSkill(job.getItem())).getKnowledge();
+                            if (!job.isDonation() && job.getTargetQL() > knowledge) {
+                                if (refundItems) {
+                                    toRefund.add(job);
+                                } else {
+                                    responder.getCommunicator().sendNormalServerMessage(crafter.getName() + " still has some jobs that require certain skill levels.  Settings not updated.");
+                                    return;
+                                }
+                            } else if (job.isDonation() && removeDonationItems) {
+                                float itemQL = job.getItem().getQualityLevel();
+                                if (!CrafterMod.canLearn() || itemQL > skillCap + 10) {
                                     toRemove.add(job);
-                            } else if (refundItems) {
-                                toRefund.add(job);
-                            } else {
-                                responder.getCommunicator().sendNormalServerMessage(crafter.getName() + " still has some jobs that require certain skills.  Settings not updated.");
-                                return;
+                                }
                             }
+                        } catch (NoSuchSkillException e) {
+                            logger.warning("Could not find " + SkillSystem.getNameFor(MethodsItems.getImproveSkill(job.getItem())) + " skill for " + crafter.getName() + " (" + crafter.getWurmId() + ")");
+                            e.printStackTrace();
                         }
                     }
                 }
@@ -93,28 +125,6 @@ public class CrafterGMSetSkillLevelsQuestion extends CrafterQuestionExtension {
                     logger.warning("Could not create refund package while changing Crafter skills, customers were not compensated.");
                     e.printStackTrace();
                 }
-
-                if (skillCap == -1)
-                    skillCap = workBook.getSkillCap();
-
-                workBook.updateSkillsSettings(crafterType, skillCap);
-
-                for (Skill skill : crafterType.getSkillsFor(crafter)) {
-                    float newSkillLevel = getFloatOrDefault(String.valueOf(skill.getNumber()), (float)skill.getKnowledge());
-                    skill.setKnowledge(newSkillLevel, false);
-
-                    if (skill.getKnowledge() < CrafterMod.getStartingSkillLevel()) {
-                        skill.setKnowledge(CrafterMod.getStartingSkillLevel(), false);
-                    }
-                    if (skill.getKnowledge() > skillCap) {
-                        skill.setKnowledge(skillCap, false);
-                    }
-                    // Parent skills.
-                    for (int skillId : skill.getDependencies()) {
-                        crafter.getSkills().getSkillOrLearn(skillId);
-                    }
-                }
-
 
                 responder.getCommunicator().sendNormalServerMessage("Crafter successfully updated their workbook.");
             } catch (WorkBook.NoWorkBookOnWorker e) {
@@ -144,7 +154,7 @@ public class CrafterGMSetSkillLevelsQuestion extends CrafterQuestionExtension {
                                      (skill, b) -> b.label(skill.getName()).label(String.format("%.2f", skill.getKnowledge())).entry(String.valueOf(skill.getNumber()), "", 7))
                              .newLine()
                              .checkbox("rd", "Remove unneeded donation items", true)
-                             .checkbox("refund", "Refund items if skill removed", true)
+                             .checkbox("refund", "Refund items if skill level insufficient", true)
                              .harray(b -> b.button("Save").spacer().button("cancel", "Cancel"))
                              .build();
 

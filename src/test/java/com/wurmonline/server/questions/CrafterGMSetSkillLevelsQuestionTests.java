@@ -9,6 +9,7 @@ import com.wurmonline.server.items.WurmMail;
 import com.wurmonline.server.players.Player;
 import com.wurmonline.server.skills.NoSuchSkillException;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterType;
@@ -39,7 +40,7 @@ public class CrafterGMSetSkillLevelsQuestionTests {
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("canLearn"), true);
         owner = factory.createNewPlayer();
         owner.setPower((byte)2);
-        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.COOKING_BAKING), 50);
+        crafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allMetal), 50);
     }
 
     @Test
@@ -95,7 +96,47 @@ public class CrafterGMSetSkillLevelsQuestionTests {
         assertEquals(blacksmithing, crafter.getSkills().getSkill(SkillList.SMITHING_BLACKSMITHING).getKnowledge());
     }
 
-    // TODO - Test skills capped at both ends.
+    @Test
+    void testSkillsNotSetAboveMax() throws NoSuchSkillException {
+        float maxSkill = 20;
+        Properties cap = new Properties();
+        cap.setProperty("max_skill", String.valueOf(maxSkill));
+        new CrafterMod().configure(cap);
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.CARPENTRY, SkillList.SMITHING_BLACKSMITHING), maxSkill);
+        float carpentry = 54;
+        float blacksmithing = 72;
+        assert crafter.getSkills().getSkill(SkillList.CARPENTRY).getKnowledge() != carpentry;
+        assert crafter.getSkills().getSkill(SkillList.SMITHING_BLACKSMITHING).getKnowledge() != blacksmithing;
+
+        Properties properties = new Properties();
+        properties.setProperty(String.valueOf(SkillList.CARPENTRY), String.valueOf(carpentry));
+        properties.setProperty(String.valueOf(SkillList.SMITHING_BLACKSMITHING), String.valueOf(blacksmithing));
+        new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
+
+        assertEquals(maxSkill, crafter.getSkills().getSkill(SkillList.CARPENTRY).getKnowledge());
+        assertEquals(maxSkill, crafter.getSkills().getSkill(SkillList.SMITHING_BLACKSMITHING).getKnowledge());
+    }
+
+    @Test
+    void testSkillsNotSetBelowStarting() throws NoSuchSkillException {
+        float minSkill = 20;
+        Properties cap = new Properties();
+        cap.setProperty("starting_skill", String.valueOf(minSkill));
+        new CrafterMod().configure(cap);
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.CARPENTRY, SkillList.SMITHING_BLACKSMITHING), minSkill);
+        float carpentry = 5;
+        float blacksmithing = 7;
+        assert crafter.getSkills().getSkill(SkillList.CARPENTRY).getKnowledge() != carpentry;
+        assert crafter.getSkills().getSkill(SkillList.SMITHING_BLACKSMITHING).getKnowledge() != blacksmithing;
+
+        Properties properties = new Properties();
+        properties.setProperty(String.valueOf(SkillList.CARPENTRY), String.valueOf(carpentry));
+        properties.setProperty(String.valueOf(SkillList.SMITHING_BLACKSMITHING), String.valueOf(blacksmithing));
+        new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
+
+        assertEquals(minSkill, crafter.getSkills().getSkill(SkillList.CARPENTRY).getKnowledge());
+        assertEquals(minSkill, crafter.getSkills().getSkill(SkillList.SMITHING_BLACKSMITHING).getKnowledge());
+    }
     
     // Copied from CrafterGMSetSkillLevelsQuestionTests
 
@@ -197,29 +238,48 @@ public class CrafterGMSetSkillLevelsQuestionTests {
     }
 
     @Test
-    void testDonationItemsDestroyedIfOptionSet() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
-        new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(new Properties());
-        Item donation = ItemFactory.createItem(ItemList.pickAxe, 10, "");
-        WorkBook.getWorkBookFromWorker(crafter).addDonation(donation);
+    void testDonationItemsDestroyedIfOptionSetAndItemQLTooHigh() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.updateSkillsSettings(workBook.getCrafterType(), 80);
+        Item donation = ItemFactory.createItem(ItemList.pickAxe, 91, "");
+        donation.setMaterial(ItemMaterials.MATERIAL_IRON);
+        workBook.addDonation(donation);
         crafter.getInventory().insertItem(donation);
 
         Properties properties = new Properties();
         properties.setProperty("rd", "true");
-        properties.setProperty(String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING), "false");
         new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
 
         assertFalse(crafter.getInventory().getItems().contains(donation));
     }
 
     @Test
-    void testDonationItemsNotDestroyedIfOptionUnSet() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
-        new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(new Properties());
-        Item donation = ItemFactory.createItem(ItemList.swordLong, 10, "");
+    void testDonationItemsDestroyedIfOptionSetAndCanLearnFalse() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        Properties canLearn = new Properties();
+        canLearn.setProperty("can_learn", "false");
+        new CrafterMod().configure(canLearn);
+        Item donation = ItemFactory.createItem(ItemList.pickAxe, 10, "");
+        donation.setMaterial(ItemMaterials.MATERIAL_IRON);
         WorkBook.getWorkBookFromWorker(crafter).addDonation(donation);
         crafter.getInventory().insertItem(donation);
 
         Properties properties = new Properties();
-        properties.setProperty(String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING), "false");
+        properties.setProperty("rd", "true");
+        new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
+
+        assertFalse(crafter.getInventory().getItems().contains(donation));
+    }
+
+    @Test
+    void testDonationItemsNotDestroyedIfOptionUnSetAndItemQLTooHigh() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.updateSkillsSettings(workBook.getCrafterType(), 80);
+        Item donation = ItemFactory.createItem(ItemList.pickAxe, 91, "");
+        donation.setMaterial(ItemMaterials.MATERIAL_IRON);
+        workBook.addDonation(donation);
+        crafter.getInventory().insertItem(donation);
+
+        Properties properties = new Properties();
         properties.setProperty("rd", "false");
         new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
 
@@ -227,14 +287,31 @@ public class CrafterGMSetSkillLevelsQuestionTests {
     }
 
     @Test
-    void testChangeBlockedWhenItemRequiresRemovedSkill() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
-        new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(new Properties());
+    void testDonationItemsNotDestroyedIfOptionUnSetAndCanLearnFalse() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        Properties canLearn = new Properties();
+        canLearn.setProperty("can_learn", "false");
+        new CrafterMod().configure(canLearn);
+        Item donation = ItemFactory.createItem(ItemList.swordLong, 10, "");
+        WorkBook.getWorkBookFromWorker(crafter).addDonation(donation);
+        crafter.getInventory().insertItem(donation);
+
+        Properties properties = new Properties();
+        properties.setProperty("rd", "false");
+        new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
+
+        assertTrue(crafter.getInventory().getItems().contains(donation));
+    }
+
+    @Test
+    void testChangeBlockedWhenItemImprovementSkillLevelInsufficient() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        int targetQL = 20;
         Item jobItem = ItemFactory.createItem(ItemList.pickAxe, 10, "");
-        WorkBook.getWorkBookFromWorker(crafter).addJob(owner.getWurmId(), jobItem, 20, false, 1);
+        jobItem.setMaterial(ItemMaterials.MATERIAL_IRON);
+        WorkBook.getWorkBookFromWorker(crafter).addJob(owner.getWurmId(), jobItem, targetQL, false, 1);
         crafter.getInventory().insertItem(jobItem);
 
         Properties properties = new Properties();
-        properties.setProperty(String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING), "false");
+        properties.setProperty(String.valueOf(SkillList.SMITHING_BLACKSMITHING), String.valueOf(targetQL - 1));
         properties.setProperty("refund", "false");
         new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
 
@@ -243,19 +320,41 @@ public class CrafterGMSetSkillLevelsQuestionTests {
     }
 
     @Test
-    void testJobItemRefundedWhenRequiresRemovedSkill() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
-        new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(new Properties());
+    void testJobItemRefundedWhenSkillLevelInsufficient() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        Properties startingSkill = new Properties();
+        startingSkill.setProperty("starting_skill", "1");
+        new CrafterMod().configure(startingSkill);
+        int targetQL = 20;
         Item jobItem = ItemFactory.createItem(ItemList.pickAxe, 10, "");
-        WorkBook.getWorkBookFromWorker(crafter).addJob(owner.getWurmId(), jobItem, 20, false, 1);
+        jobItem.setMaterial(ItemMaterials.MATERIAL_IRON);
+        WorkBook.getWorkBookFromWorker(crafter).addJob(owner.getWurmId(), jobItem, targetQL, false, 1);
         crafter.getInventory().insertItem(jobItem);
 
         Properties properties = new Properties();
-        properties.setProperty(String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING), "false");
+        properties.setProperty(String.valueOf(SkillList.SMITHING_BLACKSMITHING), String.valueOf(targetQL - 1));
         properties.setProperty("refund", "true");
         new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
 
         assertFalse(crafter.getInventory().getItems().contains(jobItem));
         assertTrue(WurmMail.allMail.stream().anyMatch((m) -> m.itemId == jobItem.getWurmId() && m.ownerId == owner.getWurmId()));
+        MatcherAssert.assertThat(owner, didNotReceiveMessageContaining("still has some jobs"));
+    }
+
+    @Test
+    void testJobItemNotRefundedWhenSkillLevelStillSufficient() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        int targetQL = 20;
+        Item jobItem = ItemFactory.createItem(ItemList.pickAxe, 10, "");
+        jobItem.setMaterial(ItemMaterials.MATERIAL_IRON);
+        WorkBook.getWorkBookFromWorker(crafter).addJob(owner.getWurmId(), jobItem, targetQL, false, 1);
+        crafter.getInventory().insertItem(jobItem);
+
+        Properties properties = new Properties();
+        properties.setProperty(String.valueOf(SkillList.SMITHING_BLACKSMITHING), String.valueOf(targetQL));
+        properties.setProperty("refund", "true");
+        new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
+
+        assertTrue(crafter.getInventory().getItems().contains(jobItem));
+        assertFalse(WurmMail.allMail.stream().anyMatch((m) -> m.itemId == jobItem.getWurmId() && m.ownerId == owner.getWurmId()));
         MatcherAssert.assertThat(owner, didNotReceiveMessageContaining("still has some jobs"));
     }
 }

@@ -54,6 +54,10 @@ public class Job {
         return done;
     }
 
+    public float getTargetQL() {
+        return targetQL;
+    }
+
     public boolean mailWhenDone() {
         return mailWhenDone;
     }

@@ -268,7 +268,7 @@ class CrafterModifySkillsQuestionTests {
         crafter.getInventory().insertItem(jobItem);
 
         Properties properties = generateProperties("all_metal");
-        properties.setProperty(String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING), "false");
+        properties.setProperty(String.valueOf(SkillList.SMITHING_BLACKSMITHING), "false");
         properties.setProperty("refund", "false");
         new CrafterModifySkillsQuestion(owner, crafter).answer(properties);
 
@@ -284,7 +284,7 @@ class CrafterModifySkillsQuestionTests {
         crafter.getInventory().insertItem(jobItem);
 
         Properties properties = generateProperties("all_metal");
-        properties.setProperty(String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING), "false");
+        properties.setProperty(String.valueOf(SkillList.SMITHING_BLACKSMITHING), "false");
         properties.setProperty("refund", "true");
         new CrafterModifySkillsQuestion(owner, crafter).answer(properties);
 

@@ -155,6 +155,7 @@ public class CrafterGMSetSkillLevelsQuestion extends CrafterQuestionExtension {
                              .newLine()
                              .checkbox("rd", "Remove unneeded donation items", true)
                              .checkbox("refund", "Refund items if skill level insufficient", true)
+                             .newLine()
                              .harray(b -> b.button("Save").spacer().button("cancel", "Cancel"))
                              .build();
 

@@ -32,6 +32,7 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
             return;
         else if (wasSelected("set") && responder.getPower() >= 2) {
             new CrafterGMSetSkillLevelsQuestion(responder, crafter).sendQuestion();
+            return;
         }
 
         Set<Integer> skills = new HashSet<>();
@@ -164,12 +165,13 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
         String bml = CrafterHireQuestion.addSkillsBML(builder, crafterType, workBook.getSkillCap())
                 .checkbox("rd", "Remove unneeded donation items")
                 .checkbox("refund", "Refund items if skill removed")
+                .newLine()
                 .harray(b -> b.button("Save").spacer()
                                      .If(getResponder().getPower() >= 2, b2 -> b2.button("set", "Set Skill Levels").spacer())
                                      .button("cancel", "Cancel"))
                 .build();
 
 
-        getResponder().getCommunicator().sendBml(400, 300, false, true, bml, 200, 200, 200, title);
+        getResponder().getCommunicator().sendBml(400, 400, false, true, bml, 200, 200, 200, title);
     }
 }

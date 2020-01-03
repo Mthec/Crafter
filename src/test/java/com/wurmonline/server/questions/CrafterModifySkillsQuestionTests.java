@@ -323,4 +323,18 @@ class CrafterModifySkillsQuestionTests {
         assertEquals(2, bml.length, Arrays.toString(factory.getCommunicator(owner).getBml()));
         assertThat(owner, bmlEqual());
     }
+
+    @Test
+    void testSettingsNotAppliedIfGoingToSetSkillLevels() throws WorkBook.NoWorkBookOnWorker, IOException {
+        CrafterType crafterType = WorkBook.getWorkBookFromWorker(crafter).getCrafterType();
+        owner.setPower((byte)2);
+
+        for (String type : allCrafterTypes) {
+            Properties properties = generateProperties(type);
+            properties.setProperty("set", "true");
+            new CrafterModifySkillsQuestion(owner, crafter).answer(properties);
+
+            assertEquals(crafterType, WorkBook.getWorkBookFromWorker(crafter).getCrafterType());
+        }
+    }
 }

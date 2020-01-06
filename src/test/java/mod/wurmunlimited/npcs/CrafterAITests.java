@@ -302,6 +302,17 @@ class CrafterAITests extends CrafterTest {
     // Donations
 
     @Test
+    void testDonationItemRepairedIfDamaged() throws WorkBook.WorkBookFull {
+        workBook.removeJob(tool);
+        workBook.addDonation(tool);
+
+        tool.setDamage(50);
+
+        data.sendNextAction();
+        assertTrue(BehaviourDispatcher.wasDispatched(tool, Actions.REPAIR));
+    }
+
+    @Test
     void testDonationImproveActionDispatched() throws WorkBook.WorkBookFull {
         warmUp();
 

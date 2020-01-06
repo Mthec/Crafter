@@ -271,6 +271,28 @@ public class CrafterAIData extends CreatureAIData {
                     continue;
                 }
 
+                if (job.isDonation()) {
+                    if (!workbook.getCrafterType().hasSkillToImprove(item)) {
+                        continue;
+                    }
+
+                    int skillNum = MethodsItems.getImproveSkill(item);
+                    float currentSkill;
+                    try {
+                        currentSkill = (float)crafter.getSkills().getSkill(skillNum).getKnowledge();
+                    } catch (NoSuchSkillException e) {
+                        logger.warning(crafter.getName() + "(" + crafter.getWurmId() + ") was missing " + SkillSystem.getNameFor(skillNum) + " skill.");
+                        continue;
+                    }
+
+                    if (CrafterMod.destroyDonationItem(currentSkill, job.item.getQualityLevel())) {
+                        workbook.removeJob(job.item);
+                        Items.destroyItem(job.item.getWurmId());
+                        continue;
+                    } else if (item.getQualityLevel() >= workbook.getSkillCap()) {
+                        continue;
+                    }
+                }
                 if (!job.isDonation() && item.getQualityLevel() >= job.targetQL) {
                     if (forge != null && forge.getItems().contains(item))
                         crafter.getInventory().insertItem(item);
@@ -278,26 +300,6 @@ public class CrafterAIData extends CreatureAIData {
                     logger.info(item.getName() + " is done.");
                     // In case a Job is removed at the wrong time.
                     return;
-                } else if (job.isDonation()) {
-                     if (!workbook.getCrafterType().hasSkillToImprove(item)) {
-                         continue;
-                     }
-
-                    int skillNum = MethodsItems.getImproveSkill(item);
-                    float currentSkill;
-                     try {
-                         currentSkill = (float)crafter.getSkills().getSkill(skillNum).getKnowledge();
-                     } catch (NoSuchSkillException e) {
-                         logger.warning(crafter.getName() + "(" + crafter.getWurmId() + ") was missing " + SkillSystem.getNameFor(skillNum) + " skill.");
-                         continue;
-                     }
-
-                     if (CrafterMod.destroyDonationItem(currentSkill, job.item.getQualityLevel())) {
-                         workbook.removeJob(job.item);
-                         Items.destroyItem(job.item.getWurmId());
-                     } else if (item.getQualityLevel() >= workbook.getSkillCap()) {
-                         continue;
-                     }
                 } else if (item.getDamage() > 0.0f) {
                     try {
                         BehaviourDispatcher.action(crafter, crafter.getCommunicator(), -10, item.getWurmId(), Actions.REPAIR);

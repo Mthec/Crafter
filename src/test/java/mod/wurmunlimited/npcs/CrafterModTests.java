@@ -1,11 +1,8 @@
 package mod.wurmunlimited.npcs;
 
-import com.wurmonline.server.Server;
-import com.wurmonline.server.ServerEntry;
 import com.wurmonline.server.Servers;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.creatures.CrafterTradeHandler;
-import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.CreatureTemplateIds;
 import com.wurmonline.server.items.*;
@@ -17,13 +14,11 @@ import mod.wurmunlimited.CrafterObjectsFactory;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Properties;
 
 import static mod.wurmunlimited.Assert.receivedMessageContaining;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,6 +35,7 @@ class CrafterModTests {
         factory = new CrafterObjectsFactory();
         CrafterAI.assignedForges.clear();
         crafterType = new CrafterType(SkillList.SMITHING_BLACKSMITHING);
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("removeDonationsAt"), Integer.MIN_VALUE);
     }
 
     @Test
@@ -442,5 +438,35 @@ class CrafterModTests {
 
         assertNull(handler.invoke(skill, method, args));
         verify(method, times(1)).invoke(skill, expectedArgs);
+    }
+
+    @Test
+    void testDestroyDonationItemNoValueSet() {
+        for (int i = 1; i < 101; i++) {
+            assertFalse(CrafterMod.destroyDonationItem(i, 10));
+        }
+    }
+
+    @Test
+    void testDestroyDonationItemPositiveValue() throws NoSuchFieldException, IllegalAccessException {
+        int plusCap = 10;
+        Properties properties = new Properties();
+        properties.setProperty("remove_donations_at", String.valueOf(plusCap));
+        new CrafterMod().configure(properties);
+        assert (int)ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("removeDonationsAt")) == plusCap;
+
+        assertFalse(CrafterMod.destroyDonationItem(10, 19));
+        assertTrue(CrafterMod.destroyDonationItem(10, 20));
+    }
+
+    @Test
+    void testDestroyDonationItemNegativeValue() {
+        int minusCap = -10;
+        Properties properties = new Properties();
+        properties.setProperty("remove_donations_at", String.valueOf(minusCap));
+        new CrafterMod().configure(properties);
+
+        assertFalse(CrafterMod.destroyDonationItem(20, 9));
+        assertTrue(CrafterMod.destroyDonationItem(20, 10));
     }
 }

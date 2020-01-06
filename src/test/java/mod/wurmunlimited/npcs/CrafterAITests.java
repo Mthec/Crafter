@@ -1,5 +1,6 @@
 package mod.wurmunlimited.npcs;
 
+import com.wurmonline.server.Items;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
 import com.wurmonline.server.creatures.Creature;
@@ -14,10 +15,7 @@ import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static mod.wurmunlimited.Assert.didNotReceiveMessageContaining;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -301,6 +299,38 @@ class CrafterAITests extends CrafterTest {
 
         data.sendNextAction();
         assertTrue(BehaviourDispatcher.wasDispatched(tool, Actions.IMPROVE));
+    }
+
+    @Test
+    void testDestroyDonationItem() throws WorkBook.WorkBookFull, NoSuchSkillException, WorkBook.NoWorkBookOnWorker {
+        Properties properties = new Properties();
+        properties.setProperty("remove_donations_at", "10");
+        new CrafterMod().configure(properties);
+        float currentSkill = (float)crafter.getSkills().getSkill(SkillList.SMITHING_BLACKSMITHING).getKnowledge();
+        warmUp();
+
+        workBook.removeJob(tool);
+        workBook.addDonation(tool);
+        tool.setQualityLevel(currentSkill + 10);
+
+        data.sendNextAction();
+        assertFalse(BehaviourDispatcher.wasDispatched(tool, Actions.IMPROVE));
+        assertFalse(Items.exists(tool.getWurmId()));
+        assertEquals(0, WorkBook.getWorkBookFromWorker(crafter).donationsTodo());
+    }
+
+    @Test
+    void testDonationItemNotDestroyed() throws WorkBook.WorkBookFull, WorkBook.NoWorkBookOnWorker {
+        warmUp();
+
+        workBook.removeJob(tool);
+        workBook.addDonation(tool);
+        tool.setQualityLevel(100);
+
+        data.sendNextAction();
+        assertFalse(BehaviourDispatcher.wasDispatched(tool, Actions.IMPROVE));
+        assertTrue(Items.exists(tool.getWurmId()));
+        assertEquals(1, WorkBook.getWorkBookFromWorker(crafter).donationsTodo());
     }
 
     // Large anvil

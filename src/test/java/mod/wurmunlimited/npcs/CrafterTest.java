@@ -6,8 +6,6 @@ import com.wurmonline.server.items.CrafterTrade;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.players.Player;
-import com.wurmonline.server.villages.DbVillage;
-import com.wurmonline.server.villages.FakeVillage;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +25,7 @@ public class CrafterTest {
         BehaviourDispatcher.reset();
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("skillCap"), 99.99999f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 1);
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("removeDonationsAt"), Integer.MIN_VALUE);
         player = factory.createNewPlayer();
         tool = factory.createNewItem(ItemList.pickAxe);
         player.getInventory().insertItem(tool);

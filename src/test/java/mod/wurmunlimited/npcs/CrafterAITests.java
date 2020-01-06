@@ -1,16 +1,15 @@
 package mod.wurmunlimited.npcs;
 
+import com.wurmonline.server.FailedException;
 import com.wurmonline.server.Items;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
 import com.wurmonline.server.creatures.Creature;
-import com.wurmonline.server.items.Item;
-import com.wurmonline.server.items.ItemList;
-import com.wurmonline.server.items.NoSpaceException;
-import com.wurmonline.server.items.WurmMail;
+import com.wurmonline.server.items.*;
 import com.wurmonline.server.skills.NoSuchSkillException;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.shared.constants.ItemMaterials;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -169,6 +168,18 @@ class CrafterAITests extends CrafterTest {
         assertEquals(lump.getTemplate().getWeightGrams(), BehaviourDispatcher.getLastDispatchSubject().getWeightGrams());
         data.sendNextAction();
         assertEquals(water.getTemplate().getWeightGrams(), BehaviourDispatcher.getLastDispatchSubject().getWeightGrams());
+    }
+
+    @Test
+    void testSpecialLumpWeightRestoredBeforeUse() throws NoSuchTemplateException, FailedException {
+        lump = data.createMissingItem(ItemList.bronzeBar);
+        tool.setMaterial(ItemMaterials.MATERIAL_BRONZE);
+        warmUp();
+
+        data.sendNextAction();
+        assertEquals(1000, BehaviourDispatcher.getLastDispatchSubject().getWeightGrams());
+        data.sendNextAction();
+        assertEquals(1000, BehaviourDispatcher.getLastDispatchSubject().getWeightGrams());
     }
 
     @Test

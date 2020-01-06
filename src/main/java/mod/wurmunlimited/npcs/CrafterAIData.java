@@ -159,6 +159,8 @@ public class CrafterAIData extends CreatureAIData {
             item.setQualityLevel(workbook.getSkillCap());
         if (item.isLiquid())
             item.setWeight(5000, false);
+        else if (item.isCombine() && item.isMetal())
+            item.setWeight(1000, false);
         else
             item.setWeight(item.getTemplate().getWeightGrams(), false);
     }

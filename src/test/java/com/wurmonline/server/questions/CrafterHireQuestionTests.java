@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
 
+import static mod.wurmunlimited.Assert.didNotReceiveMessageContaining;
 import static mod.wurmunlimited.Assert.receivedMessageContaining;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -249,5 +250,15 @@ class CrafterHireQuestionTests {
         skillCap = 33;
         bml = CrafterHireQuestion.addSkillsBML(bml, new CrafterType(CrafterType.allMetal), skillCap);
         assertTrue(bml.build().contains("input{text=\"" + skillCap + "\";id=\"skill_cap\""));
+    }
+
+    @Test
+    void testHireWithEmptySkillCap() {
+        Properties properties = generateProperties();
+        properties.remove("skill_cap");
+        new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
+
+        assertEquals(1, getCrafterCount());
+        assertThat(owner, didNotReceiveMessageContaining("invalid"));
     }
 }

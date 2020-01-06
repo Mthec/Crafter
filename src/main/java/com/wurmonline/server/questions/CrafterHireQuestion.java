@@ -110,8 +110,12 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
                 skillCap = CrafterMod.getSkillCap();
             }
         } catch (NumberFormatException e) {
-            responder.getCommunicator().sendNormalServerMessage("Skill cap value was invalid.");
-            return;
+            if (getStringProp("skill_cap").isEmpty()) {
+                skillCap = CrafterMod.getSkillCap();
+            } else {
+                responder.getCommunicator().sendNormalServerMessage("Skill cap value was invalid.");
+                return;
+            }
         }
 
         if (locationIsValid(responder)) {

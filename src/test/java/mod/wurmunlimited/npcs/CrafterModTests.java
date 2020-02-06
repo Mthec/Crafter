@@ -469,4 +469,69 @@ class CrafterModTests {
         assertFalse(CrafterMod.destroyDonationItem(20, 9));
         assertTrue(CrafterMod.destroyDonationItem(20, 10));
     }
+
+    private TradingWindow newTradingWindow(Creature one, Creature two, Item contract) throws NoSuchFieldException, IllegalAccessException {
+        TradingWindow window = new TradingWindow();
+        ReflectionUtil.setPrivateField(window, TradingWindow.class.getDeclaredField("windowowner"), one);
+        ReflectionUtil.setPrivateField(window, TradingWindow.class.getDeclaredField("watcher"), two);
+        window.addItem(contract);
+        return window;
+    }
+
+    @Test
+    void testDoubleTradeCrafterMissingItemForCompletedJob() throws Throwable {
+        CrafterMod crafterMod = new CrafterMod();
+        com.wurmonline.server.creatures.Creature player1 = factory.createNewPlayer();
+        Creature player2 = factory.createNewPlayer();
+        Creature player3 = factory.createNewPlayer();
+        Creature crafter = factory.createNewCrafter(player1, new CrafterType(SkillList.SMITHING_BLACKSMITHING), 30);
+
+        Item contract = factory.createNewItem(CrafterMod.getContractTemplateId());
+        contract.setData(crafter.getWurmId());
+        player1.getInventory().insertItem(contract, true);
+
+        Item tool = factory.createNewItem();
+        tool.setQualityLevel(30);
+        crafter.getInventory().insertItem(tool, true);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.addJob(factory.createNewPlayer().getWurmId(), tool, 30, false, 100);
+
+        InvocationHandler handler = crafterMod::swapOwners;
+        Method method = mock(Method.class);
+        when(method.invoke(any(), any())).then((Answer<Void>)invocation -> {
+            TradingWindow window = invocation.getArgument(0);
+            Item contractItem = window.getItems()[0];
+            ((Creature)ReflectionUtil.getPrivateField(window, TradingWindow.class.getDeclaredField("watcher")))
+                    .getInventory().insertItem(contractItem);
+            contractItem.setTradeWindow(null);
+            return null;
+        });
+        Object[] args = new Object[0];
+
+        TradingWindow window;
+
+        // Trade 1 - 1 > 2
+        window = newTradingWindow(player1, player2, contract);
+        assertNull(handler.invoke(window, method, args));
+        verify(method, times(1)).invoke(window, args);
+        assertEquals(player2.getWurmId(), crafter.getShop().getOwnerId());
+        assertDoesNotThrow(() -> workBook.iterator().hasNext());
+
+        // Trade 2 - 2 > 3
+        window = newTradingWindow(player2, player3, contract);
+        assertNull(handler.invoke(window, method, args));
+        verify(method, times(1)).invoke(window, args);
+        assertEquals(player3.getWurmId(), crafter.getShop().getOwnerId());
+        assertDoesNotThrow(() -> workBook.iterator().hasNext());
+
+        // Trade 3 - 3 > 2
+        window = newTradingWindow(player3, player2, contract);
+        assertNull(handler.invoke(window, method, args));
+        verify(method, times(1)).invoke(window, args);
+        assertEquals(player2.getWurmId(), crafter.getShop().getOwnerId());
+        assertDoesNotThrow(() -> workBook.iterator().hasNext());
+
+        assertEquals(1, WorkBook.getWorkBookFromWorker(crafter).todo());
+        assertTrue(crafter.getInventory().getItems().contains(tool));
+    }
 }

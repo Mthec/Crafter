@@ -990,4 +990,23 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
         assertEquals(1, workBook.todo());
     }
+
+    @Test
+    void testRemovalOfBadJobsDoesNotCauseConcurrentException() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        crafter = factory.createNewCrafter(owner, crafterType, 50);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.addJob(player.getWurmId(), factory.createNewItem(), 30, false, 100);
+        workBook.addJob(player.getWurmId(), factory.createNewItem(), 30, false, 100);
+        workBook.addJob(player.getWurmId(), factory.createNewItem(), 30, false, 100);
+        assert workBook.todo() == 3;
+        ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class, Creature.class),
+                workBook.iterator().next(), crafter);
+        Items.destroyItem(tool.getWurmId());
+
+        makeNewCrafterTrade();
+        makeHandler();
+
+        assertDoesNotThrow(() -> handler.addItemsToTrade());
+        assertEquals(2, workBook.todo());
+    }
 }

@@ -6,23 +6,13 @@ plugins {
 }
 
 group = 'mod.wurmunlimited.npcs.crafter'
-version = '0.3.18'
+version = '0.3.19'
 
 sourceCompatibility = 1.8
 def $shortName = 'crafter'
 
 repositories {
     mavenCentral()
-}
-
-idea {
-    module {
-        iml {
-            beforeMerged {
-                module -> module.dependences.add(configurations.provided)
-            }
-        }
-    }
 }
 
 configurations {

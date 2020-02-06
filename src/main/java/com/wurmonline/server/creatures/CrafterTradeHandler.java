@@ -107,6 +107,7 @@ public class CrafterTradeHandler extends TradeHandler {
 
         TradingWindow offerWindow = trade.getTradingWindow(1);
 
+        List<Job> toRemove = new ArrayList<>();
         if (workBook.done() > 0) {
             for (Job job : workBook) {
                 if (job.isDonation())
@@ -114,13 +115,17 @@ public class CrafterTradeHandler extends TradeHandler {
                 // Check for bad entries.
                 if (job.isDone() && !creature.getInventory().getItems().contains(job.getItem())) {
                     logger.warning("Item for completed Job could not be found, removing from workbook.");
-                    workBook.removeJob(job.getItem());
+                    toRemove.add(job);
                     continue;
                 }
                 if (job.isDone() && job.isCustomer(trade.creatureOne)) {
                     offerWindow.addItem(job.getItem());
                 }
             }
+        }
+
+        for (Job job : toRemove) {
+            workBook.removeJob(job.getItem());
         }
 
         if (ownerTrade && CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.for_owner) {

@@ -3,17 +3,22 @@ package mod.wurmunlimited.npcs;
 
 import com.wurmonline.server.Message;
 import com.wurmonline.server.Server;
-import com.wurmonline.server.behaviours.*;
-import com.wurmonline.server.creatures.*;
+import com.wurmonline.server.behaviours.Action;
+import com.wurmonline.server.behaviours.NoSuchActionException;
+import com.wurmonline.server.creatures.CrafterTradeHandler;
+import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.ai.CreatureAI;
 import com.wurmonline.server.creatures.ai.CreatureAIData;
 import com.wurmonline.server.creatures.ai.PathTile;
-import com.wurmonline.server.items.*;
+import com.wurmonline.server.items.Item;
 import com.wurmonline.server.players.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 public class CrafterAI extends CreatureAI {
@@ -51,7 +56,9 @@ public class CrafterAI extends CreatureAI {
                 Action action = c.getCurrentAction();
                 CrafterMod.getCrafterLogger(c).info(action.getActionString());
             } catch (NoSuchActionException ignored) {
-                ((CrafterAIData)c.getCreatureAIData()).sendNextAction();
+                CrafterAIData data = ((CrafterAIData)c.getCreatureAIData());
+                if (data.canAction)
+                    data.sendNextAction();
             }
         }
         return isDead;

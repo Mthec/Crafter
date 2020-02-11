@@ -13,12 +13,14 @@ import com.wurmonline.shared.constants.ItemMaterials;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.internal.util.reflection.FieldSetter;
 
 import java.util.*;
 
 import static mod.wurmunlimited.Assert.didNotReceiveMessageContaining;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class CrafterAITests extends CrafterTest {
 
@@ -404,5 +406,42 @@ class CrafterAITests extends CrafterTest {
 
         data.sendNextAction();
         assertFalse(WurmMail.allMail.stream().anyMatch(m -> m.itemId == tool.getWurmId()));
+    }
+
+    // Not a great test.
+    @Test
+    void testNullWorkBookWhenSendNextAction() throws NoSuchFieldException, IllegalAccessException {
+        ReflectionUtil.setPrivateField(data, CrafterAIData.class.getDeclaredField("workbook"), null);
+        assertDoesNotThrow(() -> data.sendNextAction());
+    }
+
+    @Test
+    void testCrafterNotPolledIfCanActionIsFalse() throws NoSuchFieldException, IllegalAccessException {
+        CrafterAIData aiData = mock(CrafterAIData.class);
+        FieldSetter.setField(aiData, CrafterAIData.class.getDeclaredField("canAction"), false);
+        ReflectionUtil.setPrivateField(crafter, com.wurmonline.server.creatures.Creature.class.getDeclaredField("aiData"), aiData);
+
+        crafter.getTemplate().getCreatureAI().pollCreature(crafter, 0);
+        verify(aiData, never()).sendNextAction();
+    }
+
+    @Test
+    void testCrafterPolledIfCanActionIsTrue() throws NoSuchFieldException, IllegalAccessException {
+        CrafterAIData aiData = mock(CrafterAIData.class);
+        FieldSetter.setField(aiData, CrafterAIData.class.getDeclaredField("canAction"), true);
+        ReflectionUtil.setPrivateField(crafter, Creature.class.getDeclaredField("aiData"), aiData);
+
+        crafter.getTemplate().getCreatureAI().pollCreature(crafter, 0);
+        verify(aiData, times(1)).sendNextAction();
+    }
+
+    @Test
+    void testCanActionSetToFalseIfNoWorkBook() throws NoSuchFieldException, IllegalAccessException {
+        Items.destroyItem(workBook.workBookItem.getWurmId());
+        CrafterAIData aiData = mock(CrafterAIData.class);
+        ReflectionUtil.setPrivateField(crafter, Creature.class.getDeclaredField("aiData"), aiData);
+
+        crafter.getTemplate().getCreatureAI().pollCreature(crafter, 0);
+        assertFalse(aiData.canAction);
     }
 }

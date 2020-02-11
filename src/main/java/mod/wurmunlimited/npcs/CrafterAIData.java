@@ -45,6 +45,8 @@ public class CrafterAIData extends CreatureAIData {
     // Nearby equipment
     private Item forge;
 
+    public boolean canAction = true;
+
     @Override
     public void setCreature(@NotNull Creature crafter) {
         super.setCreature(crafter);
@@ -255,6 +257,29 @@ public class CrafterAIData extends CreatureAIData {
     }
 
     void sendNextAction() {
+        if (!canAction)
+            return;
+        if (workbook == null) {
+            // Attempt to find WorkBook, in case it's just an early call.
+            for (Item item : crafter.getInventory().getItems()) {
+                if (WorkBook.isWorkBook(item)) {
+                    try {
+                        workbook = new WorkBook(item);
+                    } catch (WorkBook.InvalidWorkBookInscription e) {
+                        logger.warning("WorkBook (" + item.getWurmId() + ") had an invalid inscription.  No longer sending actions.");
+                        e.printStackTrace();
+                        canAction = false;
+                        return;
+                    }
+                }
+            }
+
+            if (workbook == null) {
+                logger.warning("WorkBook not found on crafter (" + crafter.getWurmId() + ").  No longer sending actions.");
+                canAction = false;
+                return;
+            }
+        }
         if (workbook.todo() == 0 && workbook.donationsTodo() == 0) {
             if (workbook.isForgeAssigned() && forge.isOnFire()) {
                 forge.setTemperature((short)0);

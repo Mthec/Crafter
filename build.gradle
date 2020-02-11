@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'mod.wurmunlimited.npcs.crafter'
-version = '0.3.19'
+version = '0.3.20'
 
 sourceCompatibility = 1.8
 def $shortName = 'crafter'

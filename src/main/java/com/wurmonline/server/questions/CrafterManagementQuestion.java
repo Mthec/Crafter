@@ -52,6 +52,16 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
         if (wasSelected("skills")) {
             new CrafterModifySkillsQuestion(getResponder(), crafter).sendQuestion();
         }
+
+        if (wasSelected("restrict")) {
+            try {
+                new CrafterMaterialRestrictionQuestion(getResponder(), crafter).sendQuestion();
+            } catch (WorkBook.NoWorkBookOnWorker e) {
+                logger.warning("Crafter workbook was missing.");
+                e.printStackTrace();
+                getResponder().getCommunicator().sendNormalServerMessage(crafter.getName() + " fumbles about and cannot find their workbook.");
+            }
+        }
     }
 
     @Override
@@ -79,7 +89,7 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                                          b -> b.harray(b2 -> b2.label("Price Modifier: ").entry("price_modifier", Float.toString(shop.getPriceModifier()), 4)))
                                  .newLine()
                                  .harray(b -> b.button("Send").spacer().button("dismiss", "Dismiss").confirm("You are about to dismiss " + crafter.getName() + ".", "Do you really want to do that?")
-                                    .spacer().button("skills", "Modify skills"))
+                                    .spacer().button("skills", "Modify skills").spacer().button("restrict", "Restrict Materials"))
                                  .build();
 
             getResponder().getCommunicator().sendBml(300, 400, false, true, bml, 200, 200, 200, title);

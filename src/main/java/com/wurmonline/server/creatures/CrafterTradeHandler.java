@@ -10,6 +10,7 @@ import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.shared.util.MaterialUtilities;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.Job;
 import mod.wurmunlimited.npcs.WorkBook;
@@ -223,8 +224,15 @@ public class CrafterTradeHandler extends TradeHandler {
     private void suckInterestingItems() {
         TradingWindow offerWindow = trade.getTradingWindow(2);
         TradingWindow myWindow = trade.getCreatureTwoRequestWindow();
+        boolean hasRestrictedMaterial = false;
         for (Item item : offerWindow.getItems()) {
-            if (item.isCoin() || (donating && workBook.getCrafterType().hasSkillToImprove(item)) || (item.getQualityLevel() < getTargetQL(item) && !item.isNoImprove() && item.isRepairable() && !item.isNewbieItem() && !item.isChallengeNewbieItem())) {
+            boolean restrictedMaterial = workBook.isRestrictedMaterial(item.getMaterial());
+            if (restrictedMaterial)
+                hasRestrictedMaterial = true;
+
+            if (item.isCoin() ||
+                    (donating && workBook.getCrafterType().hasSkillToImprove(item) && !restrictedMaterial)
+                    || (item.getQualityLevel() < getTargetQL(item) && !restrictedMaterial && !item.isNoImprove() && item.isRepairable() && !item.isNewbieItem() && !item.isChallengeNewbieItem())) {
                 offerWindow.removeItem(item);
                 myWindow.addItem(item);
             } else if (item.isWeaponBow() && targetQLs.keySet().contains(SkillList.GROUP_BOWYERY)) {
@@ -235,6 +243,25 @@ public class CrafterTradeHandler extends TradeHandler {
         int length = offerWindow.getItems().length;
         if (length > 0) {
             trade.creatureOne.getCommunicator().sendNormalServerMessage(creature.getName() + " says 'I cannot improve " + (length == 1 ? "that item.'" : "those items.'"));
+        }
+        if (hasRestrictedMaterial) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(creature.getName()).append(" says 'I can only improve ");
+
+            List<Byte> materials = workBook.getRestrictedMaterials();
+            byte penultimate = materials.get(materials.size() - 2);
+            byte last = materials.get(materials.size() - 1);
+
+            for (byte material : materials) {
+                sb.append(MaterialUtilities.getMaterialString(material));
+                if (material == penultimate)
+                    sb.append(", and ");
+                else if (material == last)
+                    sb.append(" items.");
+                else
+                    sb.append(", ");
+            }
+            trade.creatureOne.getCommunicator().sendNormalServerMessage(sb.toString());
         }
     }
 

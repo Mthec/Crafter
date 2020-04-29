@@ -26,7 +26,10 @@ configurations {
 
 dependencies {
     testImplementation project(':WurmTestingHelper')
-    provided fileTree(dir: 'E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/', includes: ["modlauncher.jar", "javassist.jar", "server.jar"])
+    implementation fileTree(dir: 'E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/', includes: ["server.jar"])
+    implementation fileTree(dir: 'E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/lib/', includes: ["annotations-16.0.2.jar",
+            "annotations-2.0.1.jar", "ServerLauncher-0.43.jar", "WurmUnlimitedCommon-1.9.2.7.jar", "guava-18.0.jar", "javassist-3.23.1.jar",
+            "sqlite-jdbc-3.8.11.2.jar"])
     implementation project(':BMLBuilder')
 }
 

@@ -336,6 +336,7 @@ public class CrafterAIData extends CreatureAIData {
                     }
                     return;
                 } else if (item.isMetal()) {
+                    // TODO - Not putting lump in to heat up if new placement.
                     // TODO - Baking pottery items?
                     if (forge == null)
                         continue;

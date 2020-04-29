@@ -78,6 +78,7 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
             priceModifier = CrafterMod.getMinimumPriceModifier();
         }
 
+        // TODO - Not working for some reason.
         Set<Integer> skills = new HashSet<>();
         if (wasSelected("all_metal"))
             Collections.addAll(skills, CrafterType.allMetal);

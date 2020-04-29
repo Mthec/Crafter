@@ -31,6 +31,7 @@ public class WorkBook implements Iterable<Job> {
     private float skillCap;
     private final List<Job> jobs = new ArrayList<>();
     private final Map<Item, Job> jobItems = new HashMap<>();
+    private final List<Byte> restrictedMaterials = new ArrayList<>();
 
     public static class NoWorkBookOnWorker extends WurmServerException {
         NoWorkBookOnWorker(String message) {
@@ -76,7 +77,7 @@ public class WorkBook implements Iterable<Job> {
         } catch (NumberFormatException e) {
             logger.warning("Invalid skill cap value in workbook (" + header[0] + ") - Setting server cap.");
             skillCap = CrafterMod.getSkillCap();
-            header[1] = Float.toString(skillCap);
+            header[0] = Float.toString(skillCap);
             rewriteHeader = true;
         }
 
@@ -102,10 +103,24 @@ public class WorkBook implements Iterable<Job> {
             contentsInscription.setInscription(Joiner.on("\n").join(header));
         }
 
+        boolean hasRestricted = false;
+        if (header[2].startsWith("restrict")) {
+            hasRestricted = true;
+            for (String material : header[2].split(",")) {
+                if (!material.equals("restrict")) {
+                    try {
+                        restrictedMaterials.add(Byte.parseByte(material));
+                    } catch (NumberFormatException e) {
+                        // TODO
+                    }
+                }
+            }
+        }
+
         try {
             List<Integer> skills = new ArrayList<>();
 
-            int firstIndex = 2;
+            int firstIndex = hasRestricted ? 3 : 2;
             while (firstIndex < header.length) {
                 skills.add(Integer.parseInt(header[firstIndex]));
                 ++firstIndex;
@@ -300,7 +315,14 @@ public class WorkBook implements Iterable<Job> {
             } else {
                 contentsPage = pages.next();
             }
-            contentsPage.setInscription(Joiner.on("\n").join(skillCap, (forge == null ? "-10" : forge.getWurmId()), (Object[])crafterType.getAllTypes()), "");
+
+            StringBuilder contentsSb = new StringBuilder();
+            contentsSb.append(skillCap).append("\n");
+            contentsSb.append((forge == null ? "-10" : forge.getWurmId())).append("\n");
+            if (restrictedMaterials.size() > 0)
+                contentsSb.append("restrict").append(Joiner.on(",").join(restrictedMaterials)).append("\n");
+            contentsSb.append(Joiner.on("\n").join(crafterType.getAllTypes()));
+            contentsPage.setInscription(contentsSb.toString(), "");
 
             int pageNumber = 1;
             int length = 0;
@@ -429,5 +451,19 @@ public class WorkBook implements Iterable<Job> {
             }
         }
         return false;
+    }
+
+    public List<Byte> getRestrictedMaterials() {
+        return new ArrayList<>(restrictedMaterials);
+    }
+
+    public void updateRestrictedMaterials(List<Byte> materials) throws WorkBookFull {
+        restrictedMaterials.clear();
+        restrictedMaterials.addAll(materials);
+        saveWorkBook();
+    }
+
+    public boolean isRestrictedMaterial(byte b) {
+        return restrictedMaterials.size() != 0 && restrictedMaterials.contains(b);
     }
 }

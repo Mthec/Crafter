@@ -56,6 +56,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private static boolean mailCommand = false;
     private static OutputOption output = OutputOption.none;
     private static int removeDonationsAt = Integer.MIN_VALUE;
+    private static boolean singleSkill = false;
     private static final Map<Creature, Logger> crafterLoggers = new HashMap<>();
     private Properties properties;
 
@@ -115,6 +116,10 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         if (removeDonationsAt == Integer.MIN_VALUE)
             return false;
         return currentSkill + removeDonationsAt <= itemQL;
+    }
+
+    public static boolean useSingleSkill() {
+        return singleSkill;
     }
 
     private OutputOption parseOutputOption(String value) {
@@ -203,6 +208,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         minimumPriceModifier = getOption("minimum_price_modifier", minimumPriceModifier);
         mailCommand = getOption("mail_command", mailCommand);
         removeDonationsAt = getOption("remove_donations_at", removeDonationsAt);
+        singleSkill = getOption("single_crafter_skill", singleSkill);
 
         skillPrices.put(SkillList.SMITHING_BLACKSMITHING, getOption("blacksmithing", 1.0f));
         skillPrices.put(SkillList.GROUP_SMITHING_WEAPONSMITHING, getOption("weaponsmithing", 1.0f));

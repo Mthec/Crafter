@@ -13,12 +13,33 @@ public class CrafterType {
     public static final Integer[] allMetal = new Integer[] { SkillList.SMITHING_BLACKSMITHING, SkillList.GROUP_SMITHING_WEAPONSMITHING, SkillList.SMITHING_GOLDSMITHING, SkillList.SMITHING_ARMOUR_CHAIN, SkillList.SMITHING_ARMOUR_PLATE, SkillList.SMITHING_SHIELDS };
     public static final Integer[] allWood = new Integer[] { SkillList.CARPENTRY, SkillList.CARPENTRY_FINE, SkillList.GROUP_FLETCHING, SkillList.GROUP_BOWYERY };
     public static final Integer[] allArmour = new Integer[] { SkillList.SMITHING_ARMOUR_CHAIN, SkillList.SMITHING_ARMOUR_PLATE, SkillList.LEATHERWORKING, SkillList.CLOTHTAILORING };
+    public static final Integer[] allSkills = new Integer[] {
+            SkillList.SMITHING_BLACKSMITHING,
+            SkillList.GROUP_SMITHING_WEAPONSMITHING,
+            SkillList.SMITHING_GOLDSMITHING,
+            SkillList.SMITHING_ARMOUR_CHAIN,
+            SkillList.SMITHING_ARMOUR_PLATE,
+            SkillList.CARPENTRY,
+            SkillList.CARPENTRY_FINE,
+            SkillList.GROUP_FLETCHING,
+            SkillList.GROUP_BOWYERY,
+            SkillList.LEATHERWORKING,
+            SkillList.CLOTHTAILORING,
+            SkillList.STONECUTTING,
+            SkillList.SMITHING_SHIELDS,
+            SkillList.POTTERY
+    };
 
     private final Set<Integer> skills;
 
     public CrafterType(Integer... skills) {
         this.skills = new HashSet<>();
-        Collections.addAll(this.skills, skills);
+        if (CrafterMod.useSingleSkill()) {
+            if (skills.length >= 1)
+                this.skills.add(skills[0]);
+        } else {
+            Collections.addAll(this.skills, skills);
+        }
     }
 
     public boolean hasSkillToImprove(Item item) {

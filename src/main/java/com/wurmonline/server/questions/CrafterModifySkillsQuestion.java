@@ -4,6 +4,9 @@ import com.wurmonline.server.FailedException;
 import com.wurmonline.server.Items;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.NoSuchTemplateException;
+import com.wurmonline.server.questions.skills.MultipleSkillsBML;
+import com.wurmonline.server.questions.skills.SingleSkillBML;
+import com.wurmonline.server.questions.skills.SkillsBML;
 import com.wurmonline.server.skills.Skill;
 import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.CrafterMod;
@@ -13,14 +16,14 @@ import mod.wurmunlimited.npcs.WorkBook;
 
 import java.util.*;
 
-import static com.wurmonline.server.questions.CrafterHireQuestion.allCrafterTypes;
-
 public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
     private final Creature crafter;
+    private final SkillsBML skillsBML;
 
     CrafterModifySkillsQuestion(Creature responder, Creature crafter) {
         super(responder, "Modify Skill set", "", QuestionTypes.MANAGETRADER, crafter.getWurmId());
         this.crafter = crafter;
+        skillsBML = CrafterMod.useSingleSkill() ? new SingleSkillBML() : new MultipleSkillsBML();
     }
 
     @Override
@@ -43,14 +46,8 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
         if (wasSelected("all_armour"))
             Collections.addAll(skills, CrafterType.allArmour);
 
-        for (String val : allCrafterTypes) {
-            try {
-                if (wasSelected(val))
-                    skills.add(Integer.parseInt(val));
-            } catch (NumberFormatException e) {
-                logger.info("Invalid crafter type (" + answers.getProperty(val) + ") received when updating skill settings.  Ignoring.");
-            }
-        }
+        skills.addAll(skillsBML.getSkills(answers));
+
         if (skills.size() == 0) {
             responder.getCommunicator().sendNormalServerMessage("You must select at least one crafter type.");
             return;
@@ -162,7 +159,7 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
             return;
         }
 
-        String bml = CrafterHireQuestion.addSkillsBML(builder, crafterType, workBook.getSkillCap())
+        String bml = skillsBML.addBML(builder, crafterType, workBook.getSkillCap())
                 .checkbox("rd", "Remove unneeded donation items")
                 .checkbox("refund", "Refund items if skill removed")
                 .newLine()

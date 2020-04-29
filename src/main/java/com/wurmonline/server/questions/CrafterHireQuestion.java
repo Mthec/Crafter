@@ -6,8 +6,9 @@ import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.Methods;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
-import com.wurmonline.server.skills.SkillList;
-import com.wurmonline.server.skills.SkillSystem;
+import com.wurmonline.server.questions.skills.MultipleSkillsBML;
+import com.wurmonline.server.questions.skills.SingleSkillBML;
+import com.wurmonline.server.questions.skills.SkillsBML;
 import com.wurmonline.server.structures.Structure;
 import com.wurmonline.server.villages.Village;
 import com.wurmonline.server.villages.VillageRole;
@@ -19,29 +20,17 @@ import mod.wurmunlimited.npcs.CrafterAIData;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterType;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
 
 public class CrafterHireQuestion extends CrafterQuestionExtension {
-    static final String[] allCrafterTypes = new String[] {
-            String.valueOf(SkillList.SMITHING_BLACKSMITHING),
-            String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING),
-            String.valueOf(SkillList.SMITHING_GOLDSMITHING),
-            String.valueOf(SkillList.SMITHING_ARMOUR_CHAIN),
-            String.valueOf(SkillList.SMITHING_ARMOUR_PLATE),
-            String.valueOf(SkillList.CARPENTRY),
-            String.valueOf(SkillList.CARPENTRY_FINE),
-            String.valueOf(SkillList.GROUP_FLETCHING),
-            String.valueOf(SkillList.GROUP_BOWYERY),
-            String.valueOf(SkillList.LEATHERWORKING),
-            String.valueOf(SkillList.CLOTHTAILORING),
-            String.valueOf(SkillList.STONECUTTING),
-            String.valueOf(SkillList.SMITHING_SHIELDS),
-            String.valueOf(SkillList.POTTERY)
-    };
+    private final SkillsBML skillsBML;
 
     public CrafterHireQuestion(Creature aResponder, long contract) {
         super(aResponder, "Hire Crafter", "", QuestionTypes.MANAGETRADER, contract);
+        skillsBML = CrafterMod.useSingleSkill() ? new SingleSkillBML() : new MultipleSkillsBML();
     }
 
     @Override
@@ -87,14 +76,8 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
         if (wasSelected("all_armour"))
             Collections.addAll(skills, CrafterType.allArmour);
 
-        for (String val : allCrafterTypes) {
-            try {
-                if (wasSelected(val))
-                    skills.add(Integer.parseInt(val));
-            } catch (NumberFormatException e) {
-                logger.info("Invalid crafter type (" + answers.getProperty(val) + ") received when hiring.  Ignoring.");
-            }
-        }
+        skills.addAll(skillsBML.getSkills(answers));
+
         if (skills.size() == 0) {
             responder.getCommunicator().sendNormalServerMessage("You must select at least one crafter type in order to hire.");
             return;
@@ -178,7 +161,7 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
                         b -> b.text("Under current laws all proceeds will go to the King."))
                 .newLine();
 
-        String bml = addSkillsBML(builder)
+        String bml = skillsBML.addBML(builder, new CrafterType(), CrafterMod.getSkillCap())
                 .If(CrafterMod.canUsePriceModifier(), b -> b.harray(b2 -> b2.label("Price Modifier: ").entry("price_modifier", "1.0", 4)))
                 .newLine()
                 .harray(b -> b.label("Crafter name:").entry("name", 20))
@@ -190,39 +173,5 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
                 .build();
 
         getResponder().getCommunicator().sendBml(500, 400, true, true, bml, 200, 200, 200, title);
-    }
-
-    private static BML addSkillsBML(BML bml) {
-        return addSkillsBML(bml, new CrafterType(), CrafterMod.getSkillCap());
-    }
-
-    static BML addSkillsBML(BML bml, CrafterType crafterType, float skillCap) {
-        return bml.text("General crafter options will override specialisations if selected.  Other specialisations are not affected.").italic()
-                 .text("General crafters:")
-                 .harray(b -> b
-                                      .checkbox("All Metal", "all_metal", crafterType.hasAllMetal())
-                                      .checkbox("All Wood", "all_wood", crafterType.hasAllWood())
-                                      .checkbox("All Armour", "all_armour", crafterType.hasAllArmour()))
-                 .text("Specialists:")
-                 .table(new String[] { "Metal", "Wood", "Misc."},
-                         Arrays.asList(
-                                 new int[] { SkillList.SMITHING_BLACKSMITHING, SkillList.CARPENTRY, SkillList.LEATHERWORKING },
-                                 new int[] { SkillList.GROUP_SMITHING_WEAPONSMITHING, SkillList.CARPENTRY_FINE, SkillList.CLOTHTAILORING },
-                                 new int[] { SkillList.SMITHING_GOLDSMITHING, SkillList.GROUP_FLETCHING, SkillList.STONECUTTING },
-                                 new int[] { SkillList.SMITHING_ARMOUR_CHAIN, SkillList.GROUP_BOWYERY, SkillList.POTTERY },
-                                 new int[] { SkillList.SMITHING_ARMOUR_PLATE, 0, 0 },
-                                 new int[] { SkillList.SMITHING_SHIELDS, 0, 0 }
-
-                         ),
-                         (row, bml1) -> bml1.forEach(Arrays.stream(row).boxed().collect(Collectors.toList()), (skill, b) -> {
-                             if (skill != 0)
-                                 return b.checkbox(Integer.toString(skill), SkillSystem.getNameFor(skill), crafterType.hasSkill(skill));
-                             return b.label(" ");
-                         }))
-                 .newLine()
-                 .If(CrafterMod.canLearn(),
-                         b -> b.harray(b2 -> b2.label("Skill Cap: ").entry("skill_cap", Float.toString(skillCap), 5).text("Max: " + CrafterMod.getSkillCap()).italic()),
-                         b -> b.harray(b2 -> b2.label("Skill Cap: ").text(Float.toString(CrafterMod.getSkillCap())))
-                 );
     }
 }

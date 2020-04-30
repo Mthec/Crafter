@@ -11,6 +11,7 @@ import com.wurmonline.server.questions.skills.MultipleSkillsBML;
 import com.wurmonline.server.questions.skills.SingleSkillBML;
 import com.wurmonline.server.skills.NoSuchSkillException;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.server.skills.SkillSystem;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.CrafterMod;
@@ -429,5 +430,14 @@ class CrafterModifySkillsQuestionTests {
         Integer[] setSkills = crafterType.getAllTypes();
         assertEquals(1, setSkills.length);
         assertEquals(skill, (int)setSkills[0]);
+    }
+
+    @Test
+    void testSingleSkillsDropdownHasFirstSkill() throws NoSuchFieldException, IllegalAccessException {
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("singleSkill"), true);
+        new CrafterModifySkillsQuestion(owner, crafter).sendQuestion();
+        String first = SkillSystem.getNameFor(CrafterType.allSkills[0]);
+
+        assertThat(owner, receivedBMLContaining(first));
     }
 }

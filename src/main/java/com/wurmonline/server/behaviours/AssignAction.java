@@ -4,19 +4,16 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.Creatures;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
-import com.wurmonline.server.items.ItemTypes;
 import com.wurmonline.server.players.Player;
-import com.wurmonline.server.structures.Structure;
-import com.wurmonline.server.zones.VolaTile;
-import com.wurmonline.server.zones.Zones;
 import mod.wurmunlimited.npcs.CrafterAI;
 import mod.wurmunlimited.npcs.CrafterAIData;
-import org.gotti.wurmunlimited.modsupport.actions.*;
+import org.gotti.wurmunlimited.modsupport.actions.ActionPerformer;
+import org.gotti.wurmunlimited.modsupport.actions.BehaviourProvider;
+import org.gotti.wurmunlimited.modsupport.actions.ModAction;
+import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 
 public class AssignAction implements ModAction, BehaviourProvider, ActionPerformer {
     private final short actionId;

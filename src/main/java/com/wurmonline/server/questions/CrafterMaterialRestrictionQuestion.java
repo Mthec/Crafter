@@ -60,6 +60,7 @@ public class CrafterMaterialRestrictionQuestion extends CrafterQuestionExtension
                              .table(new String[] { "Skill", "Remove?" }, restrictedMaterials,
                                      (row, b) -> b.label(MaterialUtilities.getMaterialString(row))
                                                   .checkbox("r" + i.getAndIncrement(), ""))
+                             .spacer()
                              .harray(b -> b.button("save", "Confirm").spacer()
                                            .button("add", "Add").spacer()
                                            .button("cancel", "Cancel"))

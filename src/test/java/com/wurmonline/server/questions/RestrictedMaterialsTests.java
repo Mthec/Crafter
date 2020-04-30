@@ -39,15 +39,21 @@ public class RestrictedMaterialsTests {
         byte material = ItemMaterials.MATERIAL_GOLD;
         int idx = 0;
         for (int x = 1; x <= ItemMaterials.MATERIAL_MAX; ++x) {
-            String str = MaterialUtilities.getMaterialString((byte)x);
-            if (!str.equals("unknown")) {
+            byte y = (byte)x;
+            String str = MaterialUtilities.getMaterialString(y);
+            if (!str.equals("unknown") && (
+                    MaterialUtilities.isMetal(y) ||
+                            MaterialUtilities.isWood(y) ||
+                            MaterialUtilities.isLeather(y) ||
+                            MaterialUtilities.isCloth(y) ||
+                            MaterialUtilities.isStone(y) ||
+                            MaterialUtilities.isClay(y))) {
                 if (x == material) {
                     break;
                 }
 
                 ++idx;
             }
-
         }
         properties.setProperty("mat", Integer.toString(idx));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
@@ -66,15 +72,21 @@ public class RestrictedMaterialsTests {
         byte material = ItemMaterials.MATERIAL_GOLD;
         int idx = 0;
         for (int x = 1; x <= ItemMaterials.MATERIAL_MAX; ++x) {
-            String str = MaterialUtilities.getMaterialString((byte)x);
-            if (!str.equals("unknown")) {
+            byte y = (byte)x;
+            String str = MaterialUtilities.getMaterialString(y);
+            if (!str.equals("unknown") && (
+                    MaterialUtilities.isMetal(y) ||
+                            MaterialUtilities.isWood(y) ||
+                            MaterialUtilities.isLeather(y) ||
+                            MaterialUtilities.isCloth(y) ||
+                            MaterialUtilities.isStone(y) ||
+                            MaterialUtilities.isClay(y))) {
                 if (x == material) {
                     break;
                 }
 
                 ++idx;
             }
-
         }
         properties.setProperty("mat", Integer.toString(idx));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
@@ -94,15 +106,21 @@ public class RestrictedMaterialsTests {
         byte material = ItemMaterials.MATERIAL_GOLD;
         int idx = 0;
         for (int x = 1; x <= ItemMaterials.MATERIAL_MAX; ++x) {
-            String str = MaterialUtilities.getMaterialString((byte)x);
-            if (!str.equals("unknown")) {
+            byte y = (byte)x;
+            String str = MaterialUtilities.getMaterialString(y);
+            if (!str.equals("unknown") && (
+                    MaterialUtilities.isMetal(y) ||
+                            MaterialUtilities.isWood(y) ||
+                            MaterialUtilities.isLeather(y) ||
+                            MaterialUtilities.isCloth(y) ||
+                            MaterialUtilities.isStone(y) ||
+                            MaterialUtilities.isClay(y))) {
                 if (x == material) {
                     break;
                 }
 
                 ++idx;
             }
-
         }
         properties.setProperty("mat", Integer.toString(idx));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);

@@ -14,13 +14,34 @@ public class CrafterAddRestrictedMaterialQuestion extends CrafterQuestionExtensi
     private final Creature crafter;
     private final WorkBook workBook;
     private final List<Byte> restrictedMaterials;
-    private final List<Byte> materials = new ArrayList<>(ItemMaterials.MATERIAL_MAX);
+    private static final List<Byte> materials = new ArrayList<>(ItemMaterials.MATERIAL_MAX);
+    private static final List<String> materialNames = new ArrayList<>(ItemMaterials.MATERIAL_MAX);
 
     CrafterAddRestrictedMaterialQuestion(Creature responder, Creature crafter, WorkBook workBook) {
         super(responder, "Add Restricted Material", "", MANAGETRADER, crafter.getWurmId());
         this.crafter = crafter;
         this.workBook = workBook;
         restrictedMaterials = workBook.getRestrictedMaterials();
+
+        if (materials.isEmpty()) {
+            for (int x = 1; x <= ItemMaterials.MATERIAL_MAX; ++x) {
+                byte y = (byte)x;
+                if (!restrictedMaterials.contains(y)) {
+                    String str = MaterialUtilities.getMaterialString(y);
+                    if (!str.equals("unknown") && (
+                                    MaterialUtilities.isMetal(y) ||
+                                    MaterialUtilities.isWood(y) ||
+                                    MaterialUtilities.isLeather(y) ||
+                                    MaterialUtilities.isCloth(y) ||
+                                    MaterialUtilities.isStone(y) ||
+                                    MaterialUtilities.isClay(y))) {
+                        materials.add(y);
+                        materialNames.add(str);
+                    }
+                }
+            }
+            materialNames.sort(String::compareTo);
+        }
     }
 
     @Override
@@ -50,21 +71,10 @@ public class CrafterAddRestrictedMaterialQuestion extends CrafterQuestionExtensi
 
     @Override
     public void sendQuestion() {
-        List<String> materialNames = new ArrayList<>(ItemMaterials.MATERIAL_MAX);
-        for (int x = 1; x <= ItemMaterials.MATERIAL_MAX; ++x) {
-            byte y = (byte)x;
-            if (!restrictedMaterials.contains(y)) {
-                String str = MaterialUtilities.getMaterialString(y);
-                if (!str.equals("unknown")) {
-                    materials.add(y);
-                    materialNames.add(str);
-                }
-            }
-        }
-
         String bml = new BMLBuilder(id)
                              .text("Choose a material to allow:")
                              .dropdown("mat", materialNames)
+                             .spacer()
                              .harray(b -> b.button("add", "Add").spacer().button("cancel", "Cancel"))
                              .build();
 

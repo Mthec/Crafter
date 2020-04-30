@@ -17,7 +17,7 @@ public class SingleSkillBML extends SkillsBML {
     public SingleSkillBML() {
         if (skills == null) {
             skills = Joiner.on(",").join((Iterable<String>)() -> new Iterator<String>() {
-                private int current = 0;
+                private int current = -1;
 
                 @Override
                 public boolean hasNext() {
@@ -49,8 +49,10 @@ public class SingleSkillBML extends SkillsBML {
             }
         }
 
+        int finalIdx = idx;
         bml = bml.text("Crafters may only have a single skill on this server.")
-                 .dropdown("skill", skills, idx)
+                 .spacer()
+                 .harray(b -> b.dropdown("skill", skills, finalIdx))
                  .newLine()
                  .If(CrafterMod.canLearn(),
                       b -> b.harray(b2 -> b2.label("Skill Cap: ").entry("skill_cap", Float.toString(skillCap), 5).text("Max: " + CrafterMod.getSkillCap()).italic()),

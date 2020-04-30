@@ -7,9 +7,12 @@ import com.wurmonline.server.items.ItemFactory;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.items.WurmMail;
 import com.wurmonline.server.players.Player;
+import com.wurmonline.server.questions.skills.MultipleSkillsBML;
+import com.wurmonline.server.questions.skills.SingleSkillBML;
 import com.wurmonline.server.skills.NoSuchSkillException;
 import com.wurmonline.server.skills.SkillList;
 import mod.wurmunlimited.CrafterObjectsFactory;
+import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterType;
 import mod.wurmunlimited.npcs.WorkBook;
@@ -50,6 +53,7 @@ class CrafterModifySkillsQuestionTests {
     void setUp() throws Exception {
         factory = new CrafterObjectsFactory();
         BehaviourDispatcher.reset();
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("singleSkill"), false);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("skillCap"), 99.99999f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 1);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("minimumPriceModifier"), 0.0000001f);
@@ -64,13 +68,35 @@ class CrafterModifySkillsQuestionTests {
 
     private Properties generateProperties(String crafterType) {
         Properties properties = new Properties();
-        properties.setProperty("all_metal", crafterType.equals("all_metal") ? "true" : "false");
-        properties.setProperty("all_wood", crafterType.equals("all_wood") ? "true" : "false");
-        properties.setProperty("all_armour", crafterType.equals("all_armour") ? "true" : "false");
-        for (String type : allCrafterTypes)
-            properties.setProperty(type, crafterType.equals(type) ? "true" : "false");
+        switch (crafterType) {
+            case "all_metal":
+                properties.setProperty("all_metal", "true");
+                break;
+            case "all_wood":
+                properties.setProperty("all_wood", "true");
+                break;
+            case "all_armour":
+                properties.setProperty("all_armour", "true");
+                break;
+        }
 
-        properties.setProperty("skill_cap", "99.9999");
+        return generateProperties(properties);
+    }
+
+    private Properties generateProperties(Integer[] skills) {
+        Properties properties = new Properties();
+        for (int skill : skills) {
+            properties.setProperty(Integer.toString(skill), "true");
+        }
+
+        return generateProperties(properties);
+    }
+
+    private Properties generateProperties(Properties properties) {
+        properties.setProperty("skill_cap", "99.9");
+        properties.setProperty("price_modifier", "1.0");
+        properties.setProperty("name", "NewCrafter");
+        properties.setProperty("gender", "male");
 
         return properties;
     }
@@ -99,10 +125,10 @@ class CrafterModifySkillsQuestionTests {
 
     @Test
     void testCrafterTypeProperlySet() throws WorkBook.NoWorkBookOnWorker {
-        for (String type : allCrafterTypes) {
-            new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties(type));
+        for (int type : CrafterType.allSkills) {
+            new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties(new Integer[] { type }));
 
-            assertEquals(new CrafterType(Integer.parseInt(type)), WorkBook.getWorkBookFromWorker(crafter).getCrafterType());
+            assertEquals(new CrafterType(type), WorkBook.getWorkBookFromWorker(crafter).getCrafterType());
         }
     }
 
@@ -201,17 +227,17 @@ class CrafterModifySkillsQuestionTests {
 
     @Test
     void testAppropriateCrafterSkillsAdded() throws NoSuchSkillException {
-        new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties(String.valueOf(SkillList.SMITHING_ARMOUR_PLATE)));
+        new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties(new Integer[] { SkillList.SMITHING_ARMOUR_PLATE }));
 
         assertEquals(CrafterMod.getStartingSkillLevel(), crafter.getSkills().getSkill(SkillList.SMITHING_ARMOUR_PLATE).getKnowledge());
     }
 
     @Test
     void testOldSkillsNotAffected() throws NoSuchSkillException {
-        new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties(String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING)));
+        new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties(new Integer[] { SkillList.GROUP_SMITHING_WEAPONSMITHING }));
         crafter.getSkills().getSkill(SkillList.GROUP_SMITHING_WEAPONSMITHING).setKnowledge(75, false);
 
-        new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties(String.valueOf(SkillList.SMITHING_ARMOUR_PLATE)));
+        new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties(new Integer[] { SkillList.SMITHING_ARMOUR_PLATE }));
 
         assertEquals(75, crafter.getSkills().getSkill(SkillList.GROUP_SMITHING_WEAPONSMITHING).getKnowledge());
         assertEquals(CrafterMod.getStartingSkillLevel(), crafter.getSkills().getSkill(SkillList.SMITHING_ARMOUR_PLATE).getKnowledge());
@@ -223,7 +249,7 @@ class CrafterModifySkillsQuestionTests {
         crafter.getSkills().getSkill(SkillList.GROUP_SMITHING_WEAPONSMITHING).setKnowledge(75, false);
 
         int skillCap = 45;
-        Properties properties = generateProperties(String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING));
+        Properties properties = generateProperties(new Integer[] { SkillList.GROUP_SMITHING_WEAPONSMITHING });
         properties.setProperty("skill_cap", Integer.toString(skillCap));
         new CrafterModifySkillsQuestion(owner, crafter).answer(properties);
 
@@ -336,5 +362,72 @@ class CrafterModifySkillsQuestionTests {
 
             assertEquals(crafterType, WorkBook.getWorkBookFromWorker(crafter).getCrafterType());
         }
+    }
+
+    @Test
+    void testMultipleSkillsBMLAdded() throws NoSuchFieldException, IllegalAccessException, WorkBook.NoWorkBookOnWorker {
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("singleSkill"), false);
+        new CrafterModifySkillsQuestion(owner, crafter).sendQuestion();
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        String bml = new MultipleSkillsBML().addBML(new BMLBuilder(0), workBook.getCrafterType(), workBook.getSkillCap()).build();
+        bml = bml.replaceAll("border\\{center\\{text\\{type=\"bold\";text=\"\"}};null;scroll\\{vertical=\"true\";horizontal=\"false\";varray\\{rescale=\"true\";passthrough\\{id=\"id\";text=\"0\"}", "");
+        bml = bml.replaceAll("}}};null;null;}", "");
+
+        assertThat(owner, receivedBMLContaining(bml));
+    }
+
+    @Test
+    void testSingleSkillsBMLAdded() throws NoSuchFieldException, IllegalAccessException, WorkBook.NoWorkBookOnWorker {
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("singleSkill"), true);
+        new CrafterModifySkillsQuestion(owner, crafter).sendQuestion();
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        String bml = new SingleSkillBML().addBML(new BMLBuilder(0), workBook.getCrafterType(), workBook.getSkillCap()).build();
+        bml = bml.replaceAll("border\\{center\\{text\\{type=\"bold\";text=\"\"}};null;scroll\\{vertical=\"true\";horizontal=\"false\";varray\\{rescale=\"true\";passthrough\\{id=\"id\";text=\"0\"}", "");
+        bml = bml.replaceAll("}}};null;null;}", "");
+
+        assertThat(owner, receivedBMLContaining(bml));
+    }
+
+    private void createCrafterWithSkillsMultipleAndSingle(int skill, Integer[] skills) {
+        Properties properties = generateProperties(skills);
+
+        int idx = 0;
+        for (int i = 0; i < CrafterType.allSkills.length; ++i) {
+            if (CrafterType.allSkills[i] == skill) {
+                idx = i;
+                break;
+            }
+        }
+        assert idx != 0;
+
+        properties.setProperty("skill", Integer.toString(idx));
+
+        new CrafterModifySkillsQuestion(owner, crafter).answer(properties);
+    }
+
+    @Test
+    void testMultipleSkillsSetProperly() throws WorkBook.NoWorkBookOnWorker, NoSuchFieldException, IllegalAccessException {
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("singleSkill"), false);
+        int skill = SkillList.SMITHING_GOLDSMITHING;
+        Integer[] skills = new Integer[] { SkillList.CARPENTRY, SkillList.CARPENTRY_FINE };
+        createCrafterWithSkillsMultipleAndSingle(skill, skills);
+
+        CrafterType crafterType = WorkBook.getWorkBookFromWorker(crafter).getCrafterType();
+        Integer[] setSkills = crafterType.getAllTypes();
+        Arrays.sort(setSkills);
+        assertArrayEquals(skills, setSkills);
+    }
+
+    @Test
+    void testSingleSkillsSetProperly() throws WorkBook.NoWorkBookOnWorker, NoSuchFieldException, IllegalAccessException {
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("singleSkill"), true);
+        int skill = SkillList.SMITHING_GOLDSMITHING;
+        Integer[] skills = new Integer[] { SkillList.CARPENTRY, SkillList.CARPENTRY_FINE };
+        createCrafterWithSkillsMultipleAndSingle(skill, skills);
+
+        CrafterType crafterType = WorkBook.getWorkBookFromWorker(crafter).getCrafterType();
+        Integer[] setSkills = crafterType.getAllTypes();
+        assertEquals(1, setSkills.length);
+        assertEquals(skill, (int)setSkills[0]);
     }
 }

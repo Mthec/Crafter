@@ -249,15 +249,17 @@ public class CrafterTradeHandler extends TradeHandler {
             sb.append(creature.getName()).append(" says 'I can only improve ");
 
             List<Byte> materials = workBook.getRestrictedMaterials();
-            byte penultimate = materials.get(materials.size() - 2);
+            byte penultimate = -1;
+            if (materials.size() > 1)
+                penultimate = materials.get(materials.size() - 2);
             byte last = materials.get(materials.size() - 1);
 
             for (byte material : materials) {
                 sb.append(MaterialUtilities.getMaterialString(material));
-                if (material == penultimate)
+                if (material == last)
+                    sb.append(" items.'");
+                else if (material == penultimate)
                     sb.append(", and ");
-                else if (material == last)
-                    sb.append(" items.");
                 else
                     sb.append(", ");
             }
@@ -377,14 +379,15 @@ public class CrafterTradeHandler extends TradeHandler {
                 trade.setOrderTotal(cost);
                 trade.setSatisfied(creature, true, trade.getCurrentCounter());
                 balanced = true;
-            } else if (donating) {
+            } else {
                 for (Item item : playerWindow.getItems()) {
                     if (item.isCoin()) {
                         playerWindow.removeItem(item);
                         trade.getTradingWindow(2).addItem(item);
                     }
                 }
-                player.getCommunicator().sendSafeServerMessage(creature.getName() + " says 'If you wish to donate these items, I'll be happy to take them to improve my skills.'");
+                if (trade.getTradingWindow(4).getItems().length > 0)
+                    player.getCommunicator().sendSafeServerMessage(creature.getName() + " says 'If you wish to donate these items, I'll be happy to take them to improve my skills.'");
                 trade.setSatisfied(creature, true, trade.getCurrentCounter());
                 balanced = true;
             }

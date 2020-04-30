@@ -17,6 +17,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static mod.wurmunlimited.Assert.bmlEqual;
 import static mod.wurmunlimited.Assert.receivedMessageContaining;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -208,5 +209,25 @@ class CrafterManagementQuestionTests {
         properties.setProperty("dismiss", "true");
         new CrafterManagementQuestion(owner, crafter).answer(properties);
         assertFalse(CrafterAI.assignedForges.containsKey(crafter));
+    }
+
+    @Test
+    void testModifySkillsQuestionCreated() {
+        Properties properties = new Properties();
+        properties.setProperty("skills", "true");
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+        new CrafterModifySkillsQuestion(owner, crafter).sendQuestion();
+
+        assertThat(owner, bmlEqual());
+    }
+
+    @Test
+    void testRestrictedMaterialsQuestionCreated() throws WorkBook.NoWorkBookOnWorker {
+        Properties properties = new Properties();
+        properties.setProperty("restrict", "true");
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+        new CrafterMaterialRestrictionQuestion(owner, crafter).sendQuestion();
+
+        assertThat(owner, bmlEqual());
     }
 }

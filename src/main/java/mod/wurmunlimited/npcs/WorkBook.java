@@ -111,7 +111,7 @@ public class WorkBook implements Iterable<Job> {
                     try {
                         restrictedMaterials.add(Byte.parseByte(material));
                     } catch (NumberFormatException e) {
-                        // TODO
+                        logger.warning("Invalid restricted material in workbook (" + material + ") - Ignoring.");
                     }
                 }
             }
@@ -464,6 +464,6 @@ public class WorkBook implements Iterable<Job> {
     }
 
     public boolean isRestrictedMaterial(byte b) {
-        return restrictedMaterials.size() != 0 && restrictedMaterials.contains(b);
+        return restrictedMaterials.size() != 0 && !restrictedMaterials.contains(b);
     }
 }

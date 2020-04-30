@@ -28,7 +28,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CrafterTradeHandlerTests extends CrafterTradingTest {
-
     private static final Pattern priceMessageCost = Pattern.compile("need ([\\d\\s\\w,]+) more");
     private static final Pattern priceDenominations = Pattern.compile("([\\d]+)([\\w])");
 
@@ -316,6 +315,91 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         assertThat(trade.getCreatureOneRequestWindow(), hasMailOption());
         assertEquals(handler.getTraderBuyPriceForItem(pickaxe) + CrafterMod.mailPrice(),
                 getIronsFromString(factory.getCommunicator(player).getLastMessage()));
+    }
+
+    @Test
+    void testRestrictedItemMaterials() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook.getWorkBookFromWorker(crafter).updateRestrictedMaterials(Collections.singletonList(ItemMaterials.MATERIAL_STEEL));
+
+        makeNewCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+
+        Item rake = player.getInventory().getFirstContainedItem();
+        rake.setMaterial(ItemMaterials.MATERIAL_STEEL);
+        trade.getTradingWindow(2).addItem(rake);
+        selectOption("Improve");
+        handler.balance();
+
+        assertEquals(1, trade.getTradingWindow(4).getItems().length);
+
+        rake.setMaterial(ItemMaterials.MATERIAL_IRON);
+        trade.getTradingWindow(4).removeItem(rake);
+        trade.getTradingWindow(2).addItem(rake);
+        setNotBalanced();
+        handler.balance();
+
+        assertEquals(0, trade.getTradingWindow(4).getItems().length);
+    }
+
+    @Test
+    void testDonateRestrictedItemMaterials() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook.getWorkBookFromWorker(crafter).updateRestrictedMaterials(Collections.singletonList(ItemMaterials.MATERIAL_STEEL));
+
+        makeNewCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+
+        Item rake = player.getInventory().getFirstContainedItem();
+        rake.setMaterial(ItemMaterials.MATERIAL_STEEL);
+        trade.getTradingWindow(2).addItem(rake);
+        selectOption("Donate");
+        handler.balance();
+
+        assertEquals(1, trade.getTradingWindow(4).getItems().length);
+
+        rake.setMaterial(ItemMaterials.MATERIAL_IRON);
+        trade.getTradingWindow(4).removeItem(rake);
+        trade.getTradingWindow(2).addItem(rake);
+        setNotBalanced();
+        handler.balance();
+
+        assertEquals(0, trade.getTradingWindow(4).getItems().length);
+    }
+
+    @Test
+    void testRestrictedItemsMessage() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        makeNewCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+        selectOption("Improve");
+        Item rake = player.getInventory().getFirstContainedItem();
+        rake.setMaterial(ItemMaterials.MATERIAL_SERYLL);
+        trade.getTradingWindow(2).addItem(rake);
+
+        workBook.updateRestrictedMaterials(Collections.singletonList(ItemMaterials.MATERIAL_STEEL));
+        handler.balance();
+        assertThat(player, receivedMessageContaining("I can only improve steel items."));
+
+        workBook.updateRestrictedMaterials(Arrays.asList(ItemMaterials.MATERIAL_STEEL, ItemMaterials.MATERIAL_BRONZE));
+        rake.setMaterial(ItemMaterials.MATERIAL_SERYLL);
+        trade.getTradingWindow(4).removeItem(rake);
+        trade.getTradingWindow(2).addItem(rake);
+        setNotBalanced();
+        handler.balance();
+        assertThat(player, receivedMessageContaining("I can only improve steel, and bronze items."));
+
+        workBook.updateRestrictedMaterials(Arrays.asList(ItemMaterials.MATERIAL_STEEL, ItemMaterials.MATERIAL_BRONZE, ItemMaterials.MATERIAL_IRON));
+        rake.setMaterial(ItemMaterials.MATERIAL_SERYLL);
+        trade.getTradingWindow(4).removeItem(rake);
+        trade.getTradingWindow(2).addItem(rake);
+        setNotBalanced();
+        handler.balance();
+        assertThat(player, receivedMessageContaining("I can only improve steel, bronze, and iron items."));
     }
 
     // Trade finalised

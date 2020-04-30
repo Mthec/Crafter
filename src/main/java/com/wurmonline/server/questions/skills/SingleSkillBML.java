@@ -3,6 +3,7 @@ package com.wurmonline.server.questions.skills;
 import com.google.common.base.Joiner;
 import com.wurmonline.server.skills.SkillSystem;
 import mod.wurmunlimited.bml.BML;
+import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterType;
 
 import java.util.Collection;
@@ -20,7 +21,7 @@ public class SingleSkillBML extends SkillsBML {
 
                 @Override
                 public boolean hasNext() {
-                    return current < CrafterType.allSkills.length;
+                    return current < CrafterType.allSkills.length - 1;
                 }
 
                 @Override
@@ -34,18 +35,28 @@ public class SingleSkillBML extends SkillsBML {
     @Override
     public BML addBML(BML bml, CrafterType crafterType, float skillCap) {
         int idx = 0;
-        // TODO - ArrayOutOfBoundsException
-        int singleSkill = crafterType.getAllTypes()[0];
+        int singleSkill;
+        if (crafterType.getAllTypes().length == 0)
+            singleSkill = -10;
+        else
+            singleSkill = crafterType.getAllTypes()[0];
 
-        for (int i = 0; i <= CrafterType.allSkills.length; ++i) {
+
+        for (int i = 0; i < CrafterType.allSkills.length; ++i) {
             if (CrafterType.allSkills[i] == singleSkill) {
                 idx = i;
                 break;
             }
         }
 
-        return bml.text("Crafters may only have a single skill on this server.")
-                         .dropdown("skill", skills, idx);
+        bml = bml.text("Crafters may only have a single skill on this server.")
+                 .dropdown("skill", skills, idx)
+                 .newLine()
+                 .If(CrafterMod.canLearn(),
+                      b -> b.harray(b2 -> b2.label("Skill Cap: ").entry("skill_cap", Float.toString(skillCap), 5).text("Max: " + CrafterMod.getSkillCap()).italic()),
+                      b -> b.harray(b2 -> b2.label("Skill Cap: ").text(Float.toString(CrafterMod.getSkillCap()))));
+
+        return bml;
     }
 
     @Override
@@ -54,7 +65,7 @@ public class SingleSkillBML extends SkillsBML {
             int idx = Integer.parseInt(properties.getProperty("skill"));
             return Collections.singletonList(CrafterType.allSkills[idx]);
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-            logger.info("Invalid crafter type index (" + properties.getProperty(properties.getProperty("skill")) + ") received when updating skill settings.");
+            logger.info("Invalid crafter type index (" + properties.getProperty("skill") + ") received when updating skill settings.");
             return Collections.emptyList();
         }
     }

@@ -25,6 +25,7 @@ public class CrafterAddRestrictedMaterialQuestion extends CrafterQuestionExtensi
 
     @Override
     public void answer(Properties properties) {
+        setAnswer(properties);
         try {
             if (wasSelected("add")) {
                 int idx = Integer.parseInt(properties.getProperty("mat"));

@@ -9,6 +9,7 @@ import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.items.NoSuchTemplateException;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -624,6 +625,61 @@ class WorkBookTests {
         for (Job job : workBook) {
             assertEquals(sortedQls[idx], job.item.getQualityLevel());
             ++idx;
+        }
+    }
+
+    @Test
+    void testLoadWorkBookWithRestrictedMaterials() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+
+        assert workBook.getRestrictedMaterials().size() == 0;
+
+        workBook.updateRestrictedMaterials(Collections.singletonList(ItemMaterials.MATERIAL_IRON));
+
+        WorkBook workBook2 = WorkBook.getWorkBookFromWorker(crafter);
+        List<Byte> restricted = workBook2.getRestrictedMaterials();
+        assertEquals(1, restricted.size());
+        assertEquals(ItemMaterials.MATERIAL_IRON, (byte)restricted.get(0));
+    }
+
+    @Test
+    void testUpdateRestrictedMaterials() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.updateRestrictedMaterials(Collections.singletonList(ItemMaterials.MATERIAL_IRON));
+
+        WorkBook workBook2 = WorkBook.getWorkBookFromWorker(crafter);
+        workBook2.updateRestrictedMaterials(Collections.singletonList(ItemMaterials.MATERIAL_GOLD));
+
+        WorkBook workBook3 = WorkBook.getWorkBookFromWorker(crafter);
+        List<Byte> restricted = workBook3.getRestrictedMaterials();
+        assertEquals(1, restricted.size());
+        assertEquals(ItemMaterials.MATERIAL_GOLD, (byte)restricted.get(0));
+    }
+
+    @Test
+    void testIsRestrictedMaterialWhenNoneRestricted() throws WorkBook.NoWorkBookOnWorker {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+
+        for (int x = 1; x <= ItemMaterials.MATERIAL_MAX; ++x) {
+            assertFalse(workBook.isRestrictedMaterial((byte)x));
+        }
+    }
+
+    @Test
+    void testIsRestrictedMaterial() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        byte notRestricted = ItemMaterials.MATERIAL_ADAMANTINE;
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.updateRestrictedMaterials(Collections.singletonList(notRestricted));
+
+        for (int x = 1; x <= ItemMaterials.MATERIAL_MAX; ++x) {
+            if ((byte)x == notRestricted)
+                assertFalse(workBook.isRestrictedMaterial((byte)x));
+            else
+                assertTrue(workBook.isRestrictedMaterial((byte)x));
         }
     }
 }

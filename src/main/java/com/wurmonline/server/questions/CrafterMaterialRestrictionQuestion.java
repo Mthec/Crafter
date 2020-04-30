@@ -24,6 +24,7 @@ public class CrafterMaterialRestrictionQuestion extends CrafterQuestionExtension
 
     @Override
     public void answer(Properties properties) {
+        setAnswer(properties);
         if (!wasSelected("cancel")) {
             if (wasSelected("save")) {
                 List<Byte> toRemove = new ArrayList<>();

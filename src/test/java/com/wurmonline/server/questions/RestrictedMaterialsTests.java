@@ -12,8 +12,7 @@ import mod.wurmunlimited.npcs.WorkBook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Properties;
+import java.util.*;
 
 import static mod.wurmunlimited.Assert.*;
 import static org.junit.Assert.assertThat;
@@ -37,7 +36,8 @@ public class RestrictedMaterialsTests {
         Properties properties = new Properties();
         properties.setProperty("add", "true");
         byte material = ItemMaterials.MATERIAL_GOLD;
-        int idx = 0;
+        List<Byte> restricted = Arrays.asList(ItemMaterials.MATERIAL_IRON, ItemMaterials.MATERIAL_BRONZE);
+        List<Byte> materials = new ArrayList<>();
         for (int x = 1; x <= ItemMaterials.MATERIAL_MAX; ++x) {
             byte y = (byte)x;
             String str = MaterialUtilities.getMaterialString(y);
@@ -47,14 +47,12 @@ public class RestrictedMaterialsTests {
                             MaterialUtilities.isLeather(y) ||
                             MaterialUtilities.isCloth(y) ||
                             MaterialUtilities.isStone(y) ||
-                            MaterialUtilities.isClay(y))) {
-                if (x == material) {
-                    break;
-                }
-
-                ++idx;
+                            MaterialUtilities.isClay(y)) && !restricted.contains(y)) {
+                materials.add(y);
             }
         }
+        materials.sort(Comparator.comparing(MaterialUtilities::getMaterialString));
+        int idx = materials.indexOf(material);
         properties.setProperty("mat", Integer.toString(idx));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
         Question question = new CrafterAddRestrictedMaterialQuestion(owner, crafter, workBook);
@@ -70,7 +68,8 @@ public class RestrictedMaterialsTests {
         Properties properties = new Properties();
         properties.setProperty("add", "true");
         byte material = ItemMaterials.MATERIAL_GOLD;
-        int idx = 0;
+        List<Byte> restricted = Arrays.asList(ItemMaterials.MATERIAL_IRON, ItemMaterials.MATERIAL_BRONZE);
+        List<Byte> materials = new ArrayList<>();
         for (int x = 1; x <= ItemMaterials.MATERIAL_MAX; ++x) {
             byte y = (byte)x;
             String str = MaterialUtilities.getMaterialString(y);
@@ -80,17 +79,15 @@ public class RestrictedMaterialsTests {
                             MaterialUtilities.isLeather(y) ||
                             MaterialUtilities.isCloth(y) ||
                             MaterialUtilities.isStone(y) ||
-                            MaterialUtilities.isClay(y))) {
-                if (x == material) {
-                    break;
-                }
-
-                ++idx;
+                            MaterialUtilities.isClay(y)) && !restricted.contains(y)) {
+                materials.add(y);
             }
         }
+        materials.sort(Comparator.comparing(MaterialUtilities::getMaterialString));
+        int idx = materials.indexOf(material);
         properties.setProperty("mat", Integer.toString(idx));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
-        workBook.updateRestrictedMaterials(Arrays.asList(ItemMaterials.MATERIAL_IRON, ItemMaterials.MATERIAL_BRONZE));
+        workBook.updateRestrictedMaterials(restricted);
         Question question = new CrafterAddRestrictedMaterialQuestion(owner, crafter, workBook);
         question.sendQuestion();
         question.answer(properties);
@@ -104,7 +101,8 @@ public class RestrictedMaterialsTests {
         Properties properties = new Properties();
         properties.setProperty("cancel", "true");
         byte material = ItemMaterials.MATERIAL_GOLD;
-        int idx = 0;
+        List<Byte> restricted = Arrays.asList(ItemMaterials.MATERIAL_IRON, ItemMaterials.MATERIAL_BRONZE);
+        List<Byte> materials = new ArrayList<>();
         for (int x = 1; x <= ItemMaterials.MATERIAL_MAX; ++x) {
             byte y = (byte)x;
             String str = MaterialUtilities.getMaterialString(y);
@@ -114,17 +112,15 @@ public class RestrictedMaterialsTests {
                             MaterialUtilities.isLeather(y) ||
                             MaterialUtilities.isCloth(y) ||
                             MaterialUtilities.isStone(y) ||
-                            MaterialUtilities.isClay(y))) {
-                if (x == material) {
-                    break;
-                }
-
-                ++idx;
+                            MaterialUtilities.isClay(y)) && !restricted.contains(y)) {
+                materials.add(y);
             }
         }
+        materials.sort(Comparator.comparing(MaterialUtilities::getMaterialString));
+        int idx = materials.indexOf(material);
         properties.setProperty("mat", Integer.toString(idx));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
-        workBook.updateRestrictedMaterials(Arrays.asList(ItemMaterials.MATERIAL_IRON, ItemMaterials.MATERIAL_BRONZE));
+        workBook.updateRestrictedMaterials(restricted);
         Question question = new CrafterAddRestrictedMaterialQuestion(owner, crafter, workBook);
         question.sendQuestion();
         question.answer(properties);

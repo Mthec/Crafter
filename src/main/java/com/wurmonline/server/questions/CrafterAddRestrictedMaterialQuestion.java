@@ -1,6 +1,7 @@
 package com.wurmonline.server.questions;
 
 import com.wurmonline.server.creatures.Creature;
+import com.wurmonline.server.items.Materials;
 import com.wurmonline.shared.constants.ItemMaterials;
 import com.wurmonline.shared.util.MaterialUtilities;
 import mod.wurmunlimited.bml.BMLBuilder;
@@ -35,12 +36,14 @@ public class CrafterAddRestrictedMaterialQuestion extends CrafterQuestionExtensi
                                     MaterialUtilities.isCloth(y) ||
                                     MaterialUtilities.isStone(y) ||
                                     MaterialUtilities.isClay(y))) {
-                        materials.add(y);
                         materialNames.add(str);
                     }
                 }
             }
             materialNames.sort(String::compareTo);
+
+            for (String materialName : materialNames)
+                materials.add(Materials.convertMaterialStringIntoByte(materialName));
         }
     }
 

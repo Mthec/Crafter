@@ -47,8 +47,11 @@ jar {
         }
     }
     
+//    from {
+//        configurations.runtimeClasspath.findAll { (it.name == 'main') }.collect { zipTree(it) }
+//    }
     from {
-        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+        project(':BMLBuilder').sourceSets.main.output
     }
     exclude 'Trade.class'
     exclude 'TradeHandler.class'

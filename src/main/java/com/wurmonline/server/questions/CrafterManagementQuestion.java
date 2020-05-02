@@ -88,8 +88,9 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                                  .If(CrafterMod.canUsePriceModifier(),
                                          b -> b.harray(b2 -> b2.label("Price Modifier: ").entry("price_modifier", Float.toString(shop.getPriceModifier()), 4)))
                                  .newLine()
-                                 .harray(b -> b.button("Send").spacer().button("dismiss", "Dismiss").confirm("You are about to dismiss " + crafter.getName() + ".", "Do you really want to do that?")
-                                    .spacer().button("skills", "Modify skills").spacer().button("restrict", "Restrict Materials"))
+                                 .harray(b -> b.button("Send").spacer().button("dismiss", "Dismiss").confirm("You are about to dismiss " + crafter.getName() + ".", "Do you really want to do that?").spacer()
+                                                      .If(CrafterMod.canChangeSkill(), b2 -> b2.button("skills", "Modify skills").spacer())
+                                                      .button("restrict", "Restrict Materials"))
                                  .build();
 
             getResponder().getCommunicator().sendBml(300, 400, false, true, bml, 200, 200, 200, title);

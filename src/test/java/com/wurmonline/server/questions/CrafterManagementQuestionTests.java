@@ -36,6 +36,7 @@ class CrafterManagementQuestionTests {
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 1);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("minimumPriceModifier"), 0.0000001f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("paymentOption"), CrafterMod.PaymentOption.for_owner);
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("canChangeSkill"), true);
         owner = factory.createNewPlayer();
         crafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allMetal), 50);
         factory.createVillageFor(owner, crafter);
@@ -229,5 +230,21 @@ class CrafterManagementQuestionTests {
         new CrafterMaterialRestrictionQuestion(owner, crafter).sendQuestion();
 
         assertThat(owner, bmlEqual());
+    }
+
+    @Test
+    void testWhenCanChangeSkillIsFalseModifySkillsButtonDoesNotShow() throws NoSuchFieldException, IllegalAccessException {
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("canChangeSkill"), false);
+        new CrafterManagementQuestion(owner, crafter).sendQuestion();
+
+        assertFalse(factory.getCommunicator(owner).lastBmlContent.contains("Modify skills"));
+    }
+
+    @Test
+    void testWhenCanChangeSkillIsTrueModifySkillsButtonDoesShow() {
+        assert CrafterMod.canChangeSkill();
+        new CrafterManagementQuestion(owner, crafter).sendQuestion();
+
+        assertTrue(factory.getCommunicator(owner).lastBmlContent.contains("Modify skills"));
     }
 }

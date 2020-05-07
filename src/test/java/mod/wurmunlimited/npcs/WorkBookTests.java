@@ -11,6 +11,7 @@ import com.wurmonline.server.items.NoSuchTemplateException;
 import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.CrafterObjectsFactory;
+import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,12 +19,13 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class WorkBookTests {
+class WorkBookTests extends GlobalRestrictionsFileWrapper {
     private CrafterObjectsFactory factory;
     private CrafterType crafterType;
 
     @BeforeEach
-    void setUp() throws Exception {
+    protected void setUp() throws Exception {
+        super.setUp();
         factory = new CrafterObjectsFactory();
         crafterType = new CrafterType(CrafterType.allMetal);
     }
@@ -681,5 +683,47 @@ class WorkBookTests {
             else
                 assertTrue(workBook.isRestrictedMaterial((byte)x));
         }
+    }
+
+    @Test
+    void testIsRestrictedMaterialAffectedByGlobal() throws WorkBook.NoWorkBookOnWorker, NoSuchFieldException, IllegalAccessException {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        byte notRestricted = ItemMaterials.MATERIAL_ADAMANTINE;
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        assert workBook.getRestrictedMaterials().size() == 0;
+        List<Byte> restricted = ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("restrictedMaterials"));
+        restricted.add(notRestricted);
+
+        for (int x = 1; x <= ItemMaterials.MATERIAL_MAX; ++x) {
+            if ((byte)x == notRestricted)
+                assertFalse(workBook.isRestrictedMaterial((byte)x));
+            else
+                assertTrue(workBook.isRestrictedMaterial((byte)x));
+        }
+    }
+
+    @Test
+    void testIsRestrictedMaterialDoesNotOverrideGlobal() throws WorkBook.NoWorkBookOnWorker, NoSuchFieldException, IllegalAccessException, WorkBook.WorkBookFull {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        byte notRestricted = ItemMaterials.MATERIAL_ADAMANTINE;
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.updateRestrictedMaterials(Collections.singletonList((byte)(notRestricted + 1)));
+        List<Byte> restricted = ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("restrictedMaterials"));
+        restricted.add(notRestricted);
+
+        for (int x = 1; x <= ItemMaterials.MATERIAL_MAX; ++x) {
+            assertTrue(workBook.isRestrictedMaterial((byte)x));
+        }
+    }
+
+    @Test
+    void testGetRestrictedMaterialsDoesNotIncludeOnlyGlobal() throws WorkBook.NoWorkBookOnWorker, NoSuchFieldException, IllegalAccessException, WorkBook.WorkBookFull {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        byte restricted = ItemMaterials.MATERIAL_ADAMANTINE;
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        List<Byte> restrictedMaterials = ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("restrictedMaterials"));
+        restrictedMaterials.add(restricted);
+
+        assertFalse(workBook.getRestrictedMaterials().contains(restricted));
     }
 }

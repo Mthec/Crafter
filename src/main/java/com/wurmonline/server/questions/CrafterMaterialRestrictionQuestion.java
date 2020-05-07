@@ -3,7 +3,9 @@ package com.wurmonline.server.questions;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.shared.util.MaterialUtilities;
 import mod.wurmunlimited.bml.BMLBuilder;
+import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.WorkBook;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,11 +17,18 @@ public class CrafterMaterialRestrictionQuestion extends CrafterQuestionExtension
     private final List<Byte> restrictedMaterials;
     private final WorkBook workBook;
 
-    CrafterMaterialRestrictionQuestion(Creature responder, Creature crafter) throws WorkBook.NoWorkBookOnWorker {
-        super(responder, "Restrict Materials", "", MANAGETRADER, crafter.getWurmId());
-        this.crafter = crafter;
-        workBook = WorkBook.getWorkBookFromWorker(crafter);
-        restrictedMaterials = workBook.getRestrictedMaterials();
+    public CrafterMaterialRestrictionQuestion(Creature responder, @Nullable Creature crafter) throws WorkBook.NoWorkBookOnWorker {
+        super(responder, "Restrict Materials", "", MANAGETRADER, crafter == null ? -10 : crafter.getWurmId());
+        if (crafter == null) {
+            this.crafter = null;
+            workBook = null;
+            restrictedMaterials = CrafterMod.getRestrictedMaterials();
+        } else {
+            this.crafter = crafter;
+            workBook = WorkBook.getWorkBookFromWorker(crafter);
+            restrictedMaterials = workBook.getRestrictedMaterials();
+        }
+
     }
 
     @Override
@@ -37,14 +46,19 @@ public class CrafterMaterialRestrictionQuestion extends CrafterQuestionExtension
 
                 restrictedMaterials.removeAll(toRemove);
 
-                try {
-                    workBook.updateRestrictedMaterials(restrictedMaterials);
-                } catch (WorkBook.WorkBookFull e) {
-                    getResponder().getCommunicator().sendNormalServerMessage("Crater was unable to update their list of restricted materials.");
-                    return;
-                }
+                if (crafter == null) {
+                    CrafterMod.saveRestrictedMaterials(restrictedMaterials);
+                    getResponder().getCommunicator().sendNormalServerMessage("Globally restricted materials were updated successfully.");
+                } else {
+                    try {
+                        workBook.updateRestrictedMaterials(restrictedMaterials);
+                    } catch (WorkBook.WorkBookFull e) {
+                        getResponder().getCommunicator().sendNormalServerMessage("Crafter was unable to update their list of restricted materials.");
+                        return;
+                    }
 
-                getResponder().getCommunicator().sendNormalServerMessage("Crater successfully updated their list of restricted materials.");
+                    getResponder().getCommunicator().sendNormalServerMessage("Crafter successfully updated their list of restricted materials.");
+                }
             } else if (wasSelected("add")) {
                 new CrafterAddRestrictedMaterialQuestion(getResponder(), crafter, workBook).sendQuestion();
             }
@@ -55,7 +69,9 @@ public class CrafterMaterialRestrictionQuestion extends CrafterQuestionExtension
     public void sendQuestion() {
         AtomicInteger i = new AtomicInteger(0);
         String bml = new BMLBuilder(id)
-                             .text("Choose which materials will the crafter will be allowed to use.")
+                             .If(crafter == null,
+                                     b -> b.text("Choose which materials all crafters will be allowed to use."),
+                                     b -> b.text("Choose which materials the crafter will be allowed to use."))
                              .text("Empty list to allow all.")
                              .table(new String[] { "Skill", "Remove?" }, restrictedMaterials,
                                      (row, b) -> b.label(MaterialUtilities.getMaterialString(row))

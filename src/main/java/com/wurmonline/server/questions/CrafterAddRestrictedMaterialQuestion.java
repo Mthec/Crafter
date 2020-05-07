@@ -5,7 +5,9 @@ import com.wurmonline.server.items.Materials;
 import com.wurmonline.shared.constants.ItemMaterials;
 import com.wurmonline.shared.util.MaterialUtilities;
 import mod.wurmunlimited.bml.BMLBuilder;
+import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.WorkBook;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,22 +17,33 @@ public class CrafterAddRestrictedMaterialQuestion extends CrafterQuestionExtensi
     private final Creature crafter;
     private final WorkBook workBook;
     private final List<Byte> restrictedMaterials;
-    private static final List<Byte> materials = new ArrayList<>(ItemMaterials.MATERIAL_MAX);
-    private static final List<String> materialNames = new ArrayList<>(ItemMaterials.MATERIAL_MAX);
+    private final List<Byte> materials = new ArrayList<>(ItemMaterials.MATERIAL_MAX);
+    private final List<String> materialNames = new ArrayList<>(ItemMaterials.MATERIAL_MAX);
 
-    CrafterAddRestrictedMaterialQuestion(Creature responder, Creature crafter, WorkBook workBook) {
-        super(responder, "Add Restricted Material", "", MANAGETRADER, crafter.getWurmId());
+    CrafterAddRestrictedMaterialQuestion(Creature responder, @Nullable Creature crafter, @Nullable WorkBook workBook) {
+        super(responder, "Add Restricted Material", "", MANAGETRADER, crafter == null ? -10 : crafter.getWurmId());
         this.crafter = crafter;
         this.workBook = workBook;
-        restrictedMaterials = workBook.getRestrictedMaterials();
+        if (crafter == null && workBook == null)
+            restrictedMaterials = CrafterMod.getRestrictedMaterials();
+        else {
+            assert workBook != null;
+            restrictedMaterials = workBook.getRestrictedMaterials();
+        }
 
-        if (materials.isEmpty()) {
+        if (crafter != null && CrafterMod.materialsRestrictedGlobally()) {
+            for (byte y : CrafterMod.getRestrictedMaterials()) {
+                if (!restrictedMaterials.contains(y)) {
+                    materialNames.add(MaterialUtilities.getMaterialString(y));
+                }
+            }
+        } else {
             for (int x = 1; x <= ItemMaterials.MATERIAL_MAX; ++x) {
                 byte y = (byte)x;
                 if (!restrictedMaterials.contains(y)) {
                     String str = MaterialUtilities.getMaterialString(y);
                     if (!str.equals("unknown") && (
-                                    MaterialUtilities.isMetal(y) ||
+                            MaterialUtilities.isMetal(y) ||
                                     MaterialUtilities.isWood(y) ||
                                     MaterialUtilities.isLeather(y) ||
                                     MaterialUtilities.isCloth(y) ||
@@ -40,11 +53,12 @@ public class CrafterAddRestrictedMaterialQuestion extends CrafterQuestionExtensi
                     }
                 }
             }
-            materialNames.sort(String::compareTo);
-
-            for (String materialName : materialNames)
-                materials.add(Materials.convertMaterialStringIntoByte(materialName));
         }
+
+        materialNames.sort(String::compareTo);
+
+        for (String materialName : materialNames)
+            materials.add(Materials.convertMaterialStringIntoByte(materialName));
     }
 
     @Override
@@ -55,9 +69,14 @@ public class CrafterAddRestrictedMaterialQuestion extends CrafterQuestionExtensi
                 int idx = Integer.parseInt(properties.getProperty("mat"));
                 byte material = materials.get(idx);
                 restrictedMaterials.add(material);
-                workBook.updateRestrictedMaterials(restrictedMaterials);
 
-                getResponder().getCommunicator().sendNormalServerMessage("Crafter will now accept " + MaterialUtilities.getMaterialString(material) + " items.");
+                if (crafter == null) {
+                    CrafterMod.saveRestrictedMaterials(restrictedMaterials);
+                    getResponder().getCommunicator().sendNormalServerMessage("Crafters will now accept " + MaterialUtilities.getMaterialString(material) + " items.");
+                } else {
+                    workBook.updateRestrictedMaterials(restrictedMaterials);
+                    getResponder().getCommunicator().sendNormalServerMessage("Crafter will now accept " + MaterialUtilities.getMaterialString(material) + " items.");
+                }
             }
 
             new CrafterMaterialRestrictionQuestion(getResponder(), crafter).sendQuestion();

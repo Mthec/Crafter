@@ -244,11 +244,20 @@ public class CrafterTradeHandler extends TradeHandler {
         if (length > 0) {
             trade.creatureOne.getCommunicator().sendNormalServerMessage(creature.getName() + " says 'I cannot improve " + (length == 1 ? "that item.'" : "those items.'"));
         }
+
         if (hasRestrictedMaterial) {
+            List<Byte> materials = workBook.getRestrictedMaterials();
+            if (CrafterMod.materialsRestrictedGlobally()) {
+                if (materials.isEmpty()) {
+                    materials.addAll(CrafterMod.getRestrictedMaterials());
+                } else {
+                    materials.removeIf(CrafterMod::isGloballyRestrictedMaterial);
+                }
+            }
+
             StringBuilder sb = new StringBuilder();
             sb.append(creature.getName()).append(" says 'I can only improve ");
 
-            List<Byte> materials = workBook.getRestrictedMaterials();
             byte penultimate = -1;
             if (materials.size() > 1)
                 penultimate = materials.get(materials.size() - 2);

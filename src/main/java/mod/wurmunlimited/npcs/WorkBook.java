@@ -453,6 +453,7 @@ public class WorkBook implements Iterable<Job> {
         return false;
     }
 
+    // TODO - Rename, something different as they could be seen as restricted from or restricted to.
     public List<Byte> getRestrictedMaterials() {
         return new ArrayList<>(restrictedMaterials);
     }
@@ -464,6 +465,10 @@ public class WorkBook implements Iterable<Job> {
     }
 
     public boolean isRestrictedMaterial(byte b) {
+        if (CrafterMod.materialsRestrictedGlobally()) {
+            if (CrafterMod.isGloballyRestrictedMaterial(b))
+                return true;
+        }
         return restrictedMaterials.size() != 0 && !restrictedMaterials.contains(b);
     }
 }

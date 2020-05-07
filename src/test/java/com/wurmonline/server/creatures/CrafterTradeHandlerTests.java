@@ -1093,4 +1093,45 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         assertDoesNotThrow(() -> handler.addItemsToTrade());
         assertEquals(2, workBook.todo());
     }
+
+    @Test
+    void testGlobalRestrictedMaterials() throws NoSuchFieldException, IllegalAccessException {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), 50);
+        List<Byte> restricted = ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("restrictedMaterials"));
+        restricted.add(ItemMaterials.MATERIAL_IRON);
+
+        makeNewCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+        selectOption("Improve to 20");
+        Item pickaxe = factory.createNewItem(ItemList.pickAxe);
+        pickaxe.setMaterial(ItemMaterials.MATERIAL_COPPER);
+        trade.getTradingWindow(2).addItem(pickaxe);
+        handler.balance();
+        restricted.clear();
+
+        assertThat(player, receivedMessageContaining("only improve"));
+    }
+
+    @Test
+    void testGlobalRestrictedMaterialsWithCrafterRestriction() throws NoSuchFieldException, IllegalAccessException, WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), 50);
+        List<Byte> restricted = ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("restrictedMaterials"));
+        restricted.add(ItemMaterials.MATERIAL_IRON);
+        restricted.add(ItemMaterials.MATERIAL_COPPER);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.updateRestrictedMaterials(Collections.singletonList(ItemMaterials.MATERIAL_COPPER));
+
+        makeNewCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+        selectOption("Improve to 20");
+        Item pickaxe = factory.createNewItem(ItemList.pickAxe);
+        pickaxe.setMaterial(ItemMaterials.MATERIAL_IRON);
+        trade.getTradingWindow(2).addItem(pickaxe);
+        handler.balance();
+        restricted.clear();
+
+        assertThat(player, receivedMessageContaining("only improve copper items."));
+    }
 }

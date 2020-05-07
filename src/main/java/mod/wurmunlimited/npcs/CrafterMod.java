@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.*;
@@ -46,7 +47,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private static float upkeepPercentage = 25.0f;
     private static float basePrice = 1.0f;
     private static int mailPrice = MonetaryConstants.COIN_COPPER;
-    private static Map<Integer, Float> skillPrices = new HashMap<>();
+    private final static Map<Integer, Float> skillPrices = new HashMap<>();
     // Do not set at 100.  Skill.setKnowledge will not set the skill level if so.
     private static float skillCap = 99.99999f;
     private static float startingSkill = 20;
@@ -58,8 +59,10 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private static int removeDonationsAt = Integer.MIN_VALUE;
     private static boolean singleSkill = false;
     private static boolean canChangeSkill = true;
+    private static final List<Byte> restrictedMaterials = new ArrayList<>();
     private static final Map<Creature, Logger> crafterLoggers = new HashMap<>();
     private Properties properties;
+    public static Path globalRestrictionsPath = Paths.get("mods", "crafter", "global_restrictions");
 
     private enum OutputOption {
         save,
@@ -125,6 +128,14 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
 
     public static boolean canChangeSkill() {
         return canChangeSkill;
+    }
+
+    public static boolean isGloballyRestrictedMaterial(byte material) {
+        return restrictedMaterials.size() != 0 && !restrictedMaterials.contains(material);
+    }
+
+    public static boolean materialsRestrictedGlobally() {
+        return restrictedMaterials.size() > 0;
     }
 
     private OutputOption parseOutputOption(String value) {
@@ -231,6 +242,41 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         skillPrices.put(SkillList.SMITHING_SHIELDS, getOption("shieldsmithing", 1.0f));
         skillPrices.put(DRAGON_ARMOUR, getOption("dragon_armour", 10.0f));
         skillPrices.put(MOON_METAL, getOption("moon_metal", 1.0f));
+
+        try {
+            byte[] materials = Files.readAllBytes(globalRestrictionsPath);
+            if (materials.length > 0) {
+                for (byte mat : materials) {
+                    if (mat > 0 && mat <= ItemMaterials.MATERIAL_MAX) {
+                        restrictedMaterials.add(mat);
+                    }
+                }
+            }
+
+        } catch (NoSuchFileException ignored) {
+        } catch (IOException e) {
+            logger.warning("Error reading \"global_restrictions\":");
+            e.printStackTrace();
+        }
+    }
+
+    public static List<Byte> getRestrictedMaterials() {
+        return new ArrayList<>(restrictedMaterials);
+    }
+
+    public static void saveRestrictedMaterials(List<Byte> newRestrictions) {
+        try {
+            restrictedMaterials.clear();
+            restrictedMaterials.addAll(newRestrictions);
+            byte[] bytes = new byte[restrictedMaterials.size()];
+            for (int i = 0; i < restrictedMaterials.size(); ++i)
+                bytes[i] = restrictedMaterials.get(i);
+
+            Files.write(globalRestrictionsPath, bytes, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        } catch (IOException e) {
+            logger.warning("Error saving \"global_restrictions\", changes not saved:");
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -585,6 +631,10 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 return MessagePolicy.DISCARD;
             } else if (message.equals("/crafters")) {
                 CrafterAI.sendCrafterStatusTo(player);
+                return MessagePolicy.DISCARD;
+            } else if (player.getPower() >= 2 && message.equals("/restrictmaterials")) {
+                // Doesn't run if the question is called here directly.
+                QuestionWrapper.materialRestrictionQuestion(player);
                 return MessagePolicy.DISCARD;
             }
         }

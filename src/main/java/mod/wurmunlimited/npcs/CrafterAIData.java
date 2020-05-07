@@ -354,6 +354,13 @@ public class CrafterAIData extends CreatureAIData {
                     }
                     forge.setTemperature((short)10000);
 
+                    // Clear out ash for Ash produce mod.
+                    for (Item it : forge.getAllItems(true)) {
+                        if (it.getTemplateId() == ItemList.ash) {
+                            Items.destroyItem(it.getWurmId());
+                        }
+                    }
+
                     Item lump = tools.get(MethodsItems.getImproveTemplateId(item));
                     if (lump != null && !forge.getItems().contains(lump)) {
                         forge.insertItem(lump);

@@ -444,4 +444,16 @@ class CrafterAITests extends CrafterTest {
         crafter.getTemplate().getCreatureAI().pollCreature(crafter, 0);
         assertFalse(aiData.canAction);
     }
+
+    @Test
+    void testAshRemovedIfAshProduceModIsUsed() {
+        assert tool.isMetal();
+        warmUp();
+        for (int i = 0; i < 10; ++i) {
+            forge.insertItem(factory.createNewItem(ItemList.ash));
+        }
+
+        data.sendNextAction();
+        assertTrue(forge.getItems().stream().noneMatch(i -> i.getTemplateId() == ItemList.ash));
+    }
 }

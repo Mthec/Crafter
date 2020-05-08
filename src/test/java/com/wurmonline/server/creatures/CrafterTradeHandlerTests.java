@@ -468,6 +468,78 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
     }
 
     @Test
+    void testManyJobsAdded() throws WorkBook.NoWorkBookOnWorker {
+        crafter = factory.createNewCrafter(owner, crafterType, 50);
+        assert WorkBook.getWorkBookFromWorker(crafter).todo() == 0;
+        int count = 100;
+
+        for (int i = 0; i <= count; ++i) {
+            Item item = factory.createNewItem(ItemList.pickAxe);
+            player.getInventory().insertItem(item);
+            item.setQualityLevel(1);
+
+            makeNewCrafterTrade();
+            makeHandler();
+
+            handler.addItemsToTrade();
+
+            selectOption("Improve to 20ql");
+            handler.balance();
+            trade.getTradingWindow(2).addItem(item);
+            int price = handler.getTraderBuyPriceForItem(item);
+            Arrays.stream(Economy.getEconomy().getCoinsFor(price)).forEach(player.getInventory()::insertItem);
+            player.getInventory().getItems().forEach(trade.getTradingWindow(2)::addItem);
+
+            setNotBalanced();
+            handler.balance();
+            setSatisfied(player);
+        }
+
+        assertEquals(count, crafter.getInventory().getItems().stream().filter(i -> i.getTemplateId() == ItemList.pickAxe).count());
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        assertEquals(count, workBook.todo());
+    }
+
+    @Test
+    void testBulkJobsAdded() throws WorkBook.NoWorkBookOnWorker {
+        crafter = factory.createNewCrafter(owner, crafterType, 50);
+        assert WorkBook.getWorkBookFromWorker(crafter).todo() == 0;
+        int count = 95;
+        List<Item> items = new ArrayList<>();
+
+        Items.destroyItem(player.getInventory().getFirstContainedItem().getWurmId());
+
+        for (int i = 0; i < count; ++i) {
+            Item item = factory.createNewItem(ItemList.pickAxe);
+            player.getInventory().insertItem(item);
+            item.setQualityLevel(1);
+            items.add(item);
+        }
+        assert player.getInventory().getItemCount() == count;
+
+        makeNewCrafterTrade();
+        makeHandler();
+
+        handler.addItemsToTrade();
+
+        selectOption("Improve to 20ql");
+        handler.balance();
+
+        int price = handler.getTraderBuyPriceForItem(items.get(0));
+        Arrays.stream(Economy.getEconomy().getCoinsFor(price * count)).forEach(player.getInventory()::insertItem);
+        player.getInventory().getItems().forEach(trade.getTradingWindow(2)::addItem);
+
+        setNotBalanced();
+        handler.balance();
+        assert trade.getTradingWindow(2).getItems().length == 0;
+        setSatisfied(player);
+
+        assertEquals(count, crafter.getInventory().getItems().stream().filter(i -> i.getTemplateId() == ItemList.pickAxe).count());
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        assertEquals(count, workBook.todo());
+    }
+
+    @Test
     void testItemDonated() throws WorkBook.NoWorkBookOnWorker {
         crafter = factory.createNewCrafter(owner, crafterType, 50);
         assert WorkBook.getWorkBookFromWorker(crafter).todo() == 0;

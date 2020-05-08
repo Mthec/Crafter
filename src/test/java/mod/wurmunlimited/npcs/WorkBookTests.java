@@ -586,6 +586,22 @@ class WorkBookTests extends GlobalRestrictionsFileWrapper {
     }
 
     @Test
+    void testHasEnoughSpace() {
+        List<String> lines = new ArrayList<>();
+        int max = 9 * 500;
+        WorkBook workBook = createNewWorkbook(SkillList.SMITHING_BLACKSMITHING);
+        String line = new Job(123456789, factory.createNewItem(ItemList.pickAxe), 56.65f, true, 987654321, false).toString();
+
+        while (lines.stream().mapToInt(String::length).sum() + line.length() < max) {
+            lines.add(line);
+            assertTrue(workBook.hasEnoughSpaceFor(lines), "Reached:  " + lines.stream().mapToInt(String::length).sum());
+        }
+
+        lines.add(line);
+        assertFalse(workBook.hasEnoughSpaceFor(lines));
+    }
+
+    @Test
     void testDonationsLastInIterator() throws NoSuchTemplateException, FailedException, WorkBook.WorkBookFull {
         WorkBook workBook = WorkBook.createNewWorkBook(new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
 

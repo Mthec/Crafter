@@ -440,7 +440,8 @@ public class WorkBook implements Iterable<Job> {
     public boolean hasEnoughSpaceFor(List<String> lines) {
         int currentPageNumber = workBookItem.getItemCount() - 1;
         int charactersRequired = lines.stream().mapToInt(String::length).sum();
-        if (currentPageNumber < 9 && charactersRequired < 500) {
+        int remainingPages = 9 - currentPageNumber;
+        if (remainingPages > 0 && charactersRequired < 500 * remainingPages) {
             return true;
         }
         Optional<Item> maybeItem = workBookItem.getItems().stream().max(Comparator.comparing(Item::getDescription));

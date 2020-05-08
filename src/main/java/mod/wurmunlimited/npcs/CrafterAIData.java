@@ -367,7 +367,17 @@ public class CrafterAIData extends CreatureAIData {
                         }
                     }
 
-                    Item lump = tools.get(MethodsItems.getImproveTemplateId(item));
+                    int lumpId = MethodsItems.getImproveTemplateId(item);
+                    Item lump = tools.get(lumpId);
+                    if (lump == null) {
+                        try {
+                            lump = createMissingItem(lumpId);
+                        } catch (NoSuchTemplateException | FailedException e) {
+                            logger.warning("Could not create required improving item (template id - " + lumpId + ").  Reason follows:");
+                            e.printStackTrace();
+                            continue;
+                        }
+                    }
                     if (lump != null && !forge.getItems().contains(lump)) {
                         forge.insertItem(lump);
                         logger.info("Put the " + lump.getName() + " in the forge");

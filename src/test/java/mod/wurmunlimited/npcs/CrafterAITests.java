@@ -111,6 +111,17 @@ class CrafterAITests extends CrafterTest {
     }
 
     @Test
+    void testLumpPutIntoForgeWhenNotCreated() {
+        assert tool.isMetal();
+        assert !forge.getItems().contains(lump);
+        Items.destroyItem(lump.getWurmId());
+        lump = null;
+
+        data.sendNextAction();
+        assertTrue(forge.getItems().stream().anyMatch(i -> i.getTemplateId() == ItemList.ironBar));
+    }
+
+    @Test
     void testToolPutIntoForge() {
         assert tool.isMetal();
 

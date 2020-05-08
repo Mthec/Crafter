@@ -4,10 +4,14 @@ import com.wurmonline.server.Servers;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.creatures.CrafterTradeHandler;
 import com.wurmonline.server.creatures.Creature;
+import com.wurmonline.server.creatures.CreatureTemplate;
 import com.wurmonline.server.creatures.CreatureTemplateIds;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.kingdom.Kingdom;
 import com.wurmonline.server.players.Player;
+import com.wurmonline.server.questions.CrafterHireQuestion;
+import com.wurmonline.server.questions.CreatureCreationQuestion;
+import com.wurmonline.server.questions.Question;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
 import mod.wurmunlimited.CrafterObjectsFactory;
@@ -18,9 +22,10 @@ import org.mockito.stubbing.Answer;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Properties;
 
-import static mod.wurmunlimited.Assert.receivedMessageContaining;
+import static mod.wurmunlimited.Assert.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -533,5 +538,70 @@ class CrafterModTests {
 
         assertEquals(1, WorkBook.getWorkBookFromWorker(crafter).todo());
         assertTrue(crafter.getInventory().getItems().contains(tool));
+    }
+
+    @Test
+    void testCreatureCreation() throws Throwable {
+        Player gm = factory.createNewPlayer();
+        Item wand = factory.createNewItem(ItemList.wandGM);
+        String name = "Name";
+        int tileX = 250;
+        int tileY = 250;
+        int templateId = ReflectionUtil.getPrivateField(null, CrafterTemplate.class.getDeclaredField("templateId"));
+
+        InvocationHandler handler = new CrafterMod()::creatureCreation;
+        Method method = mock(Method.class);
+        Object[] args = new Object[] { new CreatureCreationQuestion(gm, "", "", wand.getWurmId(), tileX, tileY, -1, -10)};
+        ((CreatureCreationQuestion)args[0]).sendQuestion();
+        factory.getCommunicator(gm).clear();
+        int templateIndex = -1;
+        int i = 0;
+        //noinspection unchecked
+        for (CreatureTemplate template : ((List<CreatureTemplate>)ReflectionUtil.getPrivateField(args[0], CreatureCreationQuestion.class.getDeclaredField("cretemplates")))) {
+            if (template.getTemplateId() == templateId) {
+                templateIndex = i;
+                break;
+            }
+            ++i;
+        }
+        assert templateIndex != -1;
+        Properties answers = new Properties();
+        answers.setProperty("data1", String.valueOf(i));
+        answers.setProperty("cname", name);
+        answers.setProperty("gender", "female");
+        ReflectionUtil.setPrivateField(args[0], Question.class.getDeclaredField("answer"), answers);
+
+        assertNull(handler.invoke(null, method, args));
+        verify(method, never()).invoke(null, args);
+        assertThat(gm, didNotReceiveMessageContaining("An error occurred"));
+        new CrafterHireQuestion(gm, gm.getInventory().getFirstContainedItem().getWurmId()).sendQuestion();
+        assertThat(gm, bmlEqual());
+    }
+
+    @Test
+    void testNonCustomTraderCreatureCreation() throws Throwable {
+        Player gm = factory.createNewPlayer();
+        Item wand = factory.createNewItem(ItemList.wandGM);
+        int tileX = 250;
+        int tileY = 250;
+
+        InvocationHandler handler = new CrafterMod()::creatureCreation;
+        Method method = mock(Method.class);
+        Object[] args = new Object[] { new CreatureCreationQuestion(gm, "", "", wand.getWurmId(), tileX, tileY, -1, -10)};
+        ((CreatureCreationQuestion)args[0]).sendQuestion();
+        Properties answers = new Properties();
+        answers.setProperty("data1", String.valueOf(0));
+        answers.setProperty("cname", "MyName");
+        answers.setProperty("gender", "female");
+        ReflectionUtil.setPrivateField(args[0], Question.class.getDeclaredField("answer"), answers);
+
+        for (Creature creature : factory.getAllCreatures().toArray(new Creature[0])) {
+            factory.removeCreature(creature);
+        }
+
+        assertNull(handler.invoke(null, method, args));
+        verify(method, times(1)).invoke(null, args);
+        assertEquals(0, factory.getAllCreatures().size());
+        assertThat(gm, didNotReceiveMessageContaining("An error occurred"));
     }
 }

@@ -262,6 +262,19 @@ class CrafterAITests extends CrafterTest {
     }
 
     @Test
+    void testImprovingStoneMineDoors() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.STONECUTTING), 50);
+        data = (CrafterAIData)crafter.getCreatureAIData();
+        Item stoneDoor = factory.createNewItem(ItemList.mineDoorStone);
+        WorkBook.getWorkBookFromWorker(crafter).addJob(player.getWurmId(), stoneDoor, 30, false, 100);
+        crafter.getInventory().insertItem(stoneDoor);
+
+        data.sendNextAction();
+        assertTrue(BehaviourDispatcher.wasDispatched(stoneDoor, Actions.IMPROVE));
+        assertThat(crafter, didNotReceiveMessageContaining("cannot improve"));
+    }
+
+    @Test
     void testStoneBrickDoesNotBlockCrafting() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
         Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.STONECUTTING), 50);
         data = (CrafterAIData)crafter.getCreatureAIData();

@@ -9,6 +9,9 @@ import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.players.Player;
+import com.wurmonline.server.questions.CrafterHireQuestion;
+import com.wurmonline.server.questions.CreatureCreationQuestion;
+import com.wurmonline.server.questions.Question;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.server.skills.Skills;
@@ -369,6 +372,11 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 "(DZFZD)V",
                 () -> this::alterSkill);
 
+        manager.registerHook("com.wurmonline.server.questions.QuestionParser",
+                "parseCreatureCreationQuestion",
+                "(Lcom/wurmonline/server/questions/CreatureCreationQuestion;)V",
+                () -> this::creatureCreation);
+
         ModCreatures.init();
         ModCreatures.addCreature(new CrafterTemplate());
     }
@@ -720,6 +728,37 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 advanceMultiplicator *= times * crafterSkillGainRate;
                 args[0] = advanceMultiplicator;
             }
+        }
+
+        return method.invoke(o, args);
+    }
+
+    Object creatureCreation(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        CreatureCreationQuestion question = (CreatureCreationQuestion)args[0];
+        Properties answers = ReflectionUtil.getPrivateField(question, Question.class.getDeclaredField("answer"));
+        try {
+            String templateIndexString = answers.getProperty("data1");
+            String name = answers.getProperty("cname");
+            if (name == null)
+                answers.setProperty("name", "");
+            else
+                answers.setProperty("name", name);
+            if (templateIndexString != null) {
+                int templateIndex = Integer.parseInt(templateIndexString);
+                List<CreatureTemplate> templates = ReflectionUtil.getPrivateField(question, CreatureCreationQuestion.class.getDeclaredField("cretemplates"));
+                CreatureTemplate template = templates.get(templateIndex);
+
+                if (template.getTemplateId() == CrafterTemplate.getTemplateId()) {
+                    Creature responder = question.getResponder();
+                    Item contract = Creature.createItem(contractTemplateId, (float)(10 + Server.rand.nextInt(80)));
+                    responder.getInventory().insertItem(contract);
+                    new CrafterHireQuestion(responder, contract.getWurmId()).sendQuestion();
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            question.getResponder().getCommunicator().sendAlertServerMessage("An error occurred in the rifts of the void. The crafter was not created.");
+            e.printStackTrace();
         }
 
         return method.invoke(o, args);

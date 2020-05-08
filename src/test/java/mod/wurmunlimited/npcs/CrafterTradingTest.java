@@ -41,6 +41,8 @@ public class CrafterTradingTest {
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("minimumPriceModifier"), 0.0000001f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("paymentOption"), CrafterMod.PaymentOption.for_owner);
         ((ConcurrentHashMap)ReflectionUtil.getPrivateField(null, Villages.class.getDeclaredField("villages"))).clear();
+        List<Byte> restrictedMaterials = ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("restrictedMaterials"));
+        restrictedMaterials.clear();
         owner = factory.createNewPlayer();
         player = factory.createNewPlayer();
         tool = factory.createNewItem();

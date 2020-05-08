@@ -18,6 +18,8 @@ public abstract class GlobalRestrictionsFileWrapper {
     @BeforeEach
     protected void setUp() throws Exception {
         oldPath = CrafterMod.globalRestrictionsPath;
+        List<Byte> restrictedMaterials = ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("restrictedMaterials"));
+        restrictedMaterials.clear();
         temp.create();
         CrafterMod.globalRestrictionsPath = Paths.get(temp.newFolder("mods", "crafter").toString(), "global_restrictions");
     }

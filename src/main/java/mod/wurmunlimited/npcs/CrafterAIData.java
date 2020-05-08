@@ -275,9 +275,15 @@ public class CrafterAIData extends CreatureAIData {
             }
 
             if (workbook == null) {
-                logger.warning("WorkBook not found on crafter (" + crafter.getWurmId() + ").  No longer sending actions.");
-                canAction = false;
-                return;
+                try {
+                    logger.info("WorkBook not found on Crafter, creating new.");
+                    WorkBook.createNewWorkBook(new CrafterType(CrafterType.allSkills), 30f);
+                } catch (NoSuchTemplateException | FailedException e) {
+                    logger.warning("WorkBook not found on crafter (" + crafter.getWurmId() + "), and could not create new.  No longer sending actions.");
+                    canAction = false;
+                    e.printStackTrace();
+                    return;
+                }
             }
         }
         if (workbook.todo() == 0 && workbook.donationsTodo() == 0) {

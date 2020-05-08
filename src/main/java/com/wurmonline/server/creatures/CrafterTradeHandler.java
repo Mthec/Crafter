@@ -242,7 +242,7 @@ public class CrafterTradeHandler extends TradeHandler {
 
         int length = offerWindow.getItems().length;
         if (length > 0) {
-            trade.creatureOne.getCommunicator().sendNormalServerMessage(creature.getName() + " says 'I cannot improve " + (length == 1 ? "that item.'" : "those items.'"));
+            trade.creatureOne.getCommunicator().sendSafeServerMessage(creature.getName() + " says 'I cannot improve " + (length == 1 ? "that item.'" : "those items.'"));
         }
 
         if (hasRestrictedMaterial) {
@@ -272,7 +272,7 @@ public class CrafterTradeHandler extends TradeHandler {
                 else
                     sb.append(", ");
             }
-            trade.creatureOne.getCommunicator().sendNormalServerMessage(sb.toString());
+            trade.creatureOne.getCommunicator().sendSafeServerMessage(sb.toString());
         }
     }
 

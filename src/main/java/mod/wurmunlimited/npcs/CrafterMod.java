@@ -492,17 +492,19 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 log.setLevel(Level.OFF);
             else {
                 log.setUseParentHandlers(false);
-                if (output == OutputOption.save_and_print)
-                    log.addHandler(new ConsoleHandler());
+                if (output == OutputOption.save_and_print) {
+                    Handler handler = new ConsoleHandler();
+                    handler.setFilter(new CrafterLogFilter(false));
+                    log.addHandler(handler);
+                }
                 try {
                     FileHandler fh = new FileHandler("crafter_" + log.getName() + ".log", 0, 1, true);
+                    fh.setFilter(new CrafterLogFilter(true));
                     log.addHandler(fh);
                     fh.setFormatter(new SimpleFormatter());
                 } catch (IOException e) {
                     logger.warning("Could not create log file for " + log.getName());
                 }
-                for (Handler handler : log.getHandlers())
-                    handler.setFilter(new CrafterLogFilter());
             }
             crafterLoggers.put(crafter, log);
         }

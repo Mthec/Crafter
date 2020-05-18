@@ -9,6 +9,8 @@ import com.wurmonline.server.items.Item;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.Mockito.mock;
+
 public class BehaviourDispatcher {
 
     private static List<Dispatch> dispatches = new ArrayList<>();
@@ -59,6 +61,9 @@ public class BehaviourDispatcher {
 
     public static void action(Creature creature, Communicator comm, long subject, long target, short action) throws NoSuchItemException {
         dispatches.add(new Dispatch(subject, target, action));
+        if (action == Actions.IMPROVE) {
+            MethodsItems.improveItem(mock(Action.class), creature, Items.getItem(subject), Items.getItem(target), 0f);
+        }
     }
 
 }

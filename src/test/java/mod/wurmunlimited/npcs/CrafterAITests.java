@@ -277,6 +277,7 @@ class CrafterAITests extends CrafterTest {
         Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.STONECUTTING), 50);
         data = (CrafterAIData)crafter.getCreatureAIData();
         Item stoneDoor = factory.createNewItem(ItemList.mineDoorStone);
+        stoneDoor.setQualityLevel(29.99f);
         WorkBook.getWorkBookFromWorker(crafter).addJob(player.getWurmId(), stoneDoor, 30, false, 100);
         crafter.getInventory().insertItem(stoneDoor);
 

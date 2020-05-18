@@ -52,6 +52,7 @@ public class CrafterAI extends CreatureAI {
         }
 
         if (!isDead && !c.isTrading() && !c.isFighting()) {// TODO - Stamina, including letting crafter put items in forge whilst waiting for stamina. && c.getStatus().calcStaminaPercent() == 100) {
+            // TODO - Creatures don't seem to update stamina as frequently as players.
             try {
                 Action action = c.getCurrentAction();
                 CrafterMod.getCrafterLogger(c).info(action.getActionString());

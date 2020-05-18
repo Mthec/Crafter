@@ -152,13 +152,16 @@ public class CrafterAIData extends CreatureAIData {
         return item;
     }
 
-    private void repairTool(Item item) {
+    private void repairTool(Item item, float ql) {
+        ql += 10;
+        if (ql > 100)
+            ql = 100;
         if (item.isBodyPart())
             return;
         if (item.getDamage() != 0)
             item.setDamage(0);
-        if (item.getQualityLevel() < workbook.getSkillCap() || item.getQualityLevel() > 100)
-            item.setQualityLevel(workbook.getSkillCap());
+        if (item.getQualityLevel() < ql || item.getQualityLevel() > 100)
+            item.setQualityLevel(ql);
         if (item.isLiquid())
             item.setWeight(5000, false);
         else if (item.isCombine() && item.isMetal())
@@ -342,7 +345,6 @@ public class CrafterAIData extends CreatureAIData {
                     }
                     return;
                 } else if (item.isMetal()) {
-                    // TODO - Not putting lump in to heat up if new placement.
                     // TODO - Baking pottery items?
                     if (forge == null)
                         continue;
@@ -425,7 +427,7 @@ public class CrafterAIData extends CreatureAIData {
                     }
                 }
 
-                repairTool(tool);
+                repairTool(tool, job.item.getCurrentQualityLevel());
                 capSkills();
 
                 try {

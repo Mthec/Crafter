@@ -73,6 +73,21 @@ class CrafterAITests extends CrafterTest {
     }
 
     @Test
+    void testJobDoneAtTooHighQL() throws WorkBook.WorkBookFull, NoSuchFieldException, IllegalAccessException {
+        workBook.updateSkillsSettings(workBook.getCrafterType(), 99.5f);
+        crafter.getInventory().insertItem(tool);
+        tool.setQualityLevel(100f);
+        long price = 111L;
+        ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("targetQL"), 101f);
+        ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("priceCharged"), price);
+
+        data.sendNextAction();
+        assertEquals(0, workBook.todo());
+        assertEquals(1, workBook.done());
+        assertEquals((long)(price * 0.9f), crafter.getShop().getMoney());
+    }
+
+    @Test
     void testRemoveFromForgeWhenJobDone() throws NoSuchFieldException, IllegalAccessException {
         forge.insertItem(tool);
         tool.setQualityLevel(11);
@@ -201,7 +216,7 @@ class CrafterAITests extends CrafterTest {
         crafter.getSkills().getSkills()[0].setKnowledge(workBook.getSkillCap() + 10, false);
 
         data.sendNextAction();
-        assertEquals(workBook.getSkillCap(), crafter.getSkills().getSkills()[0].getKnowledge());
+        assertTrue(crafter.getSkills().getSkills()[0].getKnowledge() < workBook.getSkillCap() + 1);
     }
 
     @Test

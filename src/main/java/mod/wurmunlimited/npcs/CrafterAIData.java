@@ -326,15 +326,18 @@ public class CrafterAIData extends CreatureAIData {
                     } else if (item.getQualityLevel() >= workbook.getSkillCap()) {
                         continue;
                     }
+                } else {
+                    if (item.getQualityLevel() >= job.targetQL || item.getQualityLevel() >= 99.999999f) {
+                        if (forge != null && forge.getItems().contains(item))
+                            crafter.getInventory().insertItem(item);
+                        workbook.setDone(job, crafter);
+                        logger.info(item.getName() + " is done.");
+                        // In case a Job is removed at the wrong time.
+                        return;
+                    }
                 }
-                if (!job.isDonation() && item.getQualityLevel() >= job.targetQL) {
-                    if (forge != null && forge.getItems().contains(item))
-                        crafter.getInventory().insertItem(item);
-                    workbook.setDone(job, crafter);
-                    logger.info(item.getName() + " is done.");
-                    // In case a Job is removed at the wrong time.
-                    return;
-                } else if (item.getDamage() > 0.0f) {
+
+                if (item.getDamage() > 0.0f) {
                     try {
                         BehaviourDispatcher.action(crafter, crafter.getCommunicator(), -10, item.getWurmId(), Actions.REPAIR);
                         logger.info("Repairing " + item.getName());

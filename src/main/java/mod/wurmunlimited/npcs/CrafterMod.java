@@ -122,7 +122,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     public static boolean destroyDonationItem(float currentSkill, float itemQL) {
         if (removeDonationsAt == Integer.MIN_VALUE)
             return false;
-        return currentSkill + removeDonationsAt <= itemQL;
+        return currentSkill + removeDonationsAt <= itemQL || itemQL > 99.999999f;
     }
 
     public static boolean useSingleSkill() {

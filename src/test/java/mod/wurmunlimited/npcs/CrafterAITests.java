@@ -201,7 +201,7 @@ class CrafterAITests extends CrafterTest {
         crafter.getSkills().getSkills()[0].setKnowledge(workBook.getSkillCap() + 10, false);
 
         data.sendNextAction();
-        assertEquals(workBook.getSkillCap(), crafter.getSkills().getSkills()[0].getKnowledge());
+        assertTrue(crafter.getSkills().getSkills()[0].getKnowledge() < workBook.getSkillCap() + 1);
     }
 
     @Test

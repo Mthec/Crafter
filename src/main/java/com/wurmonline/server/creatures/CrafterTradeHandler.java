@@ -255,19 +255,23 @@ public class CrafterTradeHandler extends TradeHandler {
             // Extra detail, for tracking down bugs.
             if (trade.creatureOne.getPower() >= 3) {
                 Communicator comm = trade.creatureOne.getCommunicator();
-                for (Item ignoredItem : offerWindow.getItems()) {
-                    if (!workBook.getCrafterType().hasSkillToImprove(ignoredItem))
-                        comm.sendNormalServerMessage(creature.getName() + " says 'I do not know the skill to improve the " + ignoredItem.getName() + ".'");
-                    else if (ignoredItem.getQualityLevel() < getTargetQL(ignoredItem)) {
-                        comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " is already higher than my skill level.'");
-                    } else if (ignoredItem.isNoImprove()) {
-                        comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " cannot be improved by anyone.'");
-                    } else if (!ignoredItem.isRepairable()) {
-                        comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " cannot be repaired.'");
-                    } else if (!ignoredItem.isNewbieItem() || !ignoredItem.isChallengeNewbieItem()) {
-                        comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " is a new player item.'");
-                    } else {
-                        comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " is probably made of a restricted material.'");
+                if (targetQLs.isEmpty()) {
+                    comm.sendNormalServerMessage(creature.getName() + " says 'No target QL selected.'");
+                } else {
+                    for (Item ignoredItem : offerWindow.getItems()) {
+                        if (!workBook.getCrafterType().hasSkillToImprove(ignoredItem))
+                            comm.sendNormalServerMessage(creature.getName() + " says 'I do not know the skill to improve the " + ignoredItem.getName() + ".'");
+                        else if (ignoredItem.getQualityLevel() >= getTargetQL(ignoredItem)) {
+                            comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " is already higher QL than my skill level.'");
+                        } else if (ignoredItem.isNoImprove()) {
+                            comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " cannot be improved by anyone.'");
+                        } else if (!ignoredItem.isRepairable()) {
+                            comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " cannot be repaired.'");
+                        } else if (ignoredItem.isNewbieItem() || ignoredItem.isChallengeNewbieItem()) {
+                            comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " is a new player item.'");
+                        } else if (hasRestrictedMaterial) {
+                            comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " is probably made of a restricted material.'");
+                        }
                     }
                 }
             }

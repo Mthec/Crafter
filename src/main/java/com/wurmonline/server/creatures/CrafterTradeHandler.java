@@ -98,6 +98,14 @@ public class CrafterTradeHandler extends TradeHandler {
                     addOption(String.format("Improve to %.1fql", skillCap), template, current);
             }
 
+            if (trade.getTradingWindow(1).getItems().length == 0) {
+                if (workBook.getCrafterType().getSkillsFor(creature).size() == 0) {
+                    trade.creatureOne.getCommunicator().sendAlertServerMessage(creature.getName() + " says 'I don't have any skills that would be of use.'");
+                } else {
+                    trade.creatureOne.getCommunicator().sendAlertServerMessage(creature.getName() + " says 'I can't remember what my skills are.'");
+                }
+            }
+
             addOption("Mail to me when done", ItemTemplateFactory.getInstance().getTemplate(ItemList.mailboxWood), CrafterMod.mailPrice(), 1);
             if (CrafterMod.canLearn() && !atSkillCap)
                 addOption("Donate Items", ItemTemplateFactory.getInstance().getTemplate(ItemList.backPack), 0, 1);
@@ -243,6 +251,26 @@ public class CrafterTradeHandler extends TradeHandler {
         int length = offerWindow.getItems().length;
         if (length > 0) {
             trade.creatureOne.getCommunicator().sendSafeServerMessage(creature.getName() + " says 'I cannot improve " + (length == 1 ? "that item.'" : "those items.'"));
+
+            // Extra detail, for tracking down bugs.
+            if (trade.creatureOne.getPower() >= 3) {
+                Communicator comm = trade.creatureOne.getCommunicator();
+                for (Item ignoredItem : offerWindow.getItems()) {
+                    if (!workBook.getCrafterType().hasSkillToImprove(ignoredItem))
+                        comm.sendNormalServerMessage(creature.getName() + " says 'I do not know the skill to improve the " + ignoredItem.getName() + ".'");
+                    else if (ignoredItem.getQualityLevel() < getTargetQL(ignoredItem)) {
+                        comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " is already higher than my skill level.'");
+                    } else if (ignoredItem.isNoImprove()) {
+                        comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " cannot be improved by anyone.'");
+                    } else if (!ignoredItem.isRepairable()) {
+                        comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " cannot be repaired.'");
+                    } else if (!ignoredItem.isNewbieItem() || !ignoredItem.isChallengeNewbieItem()) {
+                        comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " is a new player item.'");
+                    } else {
+                        comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " is probably made of a restricted material.'");
+                    }
+                }
+            }
         }
 
         if (hasRestrictedMaterial) {

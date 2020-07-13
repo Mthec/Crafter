@@ -440,4 +440,13 @@ class CrafterModifySkillsQuestionTests {
 
         assertThat(owner, receivedBMLContaining(first));
     }
+
+    @Test
+    void testMultipleSkillsHasCorrectIds() {
+        new CrafterModifySkillsQuestion(owner, crafter).sendQuestion();
+
+        assertThat(owner, receivedBMLContaining("id=\"all_metal\""));
+        assertThat(owner, receivedBMLContaining("id=\"all_wood\""));
+        assertThat(owner, receivedBMLContaining("id=\"all_armour\""));
+    }
 }

@@ -32,9 +32,9 @@ public class MultipleSkillsBML extends SkillsBML {
         return bml.text("General crafter options will override specialisations if selected.  Other specialisations are not affected.").italic()
                .text("General crafters:")
                .harray(b -> b
-                                    .checkbox("All Metal", "all_metal", crafterType.hasAllMetal())
-                                    .checkbox("All Wood", "all_wood", crafterType.hasAllWood())
-                                    .checkbox("All Armour", "all_armour", crafterType.hasAllArmour()))
+                                    .checkbox("all_metal", "All Metal", crafterType.hasAllMetal())
+                                    .checkbox("all_wood", "All Wood", crafterType.hasAllWood())
+                                    .checkbox("all_armour", "All Armour", crafterType.hasAllArmour()))
                .text("Specialists:")
                .table(new String[] { "Metal", "Wood", "Misc."},
                        Arrays.asList(

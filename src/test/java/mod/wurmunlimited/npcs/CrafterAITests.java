@@ -5,6 +5,7 @@ import com.wurmonline.server.Items;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
 import com.wurmonline.server.creatures.Creature;
+import com.wurmonline.server.creatures.CreaturePos;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.skills.NoSuchSkillException;
 import com.wurmonline.server.skills.Skill;
@@ -495,5 +496,17 @@ class CrafterAITests extends CrafterTest {
 
         data.sendNextAction();
         assertTrue(forge.getItems().stream().noneMatch(i -> i.getTemplateId() == ItemList.ash));
+    }
+
+    @Test
+    void testItemInMineWithCrafter() {
+        crafter.getStatus().setPosition(new CreaturePos(crafter.getWurmId(), crafter.getPosX(), crafter.getPosY(),
+                crafter.getPositionZ(), 0, crafter.getStatus().getZoneId(), -1, -10, false));
+        forge.setSurfaced(false);
+        crafter.getInventory().insertItem(tool);
+
+        data.sendNextAction();
+        assertFalse(lump.isOnSurface());
+        assertFalse(tool.isOnSurface());
     }
 }

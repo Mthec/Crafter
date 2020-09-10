@@ -385,10 +385,14 @@ public class CrafterAIData extends CreatureAIData {
                     }
                     if (lump != null && !forge.getItems().contains(lump)) {
                         forge.insertItem(lump);
+                        // Bug where item is put on surface when inserted.
+                        lump.setParentId(forge.getWurmId(), forge.isOnSurface());
                         logger.info("Put the " + lump.getName() + " in the forge");
                     }
                     if (!forge.getItems().contains(item)) {
                         forge.insertItem(item);
+                        // Bug where item is put on surface when inserted.
+                        item.setParentId(forge.getWurmId(), forge.isOnSurface());
                         logger.info("Put the " + item.getName() + " in the forge");
                     }
 

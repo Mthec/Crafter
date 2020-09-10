@@ -62,6 +62,7 @@ public class BehaviourDispatcher {
     public static void action(Creature creature, Communicator comm, long subject, long target, short action) throws NoSuchItemException {
         dispatches.add(new Dispatch(subject, target, action));
         if (action == Actions.IMPROVE) {
+            assert creature.isOnSurface() == Items.getItem(target).isOnSurface();
             MethodsItems.improveItem(mock(Action.class), creature, Items.getItem(subject), Items.getItem(target), 0f);
         }
     }

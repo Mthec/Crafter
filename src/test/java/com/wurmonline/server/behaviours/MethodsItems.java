@@ -12,8 +12,6 @@ import com.wurmonline.server.skills.NoSuchSkillException;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.Skills;
 
-import java.util.Iterator;
-
 public class MethodsItems {
 
     public static void setFire(Creature creature, Item target) {
@@ -349,10 +347,6 @@ public class MethodsItems {
                     }
                 }
 
-//                if (act.mayPlaySound()) {
-//                    sendImproveSound(performer, source, target, skillNum);
-//                }
-
                 if (counter * 10.0F > (float)time || insta) {
                     if (act.getRarity() != 0) {
                         performer.playPersonalSound("sound.fx.drumroll");
@@ -429,10 +423,8 @@ public class MethodsItems {
 
                         if (rarity > toRarify.getRarity()) {
                             toRarify.setRarity(rarity);
-                            Iterator var33 = toRarify.getItems().iterator();
 
-                            while(var33.hasNext()) {
-                                Item sub = (Item)var33.next();
+                            for (Item sub : toRarify.getItems()) {
                                 if (sub != null && sub.isComponentItem()) {
                                     sub.setRarity(rarity);
                                 }

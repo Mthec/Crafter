@@ -172,36 +172,6 @@ class CrafterModTests {
         verify(method, never()).invoke(crafter, args);
     }
 
-    // TODO - Still struggling with ByteBuffers.
-
-//    @Test
-//    void testServerMessage() throws Throwable {
-//        CrafterMod crafterMod = new CrafterMod();
-//        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), crafterType, 20);
-//        Player player = mock(Player.class);
-//        Communicator comm = new FakeCommunicator(player);
-//        when(player.getCommunicator()).thenReturn(comm);
-//
-////        Set<Creature> allCrafters = ReflectionUtil.getPrivateField(null, CrafterAI.class.getDeclaredField("allCrafters"));
-////        allCrafters.add(crafter);
-//
-//        InvocationHandler handler = crafterMod::serverCommand;
-//        Method method = mock(Method.class);
-//
-//
-//        byte[] toEncode = "/crafters".getBytes(StandardCharsets.UTF_8);
-//        byte[] bytes = new byte[toEncode.length & 255];
-//
-//        System.arraycopy(toEncode, 0, bytes, 0, toEncode.length);
-//
-//
-//        Object[] args = new Object[] { ByteBuffer.wrap(bytes) };
-//
-//        assertNull(handler.invoke(player.getCommunicator(), method, args));
-//        verify(method, never()).invoke(crafter, args);
-//        verify(player, times(1)).showPM(anyString(), anyString(), anyString(), anyBoolean());
-//    }
-
     @Test
     void testSwapOwners() throws Throwable {
         CrafterMod crafterMod = new CrafterMod();
@@ -263,7 +233,7 @@ class CrafterModTests {
 
         Long face = (Long)handler.invoke(creature, method, args);
         assertNotNull(face);
-        assertNotEquals(0, face);
+        assertNotEquals(0L, face);
         verify(method, never()).invoke(creature, args);
     }
 

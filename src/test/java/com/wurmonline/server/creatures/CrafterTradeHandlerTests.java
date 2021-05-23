@@ -59,13 +59,13 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
             String[] element = new String[] { matches.group(1), matches.group(2) };
             switch (element[1]) {
                 case "g":
-                    irons += MonetaryConstants.COIN_GOLD * Integer.parseInt(element[0]);
+                    irons += (long)MonetaryConstants.COIN_GOLD * Integer.parseInt(element[0]);
                     break;
                 case "s":
-                    irons += MonetaryConstants.COIN_SILVER * Integer.parseInt(element[0]);
+                    irons += (long)MonetaryConstants.COIN_SILVER * Integer.parseInt(element[0]);
                     break;
                 case "c":
-                    irons += MonetaryConstants.COIN_COPPER * Integer.parseInt(element[0]);
+                    irons += (long)MonetaryConstants.COIN_COPPER * Integer.parseInt(element[0]);
                     break;
                 case "i":
                     irons += MonetaryConstants.COIN_IRON * Integer.parseInt(element[0]);
@@ -218,7 +218,6 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
     void testManyImproveCosts() {
         crafter = factory.createNewCrafter(owner, crafterType, 50);
         int numberOfItems = 4;
-        assert numberOfItems * 20 < MonetaryConstants.COIN_COPPER;
 
         makeNewCrafterTrade();
         makeHandler();
@@ -526,7 +525,7 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         handler.balance();
 
         int price = handler.getTraderBuyPriceForItem(items.get(0));
-        Arrays.stream(Economy.getEconomy().getCoinsFor(price * count)).forEach(player.getInventory()::insertItem);
+        Arrays.stream(Economy.getEconomy().getCoinsFor((long)price * count)).forEach(player.getInventory()::insertItem);
         player.getInventory().getItems().forEach(trade.getTradingWindow(2)::addItem);
 
         setNotBalanced();

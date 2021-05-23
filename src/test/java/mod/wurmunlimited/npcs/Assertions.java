@@ -71,8 +71,8 @@ public class Assertions {
     public static class HasOptionsForQLUpTo extends TypeSafeMatcher<TradingWindow> {
 
         private static final Pattern qlValue = Pattern.compile(".* ([\\d.]+)ql$");
-        private float maxQl;
-        private Set<String> required;
+        private final float maxQl;
+        private final Set<String> required;
 
         HasOptionsForQLUpTo(float maxQl) {
             this.maxQl = maxQl;

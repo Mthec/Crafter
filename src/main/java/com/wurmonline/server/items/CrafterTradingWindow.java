@@ -45,7 +45,7 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
     }
 
     public static void stopLoggers() {
-        Iterator var0 = loggers.values().iterator();
+        Iterator<Logger> var0 = loggers.values().iterator();
 
         while(true) {
             Logger logger;
@@ -54,7 +54,7 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
                     return;
                 }
 
-                logger = (Logger)var0.next();
+                logger = var0.next();
             } while(logger == null);
 
             for (Handler h : logger.getHandlers()) {
@@ -121,12 +121,12 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
     public boolean mayAddFromInventory(Creature creature, Item item) {
         if (!item.isTraded()) {
             if (item.isNoTrade()) {
-                creature.getCommunicator().sendSafeServerMessage(item.getNameWithGenus() + " is not tradable.");
+                creature.getCommunicator().sendSafeServerMessage(item.getNameWithGenus() + " is not tradeable.");
             } else if (this.windowOwner.equals(creature)) {
                 try {
-                    long owneri = item.getOwner();
-                    if (owneri != this.watcher.getWurmId() && owneri != this.windowOwner.getWurmId()) {
-                        this.windowOwner.setCheated("Traded " + item.getName() + "[" + item.getWurmId() + "] with " + this.watcher.getName() + " owner=" + owneri);
+                    long owner = item.getOwner();
+                    if (owner != this.watcher.getWurmId() && owner != this.windowOwner.getWurmId()) {
+                        this.windowOwner.setCheated("Traded " + item.getName() + "[" + item.getWurmId() + "] with " + this.watcher.getName() + " owner=" + owner);
                     }
                 } catch (NotOwnedException var8) {
                     this.windowOwner.setCheated("Traded " + item.getName() + "[" + item.getWurmId() + "] with " + this.watcher.getName() + " not owned?");
@@ -138,7 +138,7 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
 
                         for (Item lIt : its) {
                             if (lIt.isNoTrade() || lIt.isVillageDeed() || lIt.isHomesteadDeed() || lIt.getTemplateId() == 781) {
-                                creature.getCommunicator().sendSafeServerMessage(item.getNameWithGenus() + " contains a non-tradable item.");
+                                creature.getCommunicator().sendSafeServerMessage(item.getNameWithGenus() + " contains a non-tradeable item.");
                                 return false;
                             }
                         }
@@ -261,6 +261,7 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
         this.watcher.getCommunicator().sendRemoveFromInventory(item, this.wurmId);
         if (noSwap && item.isCoin()) {
             if (item.getOwnerId() == -10L) {
+                //noinspection SpellCheckingInspection
                 Economy.getEconomy().returnCoin(item, "Notrade", true);
             }
         }
@@ -371,8 +372,8 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
         int toReturn = 0;
         Item item;
         if (this.items != null) {
-            for(Iterator var2 = this.items.iterator(); var2.hasNext(); toReturn += item.getFullWeight()) {
-                item = (Item)var2.next();
+            for(Iterator<Item> var2 = this.items.iterator(); var2.hasNext(); toReturn += item.getFullWeight()) {
+                item = var2.next();
             }
         }
 
@@ -423,10 +424,12 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
                 if (CrafterTemplate.isCrafter(windowOwner)) {
                     shop = Economy.getEconomy().getShop(this.windowOwner);
                     workBook = WorkBook.getWorkBookFromWorker(windowOwner);
+                    //noinspection ConstantConditions
                     handler = (CrafterTradeHandler)windowOwner.getTradeHandler();
                 } else {
                     shop = Economy.getEconomy().getShop(this.watcher);
                     workBook = WorkBook.getWorkBookFromWorker(watcher);
+                    //noinspection ConstantConditions
                     handler = (CrafterTradeHandler)watcher.getTradeHandler();
                 }
             } catch (WorkBook.NoWorkBookOnWorker e) {

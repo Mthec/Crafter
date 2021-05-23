@@ -6,11 +6,7 @@ import com.wurmonline.server.items.Item;
 public class Donation extends Job {
 
     Donation(Item item) {
-        this(0, item, 100, false, 0, false);
-    }
-
-    private Donation(long customerId, Item item, float targetQL, boolean mailWhenDone, long priceCharged, boolean done) {
-        super(customerId, item, targetQL, mailWhenDone, priceCharged, done);
+        super(0, item, 100, false, 0, false);
     }
 
     @Override

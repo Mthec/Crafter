@@ -21,19 +21,19 @@ import java.util.logging.Logger;
 
 public class CrafterTradeHandler extends TradeHandler {
     private static final Logger logger = Logger.getLogger(CrafterTradeHandler.class.getName());
-    private Creature creature;
-    private WorkBook workBook;
-    private float skillCap;
-    private boolean ownerTrade;
-    private CrafterTrade trade;
-    private Map<Integer, Float> targetQLs = new HashMap<>();
+    private final Creature creature;
+    private final WorkBook workBook;
+    private final float skillCap;
+    private final boolean ownerTrade;
+    private final CrafterTrade trade;
+    private final Map<Integer, Float> targetQLs = new HashMap<>();
     private boolean balanced = false;
     private boolean mailWhenDone = false;
     private boolean donating = false;
-    private float priceModifier;
-    private List<Item> optionItems = new ArrayList<>();
-    private static BiMap<Integer, ItemTemplate> skillIcons = HashBiMap.create();
-    private Set<Item> coinsToCollect = new HashSet<>();
+    private final float priceModifier;
+    private final List<Item> optionItems = new ArrayList<>();
+    private static final BiMap<Integer, ItemTemplate> skillIcons = HashBiMap.create();
+    private final Set<Item> coinsToCollect = new HashSet<>();
 
     public CrafterTradeHandler(Creature crafter, CrafterTrade _trade) {
         creature = crafter;
@@ -243,7 +243,7 @@ public class CrafterTradeHandler extends TradeHandler {
                     || (item.getQualityLevel() < getTargetQL(item) && !restrictedMaterial && !item.isNoImprove() && item.isRepairable() && !item.isNewbieItem() && !item.isChallengeNewbieItem())) {
                 offerWindow.removeItem(item);
                 myWindow.addItem(item);
-            } else if (item.isWeaponBow() && targetQLs.keySet().contains(SkillList.GROUP_BOWYERY)) {
+            } else if (item.isWeaponBow() && targetQLs.containsKey(SkillList.GROUP_BOWYERY)) {
                 trade.creatureOne.getCommunicator().sendSafeServerMessage(creature.getName() + " says 'Please unstring any bows.'");
             }
         }
@@ -418,8 +418,6 @@ public class CrafterTradeHandler extends TradeHandler {
                 }
                 trade.setMoneyAdded(money);
                 trade.setOrderTotal(cost);
-                trade.setSatisfied(creature, true, trade.getCurrentCounter());
-                balanced = true;
             } else {
                 for (Item item : playerWindow.getItems()) {
                     if (item.isCoin()) {
@@ -429,9 +427,10 @@ public class CrafterTradeHandler extends TradeHandler {
                 }
                 if (trade.getTradingWindow(4).getItems().length > 0)
                     player.getCommunicator().sendSafeServerMessage(creature.getName() + " says 'If you wish to donate these items, I'll be happy to take them to improve my skills.'");
-                trade.setSatisfied(creature, true, trade.getCurrentCounter());
-                balanced = true;
             }
+
+            trade.setSatisfied(creature, true, trade.getCurrentCounter());
+            balanced = true;
         }
     }
 

@@ -23,7 +23,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 import static mod.wurmunlimited.Assert.*;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RestrictedMaterialsTests extends GlobalRestrictionsFileWrapper {

@@ -37,7 +37,7 @@ public class CrafterAI extends CreatureAI {
     }
 
     @Override
-    public boolean pollCreature(Creature c, long delta) {
+    public boolean pollCreature(@NotNull Creature c, long delta) {
         boolean isDead = super.pollCreature(c, delta);
         try {
             if (tradeHandler != null) {

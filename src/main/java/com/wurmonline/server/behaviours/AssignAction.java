@@ -55,7 +55,7 @@ public class AssignAction implements ModAction, BehaviourProvider, ActionPerform
                 data.setForge(null);
                 performer.getCommunicator().sendNormalServerMessage("You unassign this forge from " + crafter.getName() + ".");
             } else {
-                if (CrafterAI.assignedForges.values().contains(target)) {
+                if (CrafterAI.assignedForges.containsValue(target)) {
                     performer.getCommunicator().sendNormalServerMessage("That forge is already assigned to another crafter.");
                 } else if (!Methods.isActionAllowed(crafter, Actions.TAKE)) {
                     performer.getCommunicator().sendNormalServerMessage(crafter.getName() + " would not have permission to access this forge.");

@@ -57,14 +57,14 @@ public class TradeAction implements ModAction, ActionPerformer, BehaviourProvide
             } else if (target.isTrading() && !target.shouldStopTrading(true)) {
                 Trade trade = target.getTrade();
                 if (trade != null) {
-                    Creature oppos = trade.creatureOne;
-                    if (target.equals(oppos)) {
-                        oppos = trade.creatureTwo;
+                    Creature other = trade.creatureOne;
+                    if (target.equals(other)) {
+                        other = trade.creatureTwo;
                     }
 
                     String name = "someone";
-                    if (oppos != null) {
-                        name = oppos.getName();
+                    if (other != null) {
+                        name = other.getName();
                     }
 
                     performer.getCommunicator().sendNormalServerMessage(target.getName() + " is already trading with " + name + ".");
@@ -110,6 +110,7 @@ public class TradeAction implements ModAction, ActionPerformer, BehaviourProvide
                     target.setTrade(trade);
                     target.getCommunicator().sendStartTrading(performer);
                     performer.getCommunicator().sendStartTrading(target);
+                    //noinspection ConstantConditions
                     ((CrafterTradeHandler)target.getTradeHandler()).addItemsToTrade();
                 } catch (WorkBook.NoWorkBookOnWorker e) {
                     logger.warning(e.getMessage());

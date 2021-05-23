@@ -13,7 +13,7 @@ import static org.mockito.Mockito.mock;
 
 public class BehaviourDispatcher {
 
-    private static List<Dispatch> dispatches = new ArrayList<>();
+    private static final List<Dispatch> dispatches = new ArrayList<>();
 
     private static class Dispatch {
         private final Item subject;

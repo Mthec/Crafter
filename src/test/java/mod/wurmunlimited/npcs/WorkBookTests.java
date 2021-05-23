@@ -100,6 +100,7 @@ class WorkBookTests extends GlobalRestrictionsFileWrapper {
 
     @Test
     void testWorkBookLoadingInvalidCrafterType() {
+        //noinspection SpellCheckingInspection
         String notCrafterType = "asdjhgfiaohet";
         Item workBookItem = createBlankWorkbookItem();
         workBookItem.getFirstContainedItem().setInscription(Joiner.on("\n").join(
@@ -616,11 +617,10 @@ class WorkBookTests extends GlobalRestrictionsFileWrapper {
         Job first = jobs.next();
         assertFalse(first.isDonation());
 
-        while (!jobs.next().isDonation()) {}
+        //noinspection StatementWithEmptyBody
+        while (!jobs.next().isDonation());
 
-        jobs.forEachRemaining(job -> {
-            assertTrue(job.isDonation());
-        });
+        jobs.forEachRemaining(job -> assertTrue(job.isDonation()));
 
     }
 

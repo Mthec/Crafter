@@ -32,7 +32,7 @@ public class CrafterTrade extends Trade {
     private boolean creatureTwoSatisfied = false;
     private int currentCounter = -1;
     private long moneyAdded;
-    private WorkBook workBook;
+    private final WorkBook workBook;
     private long orderTotal;
 
     public CrafterTrade(Creature player, Creature crafter) throws WorkBook.NoWorkBookOnWorker {
@@ -143,6 +143,7 @@ public class CrafterTrade extends Trade {
                     }
 
 
+                    //noinspection ConstantConditions
                     CrafterTradeHandler handler = (CrafterTradeHandler)creatureTwo.getTradeHandler();
                     List<String> requiredSpace = Stream.of(getTradingWindow(4).getItems()).filter(i -> !i.isCoin()).map(i -> Job.toString(creatureOne.getWurmId(),
                             i, handler.getTargetQL(i), handler.isMailOnDone(), handler.getTraderBuyPriceForItem(i) + (handler.isMailOnDone() ? CrafterMod.mailPrice() : 0), false))

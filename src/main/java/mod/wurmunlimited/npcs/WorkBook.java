@@ -201,8 +201,8 @@ public class WorkBook implements Iterable<Job> {
     @Nonnull
     public Iterator<Job> iterator() {
         return new Iterator<Job>() {
-            private Iterator<Job> jobIterator = jobs.stream().filter(job -> !job.isDonation()).iterator();
-            private Iterator<Job> donationsIterator = jobs.stream().filter(Job::isDonation).sorted((i, j) -> Float.compare(i.item.getQualityLevel(), j.item.getQualityLevel())).iterator();
+            private final Iterator<Job> jobIterator = jobs.stream().filter(job -> !job.isDonation()).iterator();
+            private final Iterator<Job> donationsIterator = jobs.stream().filter(Job::isDonation).sorted((i, j) -> Float.compare(i.item.getQualityLevel(), j.item.getQualityLevel())).iterator();
 
             @Override
             public boolean hasNext() {
@@ -264,7 +264,7 @@ public class WorkBook implements Iterable<Job> {
     }
 
     public boolean isJobItem(Item item) {
-        return jobItems.keySet().contains(item);
+        return jobItems.containsKey(item);
     }
 
     public void addJob(long customerId, Item item, float targetQL, boolean mailWhenDone, long priceCharged) throws WorkBookFull {

@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
     private Item tool;
@@ -56,7 +56,7 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
         for (int i = 1; i < 99; i++) {
             tool.setQualityLevel(i);
             long current = handler.getTraderBuyPriceForItem(tool);
-            assertTrue(current + " not less than " + last, current < last);
+            assertTrue(current < last, current + " not less than " + last);
             last = current;
         }
 
@@ -134,7 +134,7 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
             trade.getTradingWindow(3).addItem(op);
             handler.balance();
             int price = handler.getTraderBuyPriceForItem(tool);
-            System.out.println(String.format("%s - %s", op.getName(), price));
+            System.out.printf("%s - %s%n", op.getName(), price);
             assertTrue(price > 0);
             trade.getTradingWindow(3).removeItem(op);
         }
@@ -161,7 +161,7 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
             trade.getTradingWindow(3).addItem(op);
             handler.balance();
             int price = handler.getTraderBuyPriceForItem(tool);
-            System.out.println(String.format("%s - %s", op.getName(), price));
+            System.out.printf("%s - %s%n", op.getName(), price);
             assertTrue(price < Integer.MAX_VALUE);
             trade.getTradingWindow(3).removeItem(op);
         }
@@ -178,7 +178,7 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
         int higherPrice = handler.getTraderBuyPriceForItem(tool);
 
         assertTrue(standardPrice < higherPrice);
-        assertEquals(standardPrice / 1.0f, higherPrice / 1.1f, 0.1f);
+        assertEquals(standardPrice, higherPrice / 1.1f, 0.1f);
     }
 
     @Test

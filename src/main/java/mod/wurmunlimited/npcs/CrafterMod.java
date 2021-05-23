@@ -395,6 +395,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                     }
                 }
 
+                // TODO - Try finally?
                 method.invoke(o, args);
 
                 for (Item item : jobItems) {
@@ -446,6 +447,8 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         ModActions.registerAction(new AssignAction(contractTemplateId));
         ModActions.registerAction(new TradeAction());
         ModActions.registerAction(new CrafterContractAction(contractTemplateId));
+        new PlaceCrafterAction();
+        PlaceNpcMenu.registerAction();
 
         try {
             Class<?> ServiceHandler = Class.forName("mod.wurmunlimited.npcs.CrafterAI");

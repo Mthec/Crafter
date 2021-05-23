@@ -9,7 +9,6 @@ import com.wurmonline.server.villages.VillageStatus;
 import com.wurmonline.server.zones.NoSuchZoneException;
 import com.wurmonline.server.zones.Zones;
 import mod.wurmunlimited.CrafterObjectsFactory;
-import mod.wurmunlimited.npcs.CrafterAI;
 import mod.wurmunlimited.npcs.CrafterAIData;
 import mod.wurmunlimited.npcs.CrafterTemplate;
 import mod.wurmunlimited.npcs.CrafterType;
@@ -17,7 +16,6 @@ import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -198,6 +196,8 @@ class AssignActionTests {
     @Test
     void testInsufficientPermissionsForForge() throws NoSuchRoleException, NoSuchZoneException {
         Village v = factory.createVillageFor(player);
+        crafter.getStatus().setPosition(player.getStatus().getPosition());
+        crafter.currentTile = null;
         assert Zones.getOrCreateTile(crafter.getTileX(), crafter.getTileY(), crafter.isOnSurface()).getVillage() != null;
         assert !v.getRoleForStatus(VillageStatus.ROLE_EVERYBODY).mayPickup();
 

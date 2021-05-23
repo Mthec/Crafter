@@ -1,6 +1,8 @@
 package mod.wurmunlimited.npcs;
 
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
+import com.wurmonline.server.behaviours.PlaceCrafterAction;
+import com.wurmonline.server.behaviours.PlaceNpcMenu;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.CrafterTrade;
 import com.wurmonline.server.items.Item;
@@ -18,6 +20,8 @@ public class CrafterTest {
     protected Item tool;
     protected Item forge;
     protected CrafterTrade trade;
+    protected static PlaceNpcMenu menu;
+    private static boolean init = false;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -34,6 +38,12 @@ public class CrafterTest {
         factory.createVillageFor(owner, crafter);
         forge = factory.createNewItem(ItemList.forge);
         setForgeWithoutPathing();
+
+        if (!init) {
+            new PlaceCrafterAction();
+            menu = PlaceNpcMenu.registerAction();
+            init = true;
+        }
     }
 
     protected void setForgeWithoutPathing() {

@@ -8,7 +8,7 @@ import com.wurmonline.server.players.Player;
 import com.wurmonline.server.questions.skills.MultipleSkillsBML;
 import com.wurmonline.server.questions.skills.SingleSkillBML;
 import com.wurmonline.server.skills.SkillList;
-import com.wurmonline.server.zones.Zones;
+import com.wurmonline.server.villages.Villages;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import mod.wurmunlimited.bml.BML;
 import mod.wurmunlimited.bml.BMLBuilder;
@@ -85,11 +85,11 @@ class CrafterHireQuestionTests {
     }
 
     private Creature getNewlyCreatedCrafter() {
-        return Creatures.getInstance().getAllCreatures().stream().filter(CrafterTemplate::isCrafter).findFirst().orElseThrow(RuntimeException::new);
+        return factory.getAllCreatures().stream().filter(CrafterTemplate::isCrafter).findFirst().orElseThrow(RuntimeException::new);
     }
 
     private long getCrafterCount() {
-        return Creatures.getInstance().getAllCreatures().stream().filter(CrafterTemplate::isCrafter).count();
+        return factory.getAllCreatures().stream().filter(CrafterTemplate::isCrafter).count();
     }
 
     @Test
@@ -230,7 +230,7 @@ class CrafterHireQuestionTests {
 
     @Test
     void testNewCrafterNotAddedToVillageIfOwnerHasNoVillage() {
-        Zones.villages.clear();
+        Arrays.stream(Villages.getVillages()).forEach(v -> v.disband("upkeep"));
         new CrafterHireQuestion(factory.createNewPlayer(), contract.getWurmId()).answer(generateProperties());
 
         Creature newCrafter = getNewlyCreatedCrafter();

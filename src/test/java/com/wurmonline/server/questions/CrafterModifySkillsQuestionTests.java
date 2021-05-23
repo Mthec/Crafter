@@ -3,7 +3,6 @@ package com.wurmonline.server.questions;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
-import com.wurmonline.server.items.ItemFactory;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.items.WurmMail;
 import com.wurmonline.server.players.Player;
@@ -30,21 +29,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CrafterModifySkillsQuestionTests {
-    private static final String[] allCrafterTypes = new String[] {
-            String.valueOf(SkillList.SMITHING_BLACKSMITHING),
-            String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING),
-            String.valueOf(SkillList.SMITHING_GOLDSMITHING),
-            String.valueOf(SkillList.SMITHING_ARMOUR_CHAIN),
-            String.valueOf(SkillList.SMITHING_ARMOUR_PLATE),
-            String.valueOf(SkillList.CARPENTRY),
-            String.valueOf(SkillList.CARPENTRY_FINE),
-            String.valueOf(SkillList.GROUP_FLETCHING),
-            String.valueOf(SkillList.GROUP_BOWYERY),
-            String.valueOf(SkillList.LEATHERWORKING),
-            String.valueOf(SkillList.CLOTHTAILORING),
-            String.valueOf(SkillList.STONECUTTING),
-            String.valueOf(SkillList.SMITHING_SHIELDS),
-            String.valueOf(SkillList.POTTERY)
+    private static final int[] allCrafterTypes = new int[] {
+            SkillList.SMITHING_BLACKSMITHING,
+            SkillList.GROUP_SMITHING_WEAPONSMITHING,
+            SkillList.SMITHING_GOLDSMITHING,
+            SkillList.SMITHING_ARMOUR_CHAIN,
+            SkillList.SMITHING_ARMOUR_PLATE,
+            SkillList.CARPENTRY,
+            SkillList.CARPENTRY_FINE,
+            SkillList.GROUP_FLETCHING,
+            SkillList.GROUP_BOWYERY,
+            SkillList.LEATHERWORKING,
+            SkillList.CLOTHTAILORING,
+            SkillList.STONECUTTING,
+            SkillList.SMITHING_SHIELDS,
+            SkillList.POTTERY
     };
     private CrafterObjectsFactory factory;
     private Player owner;
@@ -246,7 +245,7 @@ class CrafterModifySkillsQuestionTests {
 
     @Test
     void testSkillsReducedIfSkillCapLowered() throws NoSuchSkillException {
-        new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties(String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING)));
+        new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties(new Integer[] { SkillList.GROUP_SMITHING_WEAPONSMITHING }));
         crafter.getSkills().getSkill(SkillList.GROUP_SMITHING_WEAPONSMITHING).setKnowledge(75, false);
 
         int skillCap = 45;
@@ -260,13 +259,14 @@ class CrafterModifySkillsQuestionTests {
     @Test
     void testDonationItemsDestroyedIfOptionSet() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
         new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties("all_metal"));
-        Item donation = ItemFactory.createItem(ItemList.pickAxe, 10, "");
+        Item donation = factory.createNewItem(ItemList.pickAxe);
+        donation.setQualityLevel(10);
         WorkBook.getWorkBookFromWorker(crafter).addDonation(donation);
         crafter.getInventory().insertItem(donation);
 
-        Properties properties = generateProperties("all_metal");
+        Properties properties = generateProperties(CrafterType.allMetal);
         properties.setProperty("rd", "true");
-        properties.setProperty(String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING), "false");
+        properties.setProperty(String.valueOf(SkillList.SMITHING_BLACKSMITHING), "false");
         new CrafterModifySkillsQuestion(owner, crafter).answer(properties);
 
         assertFalse(crafter.getInventory().getItems().contains(donation));
@@ -275,11 +275,12 @@ class CrafterModifySkillsQuestionTests {
     @Test
     void testDonationItemsNotDestroyedIfOptionUnSet() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
         new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties("all_metal"));
-        Item donation = ItemFactory.createItem(ItemList.swordLong, 10, "");
+        Item donation = factory.createNewItem(ItemList.swordLong);
+        donation.setQualityLevel(10);
         WorkBook.getWorkBookFromWorker(crafter).addDonation(donation);
         crafter.getInventory().insertItem(donation);
 
-        Properties properties = generateProperties("all_metal");
+        Properties properties = generateProperties(CrafterType.allMetal);
         properties.setProperty(String.valueOf(SkillList.GROUP_SMITHING_WEAPONSMITHING), "false");
         properties.setProperty("rd", "false");
         new CrafterModifySkillsQuestion(owner, crafter).answer(properties);
@@ -290,11 +291,12 @@ class CrafterModifySkillsQuestionTests {
     @Test
     void testChangeBlockedWhenItemRequiresRemovedSkill() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
         new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties("all_metal"));
-        Item jobItem = ItemFactory.createItem(ItemList.pickAxe, 10, "");
+        Item jobItem = factory.createNewItem(ItemList.pickAxe);
+        jobItem.setQualityLevel(10);
         WorkBook.getWorkBookFromWorker(crafter).addJob(owner.getWurmId(), jobItem, 20, false, 1);
         crafter.getInventory().insertItem(jobItem);
 
-        Properties properties = generateProperties("all_metal");
+        Properties properties = generateProperties(CrafterType.allMetal);
         properties.setProperty(String.valueOf(SkillList.SMITHING_BLACKSMITHING), "false");
         properties.setProperty("refund", "false");
         new CrafterModifySkillsQuestion(owner, crafter).answer(properties);
@@ -306,11 +308,12 @@ class CrafterModifySkillsQuestionTests {
     @Test
     void testJobItemRefundedWhenRequiresRemovedSkill() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
         new CrafterModifySkillsQuestion(owner, crafter).answer(generateProperties("all_metal"));
-        Item jobItem = ItemFactory.createItem(ItemList.pickAxe, 10, "");
+        Item jobItem = factory.createNewItem(ItemList.pickAxe);
+        jobItem.setQualityLevel(10);
         WorkBook.getWorkBookFromWorker(crafter).addJob(owner.getWurmId(), jobItem, 20, false, 1);
         crafter.getInventory().insertItem(jobItem);
 
-        Properties properties = generateProperties("all_metal");
+        Properties properties = generateProperties(CrafterType.allMetal);
         properties.setProperty(String.valueOf(SkillList.SMITHING_BLACKSMITHING), "false");
         properties.setProperty("refund", "true");
         new CrafterModifySkillsQuestion(owner, crafter).answer(properties);
@@ -356,8 +359,8 @@ class CrafterModifySkillsQuestionTests {
         CrafterType crafterType = WorkBook.getWorkBookFromWorker(crafter).getCrafterType();
         owner.setPower((byte)2);
 
-        for (String type : allCrafterTypes) {
-            Properties properties = generateProperties(type);
+        for (int type : allCrafterTypes) {
+            Properties properties = generateProperties(new Integer[] { type });
             properties.setProperty("set", "true");
             new CrafterModifySkillsQuestion(owner, crafter).answer(properties);
 

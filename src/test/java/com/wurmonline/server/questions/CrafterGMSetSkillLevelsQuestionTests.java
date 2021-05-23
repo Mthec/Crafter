@@ -3,7 +3,6 @@ package com.wurmonline.server.questions;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
-import com.wurmonline.server.items.ItemFactory;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.items.WurmMail;
 import com.wurmonline.server.players.Player;
@@ -15,14 +14,13 @@ import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterType;
 import mod.wurmunlimited.npcs.WorkBook;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
 
 import static mod.wurmunlimited.Assert.*;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CrafterGMSetSkillLevelsQuestionTests {
@@ -165,7 +163,7 @@ public class CrafterGMSetSkillLevelsQuestionTests {
         properties.setProperty("skill_cap", Float.toString(skillCap));
         new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
 
-        MatcherAssert.assertThat(owner, receivedMessageContaining("cap was too low"));
+        assertThat(owner, receivedMessageContaining("cap was too low"));
         assertEquals(20, WorkBook.getWorkBookFromWorker(crafter).getSkillCap());
     }
 
@@ -176,7 +174,7 @@ public class CrafterGMSetSkillLevelsQuestionTests {
         properties.setProperty("skill_cap", Integer.toString(skillCap));
         new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
 
-        MatcherAssert.assertThat(owner, receivedMessageContaining("was too high"));
+        assertThat(owner, receivedMessageContaining("was too high"));
         assertEquals(CrafterMod.getSkillCap(), WorkBook.getWorkBookFromWorker(crafter).getSkillCap());
     }
 
@@ -186,7 +184,7 @@ public class CrafterGMSetSkillLevelsQuestionTests {
         properties.setProperty("skill_cap", "abc");
         new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
 
-        MatcherAssert.assertThat(owner, receivedMessageContaining("was invalid"));
+        assertThat(owner, receivedMessageContaining("was invalid"));
     }
 
     @Test
@@ -196,7 +194,7 @@ public class CrafterGMSetSkillLevelsQuestionTests {
         properties.setProperty("skill_cap", "");
         new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
 
-        MatcherAssert.assertThat(owner, didNotReceiveMessageContaining("was invalid"));
+        assertThat(owner, didNotReceiveMessageContaining("was invalid"));
         assertEquals(startingCap, WorkBook.getWorkBookFromWorker(crafter).getSkillCap());
     }
 
@@ -241,7 +239,8 @@ public class CrafterGMSetSkillLevelsQuestionTests {
     void testDonationItemsDestroyedIfOptionSetAndItemQLTooHigh() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
         workBook.updateSkillsSettings(workBook.getCrafterType(), 80);
-        Item donation = ItemFactory.createItem(ItemList.pickAxe, 91, "");
+        Item donation = factory.createNewItem(ItemList.pickAxe);
+        donation.setQualityLevel(91);
         donation.setMaterial(ItemMaterials.MATERIAL_IRON);
         workBook.addDonation(donation);
         crafter.getInventory().insertItem(donation);
@@ -258,7 +257,8 @@ public class CrafterGMSetSkillLevelsQuestionTests {
         Properties canLearn = new Properties();
         canLearn.setProperty("can_learn", "false");
         new CrafterMod().configure(canLearn);
-        Item donation = ItemFactory.createItem(ItemList.pickAxe, 10, "");
+        Item donation = factory.createNewItem(ItemList.pickAxe);
+        donation.setQualityLevel(10);
         donation.setMaterial(ItemMaterials.MATERIAL_IRON);
         WorkBook.getWorkBookFromWorker(crafter).addDonation(donation);
         crafter.getInventory().insertItem(donation);
@@ -274,7 +274,8 @@ public class CrafterGMSetSkillLevelsQuestionTests {
     void testDonationItemsNotDestroyedIfOptionUnSetAndItemQLTooHigh() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
         workBook.updateSkillsSettings(workBook.getCrafterType(), 80);
-        Item donation = ItemFactory.createItem(ItemList.pickAxe, 91, "");
+        Item donation = factory.createNewItem(ItemList.pickAxe);
+        donation.setQualityLevel(91);
         donation.setMaterial(ItemMaterials.MATERIAL_IRON);
         workBook.addDonation(donation);
         crafter.getInventory().insertItem(donation);
@@ -291,7 +292,8 @@ public class CrafterGMSetSkillLevelsQuestionTests {
         Properties canLearn = new Properties();
         canLearn.setProperty("can_learn", "false");
         new CrafterMod().configure(canLearn);
-        Item donation = ItemFactory.createItem(ItemList.swordLong, 10, "");
+        Item donation = factory.createNewItem(ItemList.pickAxe);
+        donation.setQualityLevel(10);
         WorkBook.getWorkBookFromWorker(crafter).addDonation(donation);
         crafter.getInventory().insertItem(donation);
 
@@ -305,7 +307,8 @@ public class CrafterGMSetSkillLevelsQuestionTests {
     @Test
     void testChangeBlockedWhenItemImprovementSkillLevelInsufficient() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
         int targetQL = 20;
-        Item jobItem = ItemFactory.createItem(ItemList.pickAxe, 10, "");
+        Item jobItem = factory.createNewItem(ItemList.pickAxe);
+        jobItem.setQualityLevel(10);
         jobItem.setMaterial(ItemMaterials.MATERIAL_IRON);
         WorkBook.getWorkBookFromWorker(crafter).addJob(owner.getWurmId(), jobItem, targetQL, false, 1);
         crafter.getInventory().insertItem(jobItem);
@@ -316,7 +319,7 @@ public class CrafterGMSetSkillLevelsQuestionTests {
         new CrafterGMSetSkillLevelsQuestion(owner, crafter).answer(properties);
 
         assertTrue(crafter.getInventory().getItems().contains(jobItem));
-        MatcherAssert.assertThat(owner, receivedMessageContaining("still has some jobs"));
+        assertThat(owner, receivedMessageContaining("still has some jobs"));
     }
 
     @Test
@@ -325,7 +328,8 @@ public class CrafterGMSetSkillLevelsQuestionTests {
         startingSkill.setProperty("starting_skill", "1");
         new CrafterMod().configure(startingSkill);
         int targetQL = 20;
-        Item jobItem = ItemFactory.createItem(ItemList.pickAxe, 10, "");
+        Item jobItem = factory.createNewItem(ItemList.pickAxe);
+        jobItem.setQualityLevel(10);
         jobItem.setMaterial(ItemMaterials.MATERIAL_IRON);
         WorkBook.getWorkBookFromWorker(crafter).addJob(owner.getWurmId(), jobItem, targetQL, false, 1);
         crafter.getInventory().insertItem(jobItem);
@@ -337,13 +341,14 @@ public class CrafterGMSetSkillLevelsQuestionTests {
 
         assertFalse(crafter.getInventory().getItems().contains(jobItem));
         assertTrue(WurmMail.allMail.stream().anyMatch((m) -> m.itemId == jobItem.getWurmId() && m.ownerId == owner.getWurmId()));
-        MatcherAssert.assertThat(owner, didNotReceiveMessageContaining("still has some jobs"));
+        assertThat(owner, didNotReceiveMessageContaining("still has some jobs"));
     }
 
     @Test
     void testJobItemNotRefundedWhenSkillLevelStillSufficient() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
         int targetQL = 20;
-        Item jobItem = ItemFactory.createItem(ItemList.pickAxe, 10, "");
+        Item jobItem = factory.createNewItem(ItemList.pickAxe);
+        jobItem.setQualityLevel(10);
         jobItem.setMaterial(ItemMaterials.MATERIAL_IRON);
         WorkBook.getWorkBookFromWorker(crafter).addJob(owner.getWurmId(), jobItem, targetQL, false, 1);
         crafter.getInventory().insertItem(jobItem);
@@ -355,6 +360,6 @@ public class CrafterGMSetSkillLevelsQuestionTests {
 
         assertTrue(crafter.getInventory().getItems().contains(jobItem));
         assertFalse(WurmMail.allMail.stream().anyMatch((m) -> m.itemId == jobItem.getWurmId() && m.ownerId == owner.getWurmId()));
-        MatcherAssert.assertThat(owner, didNotReceiveMessageContaining("still has some jobs"));
+        assertThat(owner, didNotReceiveMessageContaining("still has some jobs"));
     }
 }

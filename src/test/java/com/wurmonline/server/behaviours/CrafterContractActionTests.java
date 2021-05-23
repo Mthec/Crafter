@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Properties;
 
 import static mod.wurmunlimited.Assert.bmlEqual;
 import static mod.wurmunlimited.Assert.receivedMessageContaining;
@@ -26,7 +27,7 @@ class CrafterContractActionTests {
     private Creature owner;
     private Creature crafter;
     private Item contract;
-    private Action act = mock(Action.class);
+    private final Action act = mock(Action.class);
 
     @BeforeEach
     void setUp() throws Exception {
@@ -38,6 +39,9 @@ class CrafterContractActionTests {
         contract = factory.createNewItem(CrafterMod.getContractTemplateId());
         contract.setData(crafter.getWurmId());
         owner.getInventory().insertItem(contract);
+        Properties crafterModProperties = new Properties();
+        crafterModProperties.setProperty("name_prefix", "");
+        new CrafterMod().configure(crafterModProperties);
     }
 
     // getBehaviourFor

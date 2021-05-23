@@ -10,6 +10,7 @@ import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.TradingWindow;
 import com.wurmonline.server.players.Player;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.server.villages.Village;
 import com.wurmonline.server.villages.Villages;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
@@ -40,7 +41,7 @@ public class CrafterTradingTest {
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 1);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("minimumPriceModifier"), 0.0000001f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("paymentOption"), CrafterMod.PaymentOption.for_owner);
-        ((ConcurrentHashMap)ReflectionUtil.getPrivateField(null, Villages.class.getDeclaredField("villages"))).clear();
+        (ReflectionUtil.<ConcurrentHashMap<Integer, Village>>getPrivateField(null, Villages.class.getDeclaredField("villages"))).clear();
         List<Byte> restrictedMaterials = ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("restrictedMaterials"));
         restrictedMaterials.clear();
         owner = factory.createNewPlayer();

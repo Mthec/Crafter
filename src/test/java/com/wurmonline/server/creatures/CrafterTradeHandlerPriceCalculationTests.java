@@ -64,8 +64,7 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
 
     @Test
     void testDragonArmourAddsAnotherModifier() throws NoSuchFieldException, IllegalAccessException {
-        //noinspection unchecked
-        ((Map<Integer, Float>)ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("skillPrices"))).put(CrafterMod.DRAGON_ARMOUR, 10.0f);
+        (ReflectionUtil.<Map<Integer, Float>>getPrivateField(null, CrafterMod.class.getDeclaredField("skillPrices"))).put(CrafterMod.DRAGON_ARMOUR, 10.0f);
         crafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allArmour), 70);
         create(20);
 
@@ -78,8 +77,7 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
 
     @Test
     void testDragonArmourModifierWithDifferentBasePrice() throws NoSuchFieldException, IllegalAccessException {
-        //noinspection unchecked
-        ((Map<Integer, Float>)ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("skillPrices"))).put(CrafterMod.DRAGON_ARMOUR, 10.0f);
+        ReflectionUtil.<Map<Integer, Float>>getPrivateField(null, CrafterMod.class.getDeclaredField("skillPrices")).put(CrafterMod.DRAGON_ARMOUR, 10.0f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 2.5f);
         crafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allArmour), 70);
         create(20);
@@ -93,8 +91,7 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
 
     @Test
     void testMoonMetalModifierAddsAnotherModifier() throws NoSuchFieldException, IllegalAccessException {
-        //noinspection unchecked
-        ((Map<Integer, Float>)ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("skillPrices"))).put(CrafterMod.MOON_METAL, 10.0f);
+        ReflectionUtil.<Map<Integer, Float>>getPrivateField(null, CrafterMod.class.getDeclaredField("skillPrices")).put(CrafterMod.MOON_METAL, 10.0f);
         crafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allMetal), 70);
         create(20);
 

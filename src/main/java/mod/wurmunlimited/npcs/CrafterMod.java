@@ -38,9 +38,11 @@ import java.util.stream.Collectors;
 public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configurable, ItemTemplatesCreatedListener, ServerStartedListener, PlayerMessageListener {
     private static final Logger logger = Logger.getLogger(CrafterMod.class.getName());
     private static final Random faceRandom = new Random();
+    public static final int maxNameLength = 50;
     static final byte MAIL_TYPE_CRAFTER = 30;
     public static final int DRAGON_ARMOUR = -1;
     public static final int MOON_METAL = -2;
+    private static String namePrefix;
     private static int contractTemplateId;
     private static int contractPrice = 10000;
     private static PaymentOption paymentOption = PaymentOption.for_owner;
@@ -77,6 +79,10 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         tax_and_upkeep,
         for_owner,
         all_tax
+    }
+
+    public static String getNamePrefix() {
+        return namePrefix;
     }
 
     public static int getContractTemplateId() {
@@ -207,6 +213,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     @Override
     public void configure(Properties properties) {
         this.properties = properties;
+        namePrefix = (String)properties.getOrDefault("name_prefix", "");
         contractPrice = getOption("contract_price_in_irons", contractPrice);
         paymentOption = parsePaymentOption(properties.getProperty("payment"));
         output = parseOutputOption(properties.getProperty("output"));

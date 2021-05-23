@@ -9,10 +9,14 @@ import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.NoSuchTemplateException;
+import com.wurmonline.shared.util.StringUtilities;
 import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.*;
 
+import java.io.IOException;
 import java.util.Properties;
+
+import static com.wurmonline.server.creatures.CreaturePackageCaller.saveCreatureName;
 
 public class CrafterManagementQuestion extends CrafterQuestionExtension {
     private final Creature crafter;
@@ -27,22 +31,41 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
     @Override
     public void answer(Properties properties) {
         setAnswer(properties);
+        Creature responder = getResponder();
+
+        String name = getStringProp("name");
+        if (name != null && !name.isEmpty()) {
+            String fullName = getPrefix() + StringUtilities.raiseFirstLetter(name);
+            if (QuestionParser.containsIllegalCharacters(name)) {
+                responder.getCommunicator().sendNormalServerMessage("The crafter didn't like that name, so they shall remain " + crafter.getName() + ".");
+            } else if (!fullName.equals(crafter.getName())) {
+                try {
+                    saveCreatureName(crafter, fullName);
+                    crafter.refreshVisible();
+                    responder.getCommunicator().sendNormalServerMessage("The crafter will now be known as " + crafter.getName() + ".");
+                } catch (IOException e) {
+                    logger.warning("Failed to set name (" + fullName + ") for creature (" + crafter.getWurmId() + ").");
+                    responder.getCommunicator().sendNormalServerMessage("The crafter looks confused, what exactly is a database?");
+                    e.printStackTrace();
+                }
+            }
+        }
 
         String val = properties.getProperty("price_modifier");
         if (val != null && val.length() > 0) {
             try {
                 float priceModifier = Float.parseFloat(val);
                 if (priceModifier <= 0)
-                    getResponder().getCommunicator().sendSafeServerMessage("Price modifier must be positive.");
+                    responder.getCommunicator().sendSafeServerMessage("Price modifier must be positive.");
                 else {
                     if (priceModifier < CrafterMod.getMinimumPriceModifier()) {
-                        getResponder().getCommunicator().sendSafeServerMessage("Price modifier was too low, setting minimum value.");
+                        responder.getCommunicator().sendSafeServerMessage("Price modifier was too low, setting minimum value.");
                         priceModifier = CrafterMod.getMinimumPriceModifier();
                     }
                     shop.setPriceModifier(priceModifier);
                 }
             } catch (NumberFormatException e) {
-                getResponder().getCommunicator().sendSafeServerMessage("Price modifier must be a number.");
+                responder.getCommunicator().sendSafeServerMessage("Price modifier must be a number.");
             }
         }
         if (wasSelected("dismiss")) {
@@ -50,7 +73,7 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
         }
 
         if (wasSelected("skills")) {
-            new CrafterModifySkillsQuestion(getResponder(), crafter).sendQuestion();
+            new CrafterModifySkillsQuestion(responder, crafter).sendQuestion();
         }
 
         if (wasSelected("restrict")) {
@@ -59,7 +82,7 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
             } catch (WorkBook.NoWorkBookOnWorker e) {
                 logger.warning("Crafter workbook was missing.");
                 e.printStackTrace();
-                getResponder().getCommunicator().sendNormalServerMessage(crafter.getName() + " fumbles about and cannot find their workbook.");
+                responder.getCommunicator().sendNormalServerMessage(crafter.getName() + " fumbles about and cannot find their workbook.");
             }
         }
     }
@@ -71,7 +94,7 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
             WorkBook workBook = data.getWorkBook();
 
             String bml = new BMLBuilder(id)
-                                 .text("Name - " + crafter.getName())
+                                 .harray(b -> b.label("Name: " + getPrefix()).entry("name", getNameWithoutPrefix(crafter.getName()), CrafterMod.maxNameLength))
                                  .table(new String[] { "Skill", "Current", "Max" }, workBook.getCrafterType().getSkillsFor(crafter),
                                          (skill, b) -> b.label(skill.getName()).label(String.format("%.2f", skill.getKnowledge())).label(Float.toString(workBook.getSkillCap())))
                                  .newLine()

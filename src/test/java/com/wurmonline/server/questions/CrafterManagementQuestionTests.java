@@ -2,10 +2,12 @@ package com.wurmonline.server.questions;
 
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
 import com.wurmonline.server.creatures.Creature;
+import com.wurmonline.server.creatures.FakeCreatureStatus;
 import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.players.Player;
+import com.wurmonline.shared.util.StringUtilities;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import mod.wurmunlimited.npcs.*;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
@@ -13,12 +15,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.sql.SQLException;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static mod.wurmunlimited.Assert.bmlEqual;
-import static mod.wurmunlimited.Assert.receivedMessageContaining;
+import static mod.wurmunlimited.Assert.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,7 +28,6 @@ class CrafterManagementQuestionTests {
     private CrafterObjectsFactory factory;
     private Player owner;
     private Creature crafter;
-    private Item contract;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -40,16 +41,28 @@ class CrafterManagementQuestionTests {
         owner = factory.createNewPlayer();
         crafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allMetal), 50);
         factory.createVillageFor(owner, crafter);
-        contract = factory.createNewItem(CrafterMod.getContractTemplateId());
+        Item contract = factory.createNewItem(CrafterMod.getContractTemplateId());
         contract.setData(crafter.getWurmId());
+        owner.getInventory().insertItem(contract);
+        setPrefix("");
     }
 
     // sendQuestion
 
     @Test
-    void testNameValueAddedCorrectlyToBML() {
+    public void testNameWithPrefixCorrectlySet() throws SQLException {
+        setPrefix("Crafter");
+        crafter.setName("Crafter_Dave");
         new CrafterManagementQuestion(owner, crafter).sendQuestion();
-        assertTrue(factory.getCommunicator(owner).lastBmlContent.contains(String.format("text{text=\"Name - %s\"}", crafter.getName())), factory.getCommunicator(owner).lastBmlContent);
+        assertThat(owner, receivedBMLContaining("input{text=\"Dave\";id=\"name\";maxchars=\"" + CrafterMod.maxNameLength + "\"}"));
+    }
+
+    @Test
+    public void testNameWithBlankPrefixCorrectlySet() throws SQLException {
+        assert CrafterMod.getNamePrefix().isEmpty();
+        crafter.setName("Crafter_Dave");
+        new CrafterManagementQuestion(owner, crafter).sendQuestion();
+        assertThat(owner, receivedBMLContaining("input{text=\"Crafter_Dave\";id=\"name\";maxchars=\"" + CrafterMod.maxNameLength + "\"}"));
     }
 
     @Test
@@ -152,6 +165,81 @@ class CrafterManagementQuestionTests {
     }
 
     // answer
+
+    private void setPrefix(String prefix) {
+        Properties crafterModProperties = new Properties();
+        crafterModProperties.setProperty("name_prefix", prefix);
+        new CrafterMod().configure(crafterModProperties);
+    }
+
+    @Test
+    void testSetName() {
+        assert CrafterMod.getNamePrefix().equals("");
+        String name = StringUtilities.raiseFirstLetter("MyName");
+        Properties properties = new Properties();
+        properties.setProperty("confirm", "true");
+        properties.setProperty("name", name);
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        assertEquals(name, crafter.getName());
+        assertEquals(name, ((FakeCreatureStatus)crafter.getStatus()).savedName);
+        assertThat(owner, receivedMessageContaining("will now be known as " + name));
+    }
+
+    @Test
+    void testWithPrefix() {
+        setPrefix("MyPrefix");
+        String name = crafter.getName();
+        Properties properties = new Properties();
+        properties.setProperty("confirm", "true");
+        properties.setProperty("name", name);
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        assertEquals("MyPrefix_" + name, crafter.getName());
+        assertThat(owner, receivedMessageContaining("will now be known as MyPrefix_" + name));
+    }
+
+    @Test
+    void testSetNameDifferentPrefix() {
+        setPrefix("MyPrefix");
+        String name = "Dave";
+        crafter.setName("Trader_" + name);
+        Properties properties = new Properties();
+        properties.setProperty("confirm", "true");
+        properties.setProperty("name", name);
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        assertEquals("MyPrefix_" + name, crafter.getName());
+        assertThat(owner, receivedMessageContaining("will now be known as MyPrefix_" + name));
+    }
+
+    @Test
+    void testSetNameIllegalCharacters() {
+        setPrefix("Crafter");
+        String name = crafter.getName();
+        Properties properties = new Properties();
+        properties.setProperty("confirm", "true");
+        properties.setProperty("name", "%Name");
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        assertEquals(name, crafter.getName());
+        assertThat(owner, receivedMessageContaining("shall remain " + name));
+    }
+
+    @Test
+    void testSetNameNoMessageOnSameName() {
+        setPrefix("Trader");
+        String name = "Name";
+        crafter.setName("Trader_" + name);
+        Properties properties = new Properties();
+        properties.setProperty("confirm", "true");
+        properties.setProperty("name", name);
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        assertEquals("Trader_" + name, crafter.getName());
+        assertThat(owner, didNotReceiveMessageContaining("will now be known as " + name));
+        assertThat(owner, didNotReceiveMessageContaining("will remain " + name));
+    }
 
     @Test
     void testPriceModifierUpdated() {

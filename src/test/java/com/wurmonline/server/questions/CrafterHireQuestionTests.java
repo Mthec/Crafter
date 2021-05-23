@@ -43,6 +43,9 @@ class CrafterHireQuestionTests {
         owner = factory.createNewPlayer();
         factory.createVillageFor(owner);
         contract = factory.createNewItem(CrafterMod.getContractTemplateId());
+        Properties crafterModProperties = new Properties();
+        crafterModProperties.setProperty("name_prefix", "");
+        new CrafterMod().configure(crafterModProperties);
     }
 
     private Properties generateProperties() {
@@ -151,6 +154,18 @@ class CrafterHireQuestionTests {
         new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
 
         assertEquals("Alfred", getNewlyCreatedCrafter().getName());
+    }
+
+    @Test
+    void testNameWithPrefixProperlySet() {
+        Properties crafterModProperties = new Properties();
+        crafterModProperties.setProperty("name_prefix", "APrefix");
+        new CrafterMod().configure(crafterModProperties);
+        Properties properties = generateProperties();
+        properties.setProperty("name", "Alfred");
+        new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
+
+        assertEquals("APrefix_Alfred", getNewlyCreatedCrafter().getName());
     }
 
     @Test

@@ -556,8 +556,7 @@ class CrafterModTests {
         factory.getCommunicator(gm).clear();
         int templateIndex = -1;
         int i = 0;
-        //noinspection unchecked
-        for (CreatureTemplate template : ((List<CreatureTemplate>)ReflectionUtil.getPrivateField(args[0], CreatureCreationQuestion.class.getDeclaredField("cretemplates")))) {
+        for (CreatureTemplate template : ReflectionUtil.<List<CreatureTemplate>>getPrivateField(args[0], CreatureCreationQuestion.class.getDeclaredField("cretemplates"))) {
             if (template.getTemplateId() == templateId) {
                 templateIndex = i;
                 break;

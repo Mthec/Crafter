@@ -51,7 +51,7 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
             sex = 1;
 
         String name = StringUtilities.raiseFirstLetter(getStringProp("name"));
-        if (name.isEmpty() || name.length() > 20 || QuestionParser.containsIllegalCharacters(name)) {
+        if (name.isEmpty() || name.length() > CrafterMod.maxNameLength || QuestionParser.containsIllegalCharacters(name)) {
             if (sex == 0) {
                 name = QuestionParser.generateGuardMaleName();
                 responder.getCommunicator().sendSafeServerMessage("The crafter didn't like the name, so he chose a new one.");
@@ -60,6 +60,7 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
                 responder.getCommunicator().sendSafeServerMessage("The crafter didn't like the name, so she chose a new one.");
             }
         }
+        name = getPrefix() + name;
 
         float priceModifier = getFloatOrDefault("price_modifier", 1.0f);
         if (priceModifier < CrafterMod.getMinimumPriceModifier()) {
@@ -67,7 +68,6 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
             priceModifier = CrafterMod.getMinimumPriceModifier();
         }
 
-        // TODO - Not working for some reason.
         Set<Integer> skills = new HashSet<>();
         if (wasSelected("all_metal"))
             Collections.addAll(skills, CrafterType.allMetal);
@@ -164,7 +164,7 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
         String bml = skillsBML.addBML(builder, new CrafterType(), CrafterMod.getSkillCap())
                 .If(CrafterMod.canUsePriceModifier(), b -> b.harray(b2 -> b2.label("Price Modifier: ").entry("price_modifier", "1.0", 4)))
                 .newLine()
-                .harray(b -> b.label("Crafter name:").entry("name", 20))
+                .harray(b -> b.label("Crafter name:").entry("name", CrafterMod.maxNameLength))
                 .text("Leave blank for a random name.").italic()
                 .text("Gender:")
                 .radio("gender", "male", "Male", responder.getSex() == (byte)0)

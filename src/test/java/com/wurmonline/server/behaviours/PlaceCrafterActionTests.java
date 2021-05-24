@@ -1,5 +1,6 @@
 package com.wurmonline.server.behaviours;
 
+import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.FakeCommunicator;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
@@ -8,6 +9,7 @@ import com.wurmonline.server.questions.CrafterHireQuestion;
 import mod.wurmunlimited.Assert;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterTest;
+import mod.wurmunlimited.npcs.CrafterType;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -104,6 +106,34 @@ public class PlaceCrafterActionTests extends CrafterTest {
     void testIncorrectTileInformation() {
         assertTrue(menu.action(action, gm, wand, -250, -250, true, 0, 0, actionId, 0f));
         assertEquals(1, factory.getCommunicator(gm).getMessages().length);
+        assertEquals(0, factory.getCommunicator(gm).getBml().length);
         assertThat(gm, receivedMessageContaining("not be located"));
+    }
+
+    @Test
+    void testAlreadyUsedContractCreatesNew() {
+        Creature crafter = factory.createNewCrafter(gm, new CrafterType(CrafterType.allArmour), 50);
+        Item contract = factory.createNewItem(CrafterMod.getContractTemplateId());
+        contract.setData(crafter.getWurmId());
+        gm.getInventory().insertItem(contract);
+        assert gm.getInventory().getItemCount() == 1;
+        assertTrue(menu.action(action, gm, wand, 0, 0, true, 0, 0, actionId, 0f));
+        assertEquals(0, factory.getCommunicator(gm).getMessages().length);
+        assertEquals(1, factory.getCommunicator(gm).getBml().length);
+        assertEquals(2, gm.getInventory().getItemCount());
+        assertTrue(gm.getInventory().getItems().stream().allMatch(i -> i.getTemplateId() == CrafterMod.getContractTemplateId()));
+    }
+
+    @Test
+    void testAlreadyEmptyContractDoesNotCreateNew() {
+        Item contract = factory.createNewItem(CrafterMod.getContractTemplateId());
+        gm.getInventory().insertItem(contract);
+        assert contract.getData() == -1;
+        assert gm.getInventory().getItemCount() == 1;
+        assertTrue(menu.action(action, gm, wand, 0, 0, true, 0, 0, actionId, 0f));
+        assertEquals(0, factory.getCommunicator(gm).getMessages().length);
+        assertEquals(1, factory.getCommunicator(gm).getBml().length);
+        assertEquals(1, gm.getInventory().getItemCount());
+        assertTrue(gm.getInventory().getItems().stream().allMatch(i -> i.getTemplateId() == CrafterMod.getContractTemplateId()));
     }
 }

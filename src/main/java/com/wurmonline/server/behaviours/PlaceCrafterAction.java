@@ -22,7 +22,7 @@ public class PlaceCrafterAction implements NpcMenuEntry {
         Item contract = null;
         try {
             for (Item item : performer.getAllItems()) {
-                if (item.getTemplateId() == CrafterMod.getContractTemplateId()) {
+                if (item.getTemplateId() == CrafterMod.getContractTemplateId() && item.getData() == -1) {
                     contract = item;
                     break;
                 }

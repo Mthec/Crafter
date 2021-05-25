@@ -4,6 +4,7 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.Creatures;
 import com.wurmonline.server.creatures.NoSuchCreatureException;
 import com.wurmonline.server.items.Item;
+import com.wurmonline.server.players.Player;
 import com.wurmonline.server.questions.CrafterHireQuestion;
 import com.wurmonline.server.questions.CrafterManagementQuestion;
 import org.gotti.wurmunlimited.modsupport.actions.*;
@@ -46,12 +47,12 @@ public class CrafterContractAction implements ModAction, ActionPerformer, Behavi
 
     @Override
     public boolean action(Action action, Creature performer, Item target, short num, float counter) {
-        if (num == actionId && target.getTemplateId() == contractTemplateId) {
+        if (num == actionId && performer.isPlayer() && target.getTemplateId() == contractTemplateId) {
             if (target.getData() == -1) {
                 new CrafterHireQuestion(performer, target.getWurmId()).sendQuestion();
             } else {
                 try {
-                    new CrafterManagementQuestion(performer, Creatures.getInstance().getCreature(target.getData())).sendQuestion();
+                    new CrafterManagementQuestion((Player)performer, Creatures.getInstance().getCreature(target.getData())).sendQuestion();
                 } catch (NoSuchCreatureException e) {
                     performer.getCommunicator().sendNormalServerMessage("You attempt to manage the crafter, but they don't exist for some reason.");
                     logger.warning("Could not get crafter creature for some reason.");

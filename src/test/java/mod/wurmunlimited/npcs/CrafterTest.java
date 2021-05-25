@@ -1,5 +1,6 @@
 package mod.wurmunlimited.npcs;
 
+import com.wurmonline.server.Constants;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
 import com.wurmonline.server.behaviours.PlaceCrafterAction;
 import com.wurmonline.server.behaviours.PlaceNpcMenu;
@@ -25,6 +26,7 @@ public class CrafterTest {
 
     @BeforeEach
     protected void setUp() throws Exception {
+        Constants.dbHost = ".";
         factory = new CrafterObjectsFactory();
         BehaviourDispatcher.reset();
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("skillCap"), 99.99999f);

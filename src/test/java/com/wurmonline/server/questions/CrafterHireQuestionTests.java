@@ -1,5 +1,6 @@
 package com.wurmonline.server.questions;
 
+import com.wurmonline.server.Constants;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.Creatures;
@@ -12,10 +13,7 @@ import com.wurmonline.server.villages.Villages;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import mod.wurmunlimited.bml.BML;
 import mod.wurmunlimited.bml.BMLBuilder;
-import mod.wurmunlimited.npcs.CrafterMod;
-import mod.wurmunlimited.npcs.CrafterTemplate;
-import mod.wurmunlimited.npcs.CrafterType;
-import mod.wurmunlimited.npcs.WorkBook;
+import mod.wurmunlimited.npcs.*;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +32,7 @@ class CrafterHireQuestionTests {
 
     @BeforeEach
     void setUp() throws Exception {
+        Constants.dbHost = ".";
         factory = new CrafterObjectsFactory();
         BehaviourDispatcher.reset();
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("singleSkill"), false);
@@ -166,6 +165,32 @@ class CrafterHireQuestionTests {
         new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
 
         assertEquals("APrefix_Alfred", getNewlyCreatedCrafter().getName());
+    }
+
+    @Test
+    public void testAnswerFace() {
+        long face = 12345;
+        Properties properties = generateProperties(CrafterType.allMetal);
+        properties.setProperty("face", Long.toString(face));
+        new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
+
+        assertEquals(1, getCrafterCount());
+        Creature crafter = getNewlyCreatedCrafter();
+        assertTrue(CrafterTemplate.isCrafter(crafter));
+        assertEquals(new Long(face), CrafterDatabase.getFaceFor(crafter));
+        assertNull(factory.getCommunicator(owner).sendCustomizeFace);
+    }
+
+    @Test
+    public void testAnswerInvalidFace() {
+        Properties properties = generateProperties(CrafterType.allMetal);
+        properties.setProperty("face", "abc");
+        new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
+
+        assertEquals(1, getCrafterCount());
+        Creature crafter = getNewlyCreatedCrafter();
+        assertTrue(CrafterTemplate.isCrafter(crafter));
+        assertNotNull(factory.getCommunicator(owner).sendCustomizeFace);
     }
 
     @Test

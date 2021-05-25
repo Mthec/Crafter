@@ -6,6 +6,7 @@ import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.Methods;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
+import com.wurmonline.server.players.Player;
 import com.wurmonline.server.questions.skills.MultipleSkillsBML;
 import com.wurmonline.server.questions.skills.SingleSkillBML;
 import com.wurmonline.server.questions.skills.SkillsBML;
@@ -17,15 +18,15 @@ import com.wurmonline.shared.util.StringUtilities;
 import mod.wurmunlimited.bml.BML;
 import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.CrafterAIData;
+import mod.wurmunlimited.npcs.CrafterDatabase;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterType;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 public class CrafterHireQuestion extends CrafterQuestionExtension {
+    private static final Random r = new Random();
+    static final int faceMaxChars = Long.toString(Long.MAX_VALUE).length();
     private final SkillsBML skillsBML;
 
     public CrafterHireQuestion(Creature aResponder, long contract) {
@@ -44,6 +45,21 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
             responder.getCommunicator().sendNormalServerMessage("You feel like the contract is slipping out of your hands, you jolt and try to recompose yourself.");
             e.printStackTrace();
             return;
+        }
+
+        String faceString = getStringProp("face");
+        long face;
+        boolean faceWasRandom = true;
+        if (faceString.isEmpty()) {
+            face = r.nextLong();
+        } else {
+            try {
+                face = Long.parseLong(faceString);
+                faceWasRandom = false;
+            } catch (NumberFormatException e) {
+                responder.getCommunicator().sendAlertServerMessage("Invalid face value, setting random.");
+                face = r.nextLong();
+            }
         }
 
         byte sex = 0;
@@ -105,13 +121,19 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
         if (locationIsValid(responder)) {
             try {
                 Creature crafter = CrafterAIData.createNewCrafter(responder,
-                        name, sex, crafterType, skillCap, priceModifier);
+                        name, sex, crafterType, skillCap, priceModifier, face);
                 contract.setData(crafter.getWurmId());
                 Village v = responder.getCitizenVillage();
                 if (v != null) {
                     v.addCitizen(crafter, v.getRoleForStatus(VillageRole.ROLE_CITIZEN));
                 }
                 logger.info(responder.getName() + " created a crafter: " + crafter);
+
+                if (faceWasRandom) {
+                    responder.getCommunicator().sendCustomizeFace(face, CrafterMod.faceSetters.createIdFor(crafter, (Player)responder));
+                } else {
+                    CrafterDatabase.setFaceFor(crafter, face);
+                }
             } catch (Exception e) {
                 responder.getCommunicator().sendAlertServerMessage("An error occurred in the rifts of the void. The crafter was not created.");
                 e.printStackTrace();
@@ -166,6 +188,8 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
                 .newLine()
                 .harray(b -> b.label("Crafter name:").entry("name", CrafterMod.maxNameLength))
                 .text("Leave blank for a random name.").italic()
+                .harray(b -> b.label("Face:").entry("face", "", faceMaxChars))
+                .text("Leave blank to create a face on the next screen, or paste a face code here.").italic()
                 .text("Gender:")
                 .radio("gender", "male", "Male", responder.getSex() == (byte)0)
                 .radio("gender", "female", "Female", responder.getSex() == (byte)1)

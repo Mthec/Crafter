@@ -2,6 +2,7 @@ package com.wurmonline.server.behaviours;
 
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
+import com.wurmonline.server.players.Player;
 import com.wurmonline.server.questions.CrafterManagementQuestion;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterTemplate;
@@ -57,7 +58,7 @@ public class ManageCrafterAction implements ModAction, ActionPerformer, Behaviou
 
     private boolean action(Creature performer, Creature crafter, @Nullable Item item) {
         if (canManage(performer, crafter, item)) {
-            new CrafterManagementQuestion(performer, crafter).sendQuestion();
+            new CrafterManagementQuestion((Player)performer, crafter).sendQuestion();
         }
 
         return true;

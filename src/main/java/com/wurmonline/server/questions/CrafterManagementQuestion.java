@@ -9,21 +9,25 @@ import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.NoSuchTemplateException;
+import com.wurmonline.server.players.Player;
 import com.wurmonline.shared.util.StringUtilities;
 import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.*;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Properties;
 
 import static com.wurmonline.server.creatures.CreaturePackageCaller.saveCreatureName;
 
 public class CrafterManagementQuestion extends CrafterQuestionExtension {
+    private final Player responder;
     private final Creature crafter;
     private final Shop shop;
 
-    public CrafterManagementQuestion(Creature aResponder, Creature crafter) {
-        super(aResponder, "Crafter Details", "", QuestionTypes.MANAGETRADER, crafter.getWurmId());
+    public CrafterManagementQuestion(Player responder, Creature crafter) {
+        super(responder, "Crafter Details", "", QuestionTypes.MANAGETRADER, crafter.getWurmId());
+        this.responder = responder;
         this.crafter = crafter;
         shop = Economy.getEconomy().getShop(crafter);
     }
@@ -31,7 +35,6 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
     @Override
     public void answer(Properties properties) {
         setAnswer(properties);
-        Creature responder = getResponder();
 
         String name = getStringProp("name");
         if (name != null && !name.isEmpty()) {
@@ -48,6 +51,36 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                     responder.getCommunicator().sendNormalServerMessage("The crafter looks confused, what exactly is a database?");
                     e.printStackTrace();
                 }
+            }
+        }
+
+        String faceString = getStringProp("face");
+        long face;
+        if (faceString.isEmpty()) {
+            face = crafter.getFace();
+        } else {
+            try {
+                face = Long.parseLong(faceString);
+            } catch (NumberFormatException e) {
+                responder.getCommunicator().sendAlertServerMessage("Invalid face value, ignoring.");
+                face = crafter.getFace();
+            }
+        }
+
+        if (faceString.isEmpty()) {
+            try {
+                responder.getCommunicator().sendCustomizeFace(face, CrafterMod.faceSetters.createIdFor(crafter, responder));
+            } catch (CrafterFaceSetters.TooManyTransactionsException e) {
+                logger.warning(e.getMessage());
+                responder.getCommunicator().sendAlertServerMessage(e.getMessage());
+            }
+        } else if (face != crafter.getFace()) {
+            try {
+                CrafterDatabase.setFaceFor(crafter, face);
+                responder.getCommunicator().sendNormalServerMessage("The crafter's face seems to shift about and takes a new form.");
+            } catch (SQLException e) {
+                logger.warning("Failed to set face (" + face + ") for crafter (" + crafter.getWurmId() + ").");
+                e.printStackTrace();
             }
         }
 
@@ -97,6 +130,9 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                                  .harray(b -> b.label("Name: " + getPrefix()).entry("name", getNameWithoutPrefix(crafter.getName()), CrafterMod.maxNameLength))
                                  .table(new String[] { "Skill", "Current", "Max" }, workBook.getCrafterType().getSkillsFor(crafter),
                                          (skill, b) -> b.label(skill.getName()).label(String.format("%.2f", skill.getKnowledge())).label(Float.toString(workBook.getSkillCap())))
+                                 .newLine()
+                                 .harray(b -> b.label("Face:").entry("face", Long.toString(crafter.getFace()), CrafterHireQuestion.faceMaxChars))
+                                 .text("Blank to create a face on the next screen, or paste a face code here.").italic()
                                  .newLine()
                                  .text("Current jobs - " + workBook.todo())
                                  .text("Awaiting collection - " + workBook.done())

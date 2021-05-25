@@ -1,8 +1,10 @@
 package com.wurmonline.server.behaviours;
 
+import com.wurmonline.server.Constants;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.FakeCommunicator;
 import com.wurmonline.server.items.Item;
+import com.wurmonline.server.players.Player;
 import com.wurmonline.server.questions.CrafterHireQuestion;
 import com.wurmonline.server.questions.CrafterManagementQuestion;
 import mod.wurmunlimited.CrafterObjectsFactory;
@@ -24,13 +26,14 @@ import static org.mockito.Mockito.mock;
 class CrafterContractActionTests {
     private CrafterObjectsFactory factory;
     private CrafterContractAction action;
-    private Creature owner;
+    private Player owner;
     private Creature crafter;
     private Item contract;
     private final Action act = mock(Action.class);
 
     @BeforeEach
     void setUp() throws Exception {
+        Constants.dbHost = ".";
         factory = new CrafterObjectsFactory();
         ActionEntryBuilder.init();
         action = new CrafterContractAction(CrafterMod.getContractTemplateId());

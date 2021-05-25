@@ -1,28 +1,39 @@
 package com.wurmonline.server.questions;
 
+import com.wurmonline.server.Constants;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
 import com.wurmonline.server.creatures.Creature;
+import com.wurmonline.server.creatures.CreatureTemplateFactory;
 import com.wurmonline.server.creatures.FakeCreatureStatus;
 import com.wurmonline.server.economy.Economy;
+import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.players.Player;
+import com.wurmonline.server.zones.VolaTile;
+import com.wurmonline.server.zones.Zones;
 import com.wurmonline.shared.util.StringUtilities;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import mod.wurmunlimited.npcs.*;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.stubbing.Answer;
 
 import java.lang.reflect.Field;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static mod.wurmunlimited.Assert.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class CrafterManagementQuestionTests {
     private CrafterObjectsFactory factory;
@@ -31,6 +42,7 @@ class CrafterManagementQuestionTests {
 
     @BeforeEach
     void setUp() throws Exception {
+        Constants.dbHost = ".";
         factory = new CrafterObjectsFactory();
         BehaviourDispatcher.reset();
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("skillCap"), 99.99999f);
@@ -45,6 +57,43 @@ class CrafterManagementQuestionTests {
         contract.setData(crafter.getWurmId());
         owner.getInventory().insertItem(contract);
         setPrefix("");
+    }
+
+    private void setFakeCrafter() {
+        try {
+            crafter = mock(Creature.class);
+            CrafterDatabase.setFaceFor(crafter, 98765);
+            AtomicReference<String> name = new AtomicReference<>("Dave");
+            when(crafter.getName()).thenAnswer(i -> name.get());
+            doAnswer((Answer<Void>)i -> {
+                name.set(i.getArgument(0));
+                return null;
+            }).when(crafter).setName(anyString());
+            when(crafter.getFace()).thenAnswer(i -> ReflectionUtil.<Map<Creature, Long>>getPrivateField(null, CrafterDatabase.class.getDeclaredField("faces")).get(crafter));
+            when(crafter.getWurmId()).thenReturn(987654L);
+            VolaTile tile = Zones.getOrCreateTile(10, 10, true);
+            when(crafter.getCurrentTile()).thenReturn(tile);
+            when(crafter.getTileX()).thenReturn(10);
+            when(crafter.getTileY()).thenReturn(10);
+            when(crafter.isOnSurface()).thenReturn(true);
+            when(crafter.getTemplate()).thenReturn(CreatureTemplateFactory.getInstance().getTemplate("crafter"));
+            FakeCreatureStatus status = new FakeCreatureStatus(crafter);
+            when(crafter.getStatus()).thenReturn(status);
+            AtomicBoolean dead = new AtomicBoolean(false);
+            when(crafter.isDead()).thenAnswer(i -> dead.get());
+            doAnswer(i -> {
+                dead.set(true);
+                return null;
+            }).when(crafter).destroy();
+            when(crafter.getHisHerItsString()).thenReturn("their");
+            CrafterAIData fakeData = mock(CrafterAIData.class);
+            when(crafter.getCreatureAIData()).thenReturn(fakeData);
+            when(fakeData.getWorkBook()).thenReturn(WorkBook.createNewWorkBook(new CrafterType(), 20));
+            Shop fakeShop = mock(Shop.class);
+            when(crafter.getShop()).thenReturn(fakeShop);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // sendQuestion
@@ -63,6 +112,15 @@ class CrafterManagementQuestionTests {
         crafter.setName("Crafter_Dave");
         new CrafterManagementQuestion(owner, crafter).sendQuestion();
         assertThat(owner, receivedBMLContaining("input{text=\"Crafter_Dave\";id=\"name\";maxchars=\"" + CrafterMod.maxNameLength + "\"}"));
+    }
+
+    @Test
+    public void testFaceCorrectlySet() throws SQLException {
+        setFakeCrafter();
+        Long face = CrafterDatabase.getFaceFor(crafter);
+        assert face != null && face == 98765;
+        new CrafterManagementQuestion(owner, crafter).sendQuestion();
+        assertThat(owner, receivedBMLContaining("input{text=\"" + face + "\";id=\"face\";maxchars=\"" + Long.toString(Long.MAX_VALUE).length() + "\"}"));
     }
 
     @Test
@@ -239,6 +297,66 @@ class CrafterManagementQuestionTests {
         assertEquals("Trader_" + name, crafter.getName());
         assertThat(owner, didNotReceiveMessageContaining("will now be known as " + name));
         assertThat(owner, didNotReceiveMessageContaining("will remain " + name));
+    }
+
+    private void answer(@Nullable String face) {
+        Properties properties = new Properties();
+        properties.setProperty("face", face != null ? face : Long.toString(98765));
+
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+    }
+
+    @Test
+    public void testAnswerFace() {
+        setFakeCrafter();
+        long face = 123456;
+        reset(crafter.getCurrentTile());
+        answer(Long.toString(face));
+
+        assertEquals(0, factory.getCommunicator(owner).getBml().length);
+        assertEquals(face, face);
+        verify(crafter.getCurrentTile(), times(1)).setNewFace(crafter);
+        assertNull(factory.getCommunicator(owner).sendCustomizeFace);
+        assertThat(owner, receivedMessageContaining("takes a new form"));
+        assertThat(owner, didNotReceiveMessageContaining(crafter.getName()));
+    }
+
+    @Test
+    public void testAnswerEmptyFace() {
+        setFakeCrafter();
+        reset(crafter.getCurrentTile());
+        answer("");
+
+        assertEquals(0, factory.getCommunicator(owner).getBml().length);
+        verify(crafter.getCurrentTile(), never()).setNewFace(crafter);
+        assertNotNull(factory.getCommunicator(owner).sendCustomizeFace);
+        assertThat(owner, didNotReceiveMessageContaining("takes a new form"));
+        assertThat(owner, didNotReceiveMessageContaining(crafter.getName()));
+    }
+
+    @Test
+    public void testAnswerInvalidFace() {
+        setFakeCrafter();
+        reset(crafter.getCurrentTile());
+        answer("abc");
+
+        verify(crafter.getCurrentTile(), never()).setNewFace(crafter);
+        assertNull(factory.getCommunicator(owner).sendCustomizeFace);
+        assertThat(owner, didNotReceiveMessageContaining("takes a new form"));
+        assertThat(owner, didNotReceiveMessageContaining(crafter.getName()));
+    }
+
+    @Test
+    public void testAnswerSameFace() {
+        setFakeCrafter();
+        reset(crafter.getCurrentTile());
+        answer(null);
+
+        assertThat(owner, didNotReceiveMessageContaining("Invalid face"));
+        assertThat(owner, didNotReceiveMessageContaining("takes a new form"));
+        verify(crafter.getCurrentTile(), never()).setNewFace(crafter);
+        assertNull(factory.getCommunicator(owner).sendCustomizeFace);
+        assertThat(owner, didNotReceiveMessageContaining(crafter.getName()));
     }
 
     @Test

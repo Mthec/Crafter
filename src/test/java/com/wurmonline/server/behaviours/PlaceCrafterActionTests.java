@@ -31,7 +31,8 @@ public class PlaceCrafterActionTests extends CrafterTest {
     private short actionId;
 
     @BeforeEach
-    private void create() throws Exception {
+    protected void setUp() throws Exception {
+        super.setUp();
         action = mock(Action.class);
         when(action.getActionString()).thenAnswer(i -> actionString);
         actionId = ReflectionUtil.<List<ActionEntry>>getPrivateField(null, PlaceNpcMenu.class.getDeclaredField("actionEntries")).get(1).getNumber();

@@ -1,5 +1,6 @@
 package com.wurmonline.server.behaviours;
 
+import com.wurmonline.server.Constants;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
@@ -42,6 +43,7 @@ class AssignActionTests {
 
     @BeforeEach
     void setUp() throws Exception {
+        Constants.dbHost = ".";
         factory = new CrafterObjectsFactory();
         ActionEntryBuilder.init();
         action = new AssignAction(contractTemplateId);

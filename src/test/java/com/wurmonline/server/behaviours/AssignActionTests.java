@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static mod.wurmunlimited.Assert.didNotReceiveMessageContaining;
 import static mod.wurmunlimited.Assert.receivedMessageContaining;
@@ -122,7 +123,7 @@ class AssignActionTests {
     void testAssignNotUnassignedOnFailure() {
         data.setForge(forge);
         assert data.getWorkBook().isForgeAssigned();
-        assertFalse(action.action(act, owner, contract, forge, (short)(action.getActionId() + 1), 0));
+        assertTrue(action.action(act, owner, contract, forge, (short)(action.getActionId() + 1), 0));
         assertTrue(data.getWorkBook().isForgeAssigned());
         assertThat(owner, didNotReceiveMessageContaining(assignMessageFragment));
         assertThat(owner, didNotReceiveMessageContaining(unassignMessageFragment));
@@ -130,7 +131,7 @@ class AssignActionTests {
 
     @Test
     void testAssignIncorrectActionId() {
-        assertFalse(action.action(act, owner, contract, forge, (short)(action.getActionId() + 1), 0));
+        assertTrue(action.action(act, owner, contract, forge, (short)(action.getActionId() + 1), 0));
         assertFalse(data.getWorkBook().isForgeAssigned());
         assertThat(owner, didNotReceiveMessageContaining(assignMessageFragment));
     }
@@ -139,7 +140,7 @@ class AssignActionTests {
     void testAssignNotForge() {
         Item item = factory.createNewItem();
         assert item.getTemplateId() != ItemList.forge;
-        assertFalse(action.action(act, owner, contract, item, action.getActionId(), 0));
+        assertTrue(action.action(act, owner, contract, item, action.getActionId(), 0));
         assertFalse(data.getWorkBook().isForgeAssigned());
         assertThat(owner, didNotReceiveMessageContaining(assignMessageFragment));
     }
@@ -147,7 +148,7 @@ class AssignActionTests {
     @Test
     void testAssignCrafterNotPlaced() {
         contract.setData(-1);
-        assertFalse(action.action(act, owner, contract, forge, action.getActionId(), 0));
+        assertTrue(action.action(act, owner, contract, forge, action.getActionId(), 0));
         assertFalse(data.getWorkBook().isForgeAssigned());
         assertThat(owner, didNotReceiveMessageContaining(assignMessageFragment));
     }
@@ -198,7 +199,7 @@ class AssignActionTests {
         Village v = factory.createVillageFor(player);
         crafter.getStatus().setPosition(player.getStatus().getPosition());
         crafter.currentTile = null;
-        assert Zones.getOrCreateTile(crafter.getTileX(), crafter.getTileY(), crafter.isOnSurface()).getVillage() != null;
+        assert Objects.requireNonNull(Zones.getOrCreateTile(crafter.getTileX(), crafter.getTileY(), crafter.isOnSurface())).getVillage() != null;
         assert !v.getRoleForStatus(VillageStatus.ROLE_EVERYBODY).mayPickup();
 
         assertTrue(action.action(act, owner, contract, forge, action.getActionId(), 0));

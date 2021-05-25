@@ -2,9 +2,9 @@ package mod.wurmunlimited;
 
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.CreatureTemplateFactory;
-import com.wurmonline.server.economy.FakeShop;
+import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
-import com.wurmonline.server.skills.Skill;
+import com.wurmonline.server.players.Player;
 import com.wurmonline.server.zones.Zones;
 import mod.wurmunlimited.npcs.*;
 
@@ -33,6 +33,13 @@ public class CrafterObjectsFactory extends WurmObjectsFactory {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public Item createWritFor(Player owner, Creature crafter) {
+        Item writ = createNewItem(CrafterMod.getContractTemplateId());
+        writ.setData(crafter.getWurmId());
+        owner.getInventory().insertItem(writ);
+        return writ;
     }
 
     public int getIsSmithingId() {

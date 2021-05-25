@@ -103,11 +103,11 @@ class CrafterContractActionTests {
 
     @Test
     void testActionIncorrectActionId() {
-        assertFalse(action.action(act, owner, contract, (short)(action.getActionId() + 1), 0));
+        assertTrue(action.action(act, owner, contract, (short)(action.getActionId() + 1), 0));
     }
 
     @Test
     void testActionNotAContract() {
-        assertFalse(action.action(act, owner, factory.createNewItem(), action.getActionId(), 0));
+        assertTrue(action.action(act, owner, factory.createNewItem(), action.getActionId(), 0));
     }
 }

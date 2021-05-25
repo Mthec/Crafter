@@ -24,7 +24,7 @@ public class CrafterTest {
     private static boolean init = false;
 
     @BeforeEach
-    void setUp() throws Exception {
+    protected void setUp() throws Exception {
         factory = new CrafterObjectsFactory();
         BehaviourDispatcher.reset();
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("skillCap"), 99.99999f);
@@ -41,7 +41,7 @@ public class CrafterTest {
 
         if (!init) {
             new PlaceCrafterAction();
-            menu = PlaceNpcMenu.registerAction();
+            menu = PlaceNpcMenu.register();
             init = true;
         }
     }

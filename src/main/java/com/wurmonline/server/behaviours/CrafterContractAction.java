@@ -49,7 +49,6 @@ public class CrafterContractAction implements ModAction, ActionPerformer, Behavi
         if (num == actionId && target.getTemplateId() == contractTemplateId) {
             if (target.getData() == -1) {
                 new CrafterHireQuestion(performer, target.getWurmId()).sendQuestion();
-                return true;
             } else {
                 try {
                     new CrafterManagementQuestion(performer, Creatures.getInstance().getCreature(target.getData())).sendQuestion();
@@ -58,10 +57,9 @@ public class CrafterContractAction implements ModAction, ActionPerformer, Behavi
                     logger.warning("Could not get crafter creature for some reason.");
                     e.printStackTrace();
                 }
-                return true;
             }
         }
-        return false;
+        return true;
     }
 
     @Override

@@ -44,7 +44,7 @@ public class AssignAction implements ModAction, BehaviourProvider, ActionPerform
     @Override
     public boolean action(Action action, Creature performer, Item source, Item target, short num, float counter) {
         if (num != actionId || target == null || target.getTemplateId() != ItemList.forge)
-            return false;
+            return true;
         Creature crafter = Creatures.getInstance().getCreatureOrNull(source.getData());
         if (crafter != null) {
             CrafterAIData data = (CrafterAIData)crafter.getCreatureAIData();
@@ -68,10 +68,9 @@ public class AssignAction implements ModAction, BehaviourProvider, ActionPerform
                     performer.getCommunicator().sendNormalServerMessage("You assign this forge to " + crafter.getName() + ".");
                 }
             }
-            return true;
         }
 
-        return false;
+        return true;
     }
 
     @Override

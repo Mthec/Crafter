@@ -117,11 +117,9 @@ public class TradeAction implements ModAction, ActionPerformer, BehaviourProvide
                     e.printStackTrace();
                     performer.getCommunicator().sendNormalServerMessage(target.getName() + " has misplaced their price list and cannot trade.");
                 }
-                return true;
             }
-            return true;
         }
-        return false;
+        return true;
     }
 
     @Override

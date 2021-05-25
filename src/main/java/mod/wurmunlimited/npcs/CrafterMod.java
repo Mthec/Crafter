@@ -49,6 +49,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private static boolean canLearn = true;
     private static boolean updateTraders = false;
     private static boolean contractsOnTraders = true;
+    private static byte gmManagePowerRequired = 10;
     private static float upkeepPercentage = 25.0f;
     private static float basePrice = 1.0f;
     private static int mailPrice = MonetaryConstants.COIN_COPPER;
@@ -83,6 +84,10 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
 
     public static String getNamePrefix() {
         return namePrefix;
+    }
+
+    public static byte gmManagePowerRequired() {
+        return gmManagePowerRequired;
     }
 
     public static int getContractTemplateId() {
@@ -219,6 +224,11 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         output = parseOutputOption(properties.getProperty("output"));
         canLearn = getOption("can_learn", canLearn);
         updateTraders = getOption("update_traders", updateTraders);
+        gmManagePowerRequired = (byte)getOption("gm_manage_power_required", gmManagePowerRequired);
+        if (gmManagePowerRequired < 1) {
+            logger.warning("gm_manage_power_required must be 1 or higher.  Setting default (10).");
+            gmManagePowerRequired = 10;
+        }
         contractsOnTraders = getOption("contracts_on_traders", contractsOnTraders);
         upkeepPercentage = getOption("upkeep_percentage", upkeepPercentage);
         basePrice = getOption("base_price", basePrice);
@@ -454,8 +464,9 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         ModActions.registerAction(new AssignAction(contractTemplateId));
         ModActions.registerAction(new TradeAction());
         ModActions.registerAction(new CrafterContractAction(contractTemplateId));
+        ModActions.registerAction(new ManageCrafterAction());
         new PlaceCrafterAction();
-        PlaceNpcMenu.registerAction();
+        PlaceNpcMenu.register();
 
         try {
             Class<?> ServiceHandler = Class.forName("mod.wurmunlimited.npcs.CrafterAI");

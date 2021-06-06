@@ -49,8 +49,10 @@ jar {
     }
 
     from {
-        project(':BMLBuilder').sourceSets.main.output
         project(':PlaceNpc').sourceSets.main.output
+    }
+    from {
+        project(':BMLBuilder').sourceSets.main.output
     }
     exclude 'Trade.class'
     exclude 'TradeHandler.class'

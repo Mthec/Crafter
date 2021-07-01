@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
@@ -452,5 +453,58 @@ class CrafterManagementQuestionTests {
         new CrafterManagementQuestion(owner, crafter).sendQuestion();
 
         assertTrue(factory.getCommunicator(owner).lastBmlContent.contains("Modify skills"));
+    }
+
+    @Test
+    void testWhenNoJobsStopButtonDoesNotShow() throws WorkBook.NoWorkBookOnWorker {
+        assert WorkBook.getWorkBookFromWorker(crafter).todo() == 0;
+        new CrafterManagementQuestion(owner, crafter).sendQuestion();
+
+        assertFalse(factory.getCommunicator(owner).lastBmlContent.contains("Stop current job"));
+    }
+
+    @Test
+    void testWhenOnlyDoneJobsStopButtonDoesNotShow() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.addJob(1, factory.createNewItem(), 1, false, 100);
+        ReflectionUtil.callPrivateMethod(workBook, WorkBook.class.getDeclaredMethod("setDone", Job.class, Creature.class), workBook.iterator().next(), crafter);
+        new CrafterManagementQuestion(owner, crafter).sendQuestion();
+
+        assertFalse(factory.getCommunicator(owner).lastBmlContent.contains("Stop current job"));
+    }
+
+    @Test
+    void testWhenJobsStopButtonDoesShow() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        WorkBook.getWorkBookFromWorker(crafter).addJob(1, factory.createNewItem(), 1, false, 100);
+        new CrafterManagementQuestion(owner, crafter).sendQuestion();
+
+        assertTrue(factory.getCommunicator(owner).lastBmlContent.contains("Stop current job"));
+    }
+
+    @Test
+    void testStopButtonSelected() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.addJob(1, factory.createNewItem(), 1, false, 100);
+        CrafterManagementQuestion question = new CrafterManagementQuestion(owner, crafter);
+        Properties properties = new Properties();
+        properties.setProperty("stop", "true");
+        question.answer(properties);
+
+        assertEquals(0, workBook.todo());
+        assertThat(owner, receivedMessageContaining("successfully refunded"));
+    }
+
+    @Test
+    void testStopButtonSelectedOnlyOneJobRemoved() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.addJob(1, factory.createNewItem(), 1, false, 100);
+        workBook.addJob(2, factory.createNewItem(), 2, false, 100);
+        CrafterManagementQuestion question = new CrafterManagementQuestion(owner, crafter);
+        Properties properties = new Properties();
+        properties.setProperty("stop", "true");
+        question.answer(properties);
+
+        assertEquals(1, workBook.todo());
+        assertThat(owner, receivedMessageContaining("successfully refunded"));
     }
 }

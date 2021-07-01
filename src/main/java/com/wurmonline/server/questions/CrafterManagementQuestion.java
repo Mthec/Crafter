@@ -101,15 +101,42 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                 responder.getCommunicator().sendSafeServerMessage("Price modifier must be a number.");
             }
         }
+
         if (wasSelected("dismiss")) {
             dismiss();
-        }
+        } else if (wasSelected("stop")) {
+            try {
+                WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+                boolean noJobs = true;
+                for (Job job : workBook) {
+                    if (job.isDone()) {
+                        continue;
+                    }
 
-        if (wasSelected("skills")) {
+                    Item item = job.getItem();
+                    job.refundCustomer();
+                    workBook.removeJob(item);
+                    noJobs = false;
+                    break;
+                }
+
+                if (noJobs) {
+                    responder.getCommunicator().sendNormalServerMessage(crafter.getName() + " is not currently working on any jobs.");
+                } else {
+                    responder.getCommunicator().sendNormalServerMessage(crafter.getName() + " successfully refunded the job.");
+                }
+            } catch (WorkBook.NoWorkBookOnWorker e) {
+                logger.warning("Crafter workbook was missing.");
+                e.printStackTrace();
+                responder.getCommunicator().sendNormalServerMessage(crafter.getName() + " fumbles about and cannot find their workbook.");
+            } catch (NoSuchTemplateException | FailedException e) {
+                logger.warning("Error occurred when attempting to refund stopped job.");
+                e.printStackTrace();
+                responder.getCommunicator().sendNormalServerMessage("Could not create refund package while stopping job, the customer was not compensated.");
+            }
+        } else if (wasSelected("skills")) {
             new CrafterModifySkillsQuestion(responder, crafter).sendQuestion();
-        }
-
-        if (wasSelected("restrict")) {
+        } else if (wasSelected("restrict")) {
             try {
                 new CrafterMaterialRestrictionQuestion(getResponder(), crafter).sendQuestion();
             } catch (WorkBook.NoWorkBookOnWorker e) {
@@ -148,6 +175,7 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                                          b -> b.harray(b2 -> b2.label("Price Modifier: ").entry("price_modifier", Float.toString(shop.getPriceModifier()), 4)))
                                  .newLine()
                                  .harray(b -> b.button("Send").spacer().button("dismiss", "Dismiss").confirm("You are about to dismiss " + crafter.getName() + ".", "Do you really want to do that?").spacer()
+                                                      .If(workBook.todo() > 0, b2 -> b2.button("stop", "Stop current job").confirm("Stop current job.", "Are you sure you wish to stop the current job?  This will refund the order and return the item to the customer.").spacer())
                                                       .If(CrafterMod.canChangeSkill(), b2 -> b2.button("skills", "Modify skills").spacer())
                                                       .button("restrict", "Restrict Materials"))
                                  .build();

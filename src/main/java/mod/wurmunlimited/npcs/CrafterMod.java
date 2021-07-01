@@ -29,9 +29,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
 import java.nio.file.*;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.*;
@@ -39,7 +37,10 @@ import java.util.stream.Collectors;
 
 public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configurable, ItemTemplatesCreatedListener, ServerStartedListener, PlayerMessageListener {
     private static final Logger logger = Logger.getLogger(CrafterMod.class.getName());
-    public static final CrafterFaceSetters faceSetters = new CrafterFaceSetters();
+    private static final String dbName = "crafter.db";
+    public static CrafterMod mod;
+    public FaceSetter faceSetter;
+    public ModelSetter modelSetter;
     private static final Random faceRandom = new Random();
     public static final int maxNameLength = 50;
     static final byte MAIL_TYPE_CRAFTER = 30;
@@ -83,6 +84,10 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         tax_and_upkeep,
         for_owner,
         all_tax
+    }
+
+    public CrafterMod() {
+        mod = this;
     }
 
     public static String getNamePrefix() {
@@ -368,21 +373,6 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 () -> this::swapOwners);
 
         manager.registerHook("com.wurmonline.server.creatures.Creature",
-                "getFace",
-                "()J",
-                () -> this::getFace);
-
-        manager.registerHook("com.wurmonline.server.creatures.Creature",
-                "getBlood",
-                "()B",
-                () -> this::getBlood);
-
-        manager.registerHook("com.wurmonline.server.creatures.Communicator",
-                "sendNewCreature",
-                "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;FFFJFBZZZBJBZZB)V",
-                () -> this::sendNewCreature);
-
-        manager.registerHook("com.wurmonline.server.creatures.Creature",
                 "wearItems",
                 "()V",
                 () -> this::wearItems);
@@ -397,16 +387,13 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 "(Lcom/wurmonline/server/questions/CreatureCreationQuestion;)V",
                 () -> this::creatureCreation);
 
-        manager.registerHook("com.wurmonline.server.creatures.Communicator",
-                "reallyHandle_CMD_NEW_FACE",
-                "(Ljava/nio/ByteBuffer;)V",
-                () -> this::setFace);
-
         manager.registerHook("com.wurmonline.server.items.Item",
                 "willLeaveServer",
                 "(ZZZ)Z",
                 () -> this::willLeaveServer);
 
+        FaceSetter.init(manager);
+        ModelSetter.init(manager);
         ModCreatures.init();
         ModCreatures.addCreature(new CrafterTemplate());
     }
@@ -475,12 +462,16 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
 
     @Override
     public void onServerStarted() {
+        faceSetter = new FaceSetter(CrafterTemplate::isCrafter, dbName);
+        modelSetter = new ModelSetter(CrafterTemplate::isCrafter, dbName);
+
         ModActions.registerAction(new AssignAction(contractTemplateId));
         ModActions.registerAction(new TradeAction());
         ModActions.registerAction(new CrafterContractAction(contractTemplateId));
         ModActions.registerAction(new ManageCrafterAction());
         new PlaceCrafterAction();
         PlaceNpcMenu.register();
+        CustomiserPlayerGiveAction.register();
 
         try {
             Class<?> ServiceHandler = Class.forName("mod.wurmunlimited.npcs.CrafterAI");
@@ -726,41 +717,6 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         return method.invoke(o, args);
     }
 
-    Object getFace(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
-        Creature creature = (Creature)o;
-        if (CrafterTemplate.isCrafter(creature)) {
-            Long newFace = CrafterDatabase.getFaceFor(creature);
-            if (newFace == null) {
-                faceRandom.setSeed(creature.getWurmId());
-                newFace = faceRandom.nextLong();
-            }
-            return newFace;
-        }
-        return method.invoke(o, args);
-    }
-
-    // Required for not having weird character model.
-    Object getBlood(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
-        Creature creature = (Creature)o;
-        if (CrafterTemplate.isCrafter(creature)) {
-            return (byte)-1;
-        }
-        return method.invoke(o, args);
-    }
-
-    Object sendNewCreature(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
-        // If id is Creature id.
-        if (WurmId.getType((Long)args[0]) == 1) {
-            if ((Byte)args[15] == (byte)-1) {
-                // Blood - Should only apply to players, so re-purposing it for this should be okay.
-                args[15] = (byte)0;
-                // isCopy
-                args[17] = true;
-            }
-        }
-        return method.invoke(o, args);
-    }
-
     Object alterSkill(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException, NoSuchFieldException {
         if (crafterSkillGainRate != 1f) {
             Skill skill = (Skill)o;
@@ -807,45 +763,6 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
             e.printStackTrace();
         }
 
-        return method.invoke(o, args);
-    }
-
-    Object setFace(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
-        ByteBuffer buf = (ByteBuffer)args[0];
-        buf.mark();
-        long face = buf.getLong();
-        long itemId = buf.getLong();
-
-        if (itemId < 0) {
-            Player player = ((Communicator)o).player;
-            if (player != null) {
-                Creature crafter = faceSetters.retrieveCrafterOrNull(player, itemId);
-
-                if (crafter != null) {
-                    if (CrafterTemplate.isCrafter(crafter)) {
-                        if (CrafterDatabase.isDifferentFace(face, crafter)) {
-                            try {
-                                CrafterDatabase.setFaceFor(crafter, face);
-                                CrafterDatabase.resetPlayerFace(player);
-                                player.getCommunicator().sendNormalServerMessage("The crafter's face seems to shift about and takes a new form.");
-                            } catch (SQLException e) {
-                                logger.warning("Failed to set " + crafter.getName() + "'s face.");
-                                e.printStackTrace();
-                                player.getCommunicator().sendNormalServerMessage("The crafter's face seems to shift about, but then returns as it was.");
-                            }
-                        } else {
-                            player.getCommunicator().sendNormalServerMessage("The crafter's face seems to shift about, but then returns as it was.");
-                        }
-
-                        return null;
-                    }
-                }
-            } else {
-                logger.warning("Why is player null?  This should never happen.");
-            }
-        }
-
-        buf.reset();
         return method.invoke(o, args);
     }
 

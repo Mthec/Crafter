@@ -15,17 +15,22 @@ import mod.wurmunlimited.bml.BML;
 import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.*;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
+import static com.wurmonline.server.questions.CrafterHireQuestion.modelOptions;
 import static mod.wurmunlimited.Assert.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CrafterHireQuestionTests {
+    private static final String dbName = "crafter.db";
     private CrafterObjectsFactory factory;
     private Player owner;
     private Item contract;
@@ -39,12 +44,25 @@ class CrafterHireQuestionTests {
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("skillCap"), 99.99999f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 1);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("minimumPriceModifier"), 0.0000001f);
+        ReflectionUtil.<List<FaceSetter>>getPrivateField(null, FaceSetter.class.getDeclaredField("faceSetters")).clear();
+        ReflectionUtil.<List<ModelSetter>>getPrivateField(null, ModelSetter.class.getDeclaredField("modelSetters")).clear();
         owner = factory.createNewPlayer();
         factory.createVillageFor(owner);
         contract = factory.createNewItem(CrafterMod.getContractTemplateId());
         Properties crafterModProperties = new Properties();
         crafterModProperties.setProperty("name_prefix", "");
         new CrafterMod().configure(crafterModProperties);
+        CrafterMod.mod.faceSetter = new FaceSetter(CrafterTemplate::isCrafter, dbName);
+        CrafterMod.mod.modelSetter = new ModelSetter(CrafterTemplate::isCrafter, dbName);
+    }
+
+    @AfterEach
+    void tearDown() {
+        File file = new File("./sqlite/" + dbName);
+        if (file.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            file.delete();
+        }
     }
 
     private Properties generateProperties() {
@@ -165,32 +183,6 @@ class CrafterHireQuestionTests {
         new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
 
         assertEquals("APrefix_Alfred", getNewlyCreatedCrafter().getName());
-    }
-
-    @Test
-    public void testAnswerFace() {
-        long face = 12345;
-        Properties properties = generateProperties(CrafterType.allMetal);
-        properties.setProperty("face", Long.toString(face));
-        new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
-
-        assertEquals(1, getCrafterCount());
-        Creature crafter = getNewlyCreatedCrafter();
-        assertTrue(CrafterTemplate.isCrafter(crafter));
-        assertEquals(new Long(face), CrafterDatabase.getFaceFor(crafter));
-        assertNull(factory.getCommunicator(owner).sendCustomizeFace);
-    }
-
-    @Test
-    public void testAnswerInvalidFace() {
-        Properties properties = generateProperties(CrafterType.allMetal);
-        properties.setProperty("face", "abc");
-        new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
-
-        assertEquals(1, getCrafterCount());
-        Creature crafter = getNewlyCreatedCrafter();
-        assertTrue(CrafterTemplate.isCrafter(crafter));
-        assertNotNull(factory.getCommunicator(owner).sendCustomizeFace);
     }
 
     @Test
@@ -373,5 +365,28 @@ class CrafterHireQuestionTests {
         Integer[] setSkills = crafterType.getAllTypes();
         assertEquals(1, setSkills.length);
         assertEquals(skill, (int)setSkills[0]);
+    }
+
+    @Test
+    void testCustomiseAppearanceSent() {
+        Properties properties = generateProperties();
+        properties.setProperty("customise", "true");
+        new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
+
+        assertEquals(1, getCrafterCount());
+        assertThat(owner, didNotReceiveMessageContaining("invalid"));
+        new CreatureCustomiserQuestion(owner, getNewlyCreatedCrafter(), CrafterMod.mod.faceSetter, CrafterMod.mod.modelSetter, modelOptions).sendQuestion();
+        assertThat(owner, bmlEqual());
+    }
+
+    @Test
+    void testCustomiseAppearanceNotSentIfFalse() {
+        Properties properties = generateProperties();
+        properties.setProperty("customise", "false");
+        new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
+
+        assertEquals(1, getCrafterCount());
+        assertThat(owner, didNotReceiveMessageContaining("invalid"));
+        assertEquals(0, factory.getCommunicator(owner).getBml().length);
     }
 }

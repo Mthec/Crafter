@@ -17,26 +17,30 @@ import mod.wurmunlimited.CrafterObjectsFactory;
 import mod.wurmunlimited.npcs.*;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
-import java.util.Map;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.wurmonline.server.questions.CrafterHireQuestion.modelOptions;
 import static mod.wurmunlimited.Assert.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class CrafterManagementQuestionTests {
+    private static final String dbName = "crafter.db";
     private CrafterObjectsFactory factory;
     private Player owner;
     private Creature crafter;
@@ -51,6 +55,8 @@ class CrafterManagementQuestionTests {
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("minimumPriceModifier"), 0.0000001f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("paymentOption"), CrafterMod.PaymentOption.for_owner);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("canChangeSkill"), true);
+        ReflectionUtil.<List<FaceSetter>>getPrivateField(null, FaceSetter.class.getDeclaredField("faceSetters")).clear();
+        ReflectionUtil.<List<ModelSetter>>getPrivateField(null, ModelSetter.class.getDeclaredField("modelSetters")).clear();
         owner = factory.createNewPlayer();
         crafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allMetal), 50);
         factory.createVillageFor(owner, crafter);
@@ -58,19 +64,30 @@ class CrafterManagementQuestionTests {
         contract.setData(crafter.getWurmId());
         owner.getInventory().insertItem(contract);
         setPrefix("");
+        new CrafterMod();
+        CrafterMod.mod.faceSetter = new FaceSetter(CrafterTemplate::isCrafter, dbName);
+        CrafterMod.mod.modelSetter = new ModelSetter(CrafterTemplate::isCrafter, dbName);
+    }
+
+    @AfterEach
+    void tearDown() {
+        File file = new File("./sqlite/" + dbName);
+        if (file.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            file.delete();
+        }
     }
 
     private void setFakeCrafter() {
         try {
             crafter = mock(Creature.class);
-            CrafterDatabase.setFaceFor(crafter, 98765);
             AtomicReference<String> name = new AtomicReference<>("Dave");
             when(crafter.getName()).thenAnswer(i -> name.get());
             doAnswer((Answer<Void>)i -> {
                 name.set(i.getArgument(0));
                 return null;
             }).when(crafter).setName(anyString());
-            when(crafter.getFace()).thenAnswer(i -> ReflectionUtil.<Map<Creature, Long>>getPrivateField(null, CrafterDatabase.class.getDeclaredField("faces")).get(crafter));
+            when(crafter.getFace()).thenAnswer(i -> CrafterMod.mod.faceSetter.getFaceFor(crafter));
             when(crafter.getWurmId()).thenReturn(987654L);
             VolaTile tile = Zones.getOrCreateTile(10, 10, true);
             when(crafter.getCurrentTile()).thenReturn(tile);
@@ -113,15 +130,6 @@ class CrafterManagementQuestionTests {
         crafter.setName("Crafter_Dave");
         new CrafterManagementQuestion(owner, crafter).sendQuestion();
         assertThat(owner, receivedBMLContaining("input{text=\"Crafter_Dave\";id=\"name\";maxchars=\"" + CrafterMod.maxNameLength + "\"}"));
-    }
-
-    @Test
-    public void testFaceCorrectlySet() throws SQLException {
-        setFakeCrafter();
-        Long face = CrafterDatabase.getFaceFor(crafter);
-        assert face != null && face == 98765;
-        new CrafterManagementQuestion(owner, crafter).sendQuestion();
-        assertThat(owner, receivedBMLContaining("input{text=\"" + face + "\";id=\"face\";maxchars=\"" + Long.toString(Long.MAX_VALUE).length() + "\"}"));
     }
 
     @Test
@@ -308,59 +316,6 @@ class CrafterManagementQuestionTests {
     }
 
     @Test
-    public void testAnswerFace() {
-        setFakeCrafter();
-        long face = 123456;
-        reset(crafter.getCurrentTile());
-        answer(Long.toString(face));
-
-        assertEquals(0, factory.getCommunicator(owner).getBml().length);
-        assertEquals(face, face);
-        verify(crafter.getCurrentTile(), times(1)).setNewFace(crafter);
-        assertNull(factory.getCommunicator(owner).sendCustomizeFace);
-        assertThat(owner, receivedMessageContaining("takes a new form"));
-        assertThat(owner, didNotReceiveMessageContaining(crafter.getName()));
-    }
-
-    @Test
-    public void testAnswerEmptyFace() {
-        setFakeCrafter();
-        reset(crafter.getCurrentTile());
-        answer("");
-
-        assertEquals(0, factory.getCommunicator(owner).getBml().length);
-        verify(crafter.getCurrentTile(), never()).setNewFace(crafter);
-        assertNotNull(factory.getCommunicator(owner).sendCustomizeFace);
-        assertThat(owner, didNotReceiveMessageContaining("takes a new form"));
-        assertThat(owner, didNotReceiveMessageContaining(crafter.getName()));
-    }
-
-    @Test
-    public void testAnswerInvalidFace() {
-        setFakeCrafter();
-        reset(crafter.getCurrentTile());
-        answer("abc");
-
-        verify(crafter.getCurrentTile(), never()).setNewFace(crafter);
-        assertNull(factory.getCommunicator(owner).sendCustomizeFace);
-        assertThat(owner, didNotReceiveMessageContaining("takes a new form"));
-        assertThat(owner, didNotReceiveMessageContaining(crafter.getName()));
-    }
-
-    @Test
-    public void testAnswerSameFace() {
-        setFakeCrafter();
-        reset(crafter.getCurrentTile());
-        answer(null);
-
-        assertThat(owner, didNotReceiveMessageContaining("Invalid face"));
-        assertThat(owner, didNotReceiveMessageContaining("takes a new form"));
-        verify(crafter.getCurrentTile(), never()).setNewFace(crafter);
-        assertNull(factory.getCommunicator(owner).sendCustomizeFace);
-        assertThat(owner, didNotReceiveMessageContaining(crafter.getName()));
-    }
-
-    @Test
     void testPriceModifierUpdated() {
         assert Economy.getEconomy().getShop(crafter).getPriceModifier() == 1.0f;
         Properties properties = new Properties();
@@ -506,5 +461,15 @@ class CrafterManagementQuestionTests {
 
         assertEquals(1, workBook.todo());
         assertThat(owner, receivedMessageContaining("successfully refunded"));
+    }
+
+    @Test
+    void testCustomiseAppearanceSent() {
+        Properties properties = new Properties();
+        properties.setProperty("customise", "true");
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        new CreatureCustomiserQuestion(owner, crafter, CrafterMod.mod.faceSetter, CrafterMod.mod.modelSetter, modelOptions).sendQuestion();
+        assertThat(owner, bmlEqual());
     }
 }

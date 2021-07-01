@@ -15,10 +15,10 @@ import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.*;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Properties;
 
 import static com.wurmonline.server.creatures.CreaturePackageCaller.saveCreatureName;
+import static com.wurmonline.server.questions.CrafterHireQuestion.modelOptions;
 
 public class CrafterManagementQuestion extends CrafterQuestionExtension {
     private final Player responder;
@@ -54,36 +54,6 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
             }
         }
 
-        String faceString = getStringProp("face");
-        long face;
-        if (faceString.isEmpty()) {
-            face = crafter.getFace();
-        } else {
-            try {
-                face = Long.parseLong(faceString);
-            } catch (NumberFormatException e) {
-                responder.getCommunicator().sendAlertServerMessage("Invalid face value, ignoring.");
-                face = crafter.getFace();
-            }
-        }
-
-        if (faceString.isEmpty()) {
-            try {
-                responder.getCommunicator().sendCustomizeFace(face, CrafterMod.faceSetters.createIdFor(crafter, responder));
-            } catch (CrafterFaceSetters.TooManyTransactionsException e) {
-                logger.warning(e.getMessage());
-                responder.getCommunicator().sendAlertServerMessage(e.getMessage());
-            }
-        } else if (face != crafter.getFace()) {
-            try {
-                CrafterDatabase.setFaceFor(crafter, face);
-                responder.getCommunicator().sendNormalServerMessage("The crafter's face seems to shift about and takes a new form.");
-            } catch (SQLException e) {
-                logger.warning("Failed to set face (" + face + ") for crafter (" + crafter.getWurmId() + ").");
-                e.printStackTrace();
-            }
-        }
-
         String val = properties.getProperty("price_modifier");
         if (val != null && val.length() > 0) {
             try {
@@ -104,6 +74,8 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
 
         if (wasSelected("dismiss")) {
             dismiss();
+        } else if (wasSelected("customise")) {
+            new CreatureCustomiserQuestion(responder, crafter, CrafterMod.mod.faceSetter, CrafterMod.mod.modelSetter, modelOptions).sendQuestion();
         } else if (wasSelected("stop")) {
             try {
                 WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
@@ -158,9 +130,6 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                                  .table(new String[] { "Skill", "Current", "Max" }, workBook.getCrafterType().getSkillsFor(crafter),
                                          (skill, b) -> b.label(skill.getName()).label(String.format("%.2f", skill.getKnowledge())).label(Float.toString(workBook.getSkillCap())))
                                  .newLine()
-                                 .harray(b -> b.label("Face:").entry("face", Long.toString(crafter.getFace()), CrafterHireQuestion.faceMaxChars))
-                                 .text("Blank to create a face on the next screen, or paste a face code here.").italic()
-                                 .newLine()
                                  .text("Current jobs - " + workBook.todo())
                                  .text("Awaiting collection - " + workBook.done())
                                  .If(!workBook.getCrafterType().needsForge(),
@@ -175,6 +144,7 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                                          b -> b.harray(b2 -> b2.label("Price Modifier: ").entry("price_modifier", Float.toString(shop.getPriceModifier()), 4)))
                                  .newLine()
                                  .harray(b -> b.button("Send").spacer().button("dismiss", "Dismiss").confirm("You are about to dismiss " + crafter.getName() + ".", "Do you really want to do that?").spacer()
+                                                      .button("customise", "Appearance").spacer()
                                                       .If(workBook.todo() > 0, b2 -> b2.button("stop", "Stop current job").confirm("Stop current job.", "Are you sure you wish to stop the current job?  This will refund the order and return the item to the customer.").spacer())
                                                       .If(CrafterMod.canChangeSkill(), b2 -> b2.button("skills", "Modify skills").spacer())
                                                       .button("restrict", "Restrict Materials"))

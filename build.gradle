@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'mod.wurmunlimited.npcs.crafter'
-version = '0.5'
+version = '0.5.2'
 
 sourceCompatibility = 1.8
 def $shortName = 'crafter'
@@ -31,6 +31,7 @@ dependencies {
 //            "annotations-2.0.1.jar", "ServerLauncher-0.43.jar", "WurmUnlimitedCommon-1.9.2.7.jar", "guava-18.0.jar", "javassist-3.23.1.jar",
 //            "sqlite-jdbc-3.8.11.2.jar"])
     implementation project(':BMLBuilder')
+    implementation project(':CreatureCustomiser')
     implementation project(':PlaceNpc')
 }
 
@@ -53,6 +54,9 @@ jar {
     }
     from {
         project(':BMLBuilder').sourceSets.main.output
+    }
+    from {
+        project(':CreatureCustomiser').sourceSets.main.output
     }
     exclude 'Trade.class'
     exclude 'TradeHandler.class'

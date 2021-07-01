@@ -465,12 +465,10 @@ public class CrafterAIData extends CreatureAIData {
         workbook.removeJob(item);
     }
 
-    public static Creature createNewCrafter(Creature owner, String name, byte sex, CrafterType crafterType, float skillCap, float priceModifier, long face) throws Exception {
+    public static Creature createNewCrafter(Creature owner, String name, byte sex, CrafterType crafterType, float skillCap, float priceModifier) throws Exception {
         skillCap = Math.min(skillCap, CrafterMod.getSkillCap());
         VolaTile tile = owner.getCurrentTile();
-        CrafterDatabase.setTempFace(face);
         Creature crafter = Creature.doNew(CrafterTemplate.getTemplateId(), (float)(tile.getTileX() << 2) + 2.0F, (float)(tile.getTileY() << 2) + 2.0F, 180.0F, owner.getLayer(), name, sex, owner.getKingdomId());
-        CrafterDatabase.removeTempFace(face);
 
         // Cleaning up.  Hook may not be run after other mods have adjusted the createShop method.
         for (Item item : crafter.getInventory().getItemsAsArray()) {

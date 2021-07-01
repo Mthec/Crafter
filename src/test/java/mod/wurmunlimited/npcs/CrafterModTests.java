@@ -8,7 +8,6 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.CreatureTemplate;
 import com.wurmonline.server.creatures.CreatureTemplateIds;
 import com.wurmonline.server.items.*;
-import com.wurmonline.server.kingdom.Kingdom;
 import com.wurmonline.server.players.Player;
 import com.wurmonline.server.questions.CrafterHireQuestion;
 import com.wurmonline.server.questions.CreatureCreationQuestion;
@@ -222,107 +221,6 @@ class CrafterModTests {
         assertNull(handler.invoke(window, method, args));
         verify(method, times(1)).invoke(window, args);
         assertEquals(contract.getData(), -1);
-    }
-
-    @Test
-    void testGetFaceReturnsNot0ForCrafter() throws Throwable {
-        CrafterMod crafterMod = new CrafterMod();
-        Creature creature = factory.createNewCrafter(factory.createNewPlayer(), crafterType, 50);
-
-        InvocationHandler handler = crafterMod::getFace;
-        Method method = mock(Method.class);
-        Object[] args = new Object[0];
-
-        Long face = (Long)handler.invoke(creature, method, args);
-        assertNotNull(face);
-        assertNotEquals(0L, face);
-        verify(method, never()).invoke(creature, args);
-    }
-
-    @Test
-    void testGetFaceReturnsNormalForNoneCrafter() throws Throwable {
-        CrafterMod crafterMod = new CrafterMod();
-        Creature creature = factory.createNewCreature();
-
-        InvocationHandler handler = crafterMod::getFace;
-        Method method = mock(Method.class);
-        Object[] args = new Object[0];
-
-        assertNull(handler.invoke(creature, method, args));
-        verify(method, times(1)).invoke(creature, args);
-    }
-
-    @Test
-    void testGetBloodReturnsMinus1ForCrafter() throws Throwable {
-        CrafterMod crafterMod = new CrafterMod();
-        Creature creature = factory.createNewCrafter(factory.createNewPlayer(), crafterType, 50);
-
-        InvocationHandler handler = crafterMod::getBlood;
-        Method method = mock(Method.class);
-        Object[] args = new Object[0];
-
-        Byte face = (Byte)handler.invoke(creature, method, args);
-        assertNotNull(face);
-        assertEquals((byte)-1, (byte)face);
-        verify(method, never()).invoke(creature, args);
-    }
-
-    @Test
-    void testGetBloodReturnsNormalForNoneCrafter() throws Throwable {
-        CrafterMod crafterMod = new CrafterMod();
-        Creature creature = factory.createNewCreature();
-
-        InvocationHandler handler = crafterMod::getBlood;
-        Method method = mock(Method.class);
-        Object[] args = new Object[0];
-
-        assertNull(handler.invoke(creature, method, args));
-        verify(method, times(1)).invoke(creature, args);
-    }
-
-    @Test
-    void testSendNewCreatureModifiesReturnForMinus1Blood() throws Throwable {
-        CrafterMod crafterMod = new CrafterMod();
-        Creature creature = factory.createNewCrafter(factory.createNewPlayer(), crafterType, 50);
-
-        InvocationHandler handler = crafterMod::sendNewCreature;
-        Method method = mock(Method.class);
-        Object[] args = new Object[] { creature.getWurmId(), creature.getName(), "", "model.whatsit", 1, 1, 1, 1, 1, (byte)1, true, false, true, Kingdom.KINGDOM_MOLREHAN, 0, (byte)-1, false, false, (byte)0 };
-
-        assertNull(handler.invoke(creature, method, args));
-        assertEquals((byte)0, (byte)args[15]);
-        assertTrue((boolean)args[17]);
-        verify(method, times(1)).invoke(creature, args);
-    }
-
-    @Test
-    void testSendNewCreatureReturnsNormalForNoneCrafter() throws Throwable {
-        CrafterMod crafterMod = new CrafterMod();
-        Creature creature = factory.createNewCreature();
-
-        InvocationHandler handler = crafterMod::sendNewCreature;
-        Method method = mock(Method.class);
-        Object[] args = new Object[] { creature.getWurmId(), creature.getName(), "", "model.whatsit", 1, 1, 1, 1, 1, (byte)1, true, false, true, Kingdom.KINGDOM_MOLREHAN, 0, (byte)0, false, false, (byte)0 };
-        assert !(boolean)args[17];
-
-        assertNull(handler.invoke(creature, method, args));
-        assertFalse((boolean)args[17]);
-        verify(method, times(1)).invoke(creature, args);
-    }
-
-    @Test
-    void testSendNewCreatureReturnsNormalForPlayerEvenIfBloodWasMinus1() throws Throwable {
-        CrafterMod crafterMod = new CrafterMod();
-        Creature creature = factory.createNewPlayer();
-
-        InvocationHandler handler = crafterMod::sendNewCreature;
-        Method method = mock(Method.class);
-        Object[] args = new Object[] { creature.getWurmId(), creature.getName(), "", "model.whatsit", 1, 1, 1, 1, 1, (byte)1, true, false, true, Kingdom.KINGDOM_MOLREHAN, 0, (byte)-1, false, false, (byte)0 };
-        assert !(boolean)args[17];
-
-        assertNull(handler.invoke(creature, method, args));
-        assertFalse((boolean)args[17]);
-        verify(method, times(1)).invoke(creature, args);
     }
 
     @Test

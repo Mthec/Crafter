@@ -372,11 +372,6 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 "()V",
                 () -> this::swapOwners);
 
-        manager.registerHook("com.wurmonline.server.creatures.Creature",
-                "wearItems",
-                "()V",
-                () -> this::wearItems);
-
         manager.registerHook("com.wurmonline.server.skills.Skill",
                 "alterSkill",
                 "(DZFZD)V",
@@ -396,33 +391,6 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         ModelSetter.init(manager);
         ModCreatures.init();
         ModCreatures.addCreature(new CrafterTemplate());
-    }
-
-    Object wearItems(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
-        Creature creature = (Creature)o;
-        if (CrafterTemplate.isCrafter(creature)) {
-            WorkBook workBook = ((CrafterAIData)creature.getCreatureAIData()).getWorkBook();
-            if (workBook != null) {
-                List<Item> jobItems = new ArrayList<>();
-
-                for (Item item : creature.getInventory().getItemsAsArray()) {
-                    if (workBook.isJobItem(item)) {
-                        jobItems.add(item);
-                        creature.getInventory().getItems().remove(item);
-                    }
-                }
-
-                try {
-                    method.invoke(o, args);
-                } finally {
-                    for (Item item : jobItems) {
-                        creature.getInventory().getItems().add(item);
-                    }
-                }
-                return null;
-            }
-        }
-        return method.invoke(o, args);
     }
 
     @Override
@@ -463,7 +431,31 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     @Override
     public void onServerStarted() {
         faceSetter = new FaceSetter(CrafterTemplate::isCrafter, dbName);
-        modelSetter = new ModelSetter(CrafterTemplate::isCrafter, dbName);
+        modelSetter = new ModelSetter(CrafterTemplate::isCrafter, new WearItems() {
+            private final List<Item> jobItems = new ArrayList<>();
+
+            @Override
+            public void beforeWearing(Creature creature) {
+                WorkBook workBook = ((CrafterAIData)creature.getCreatureAIData()).getWorkBook();
+                if (workBook != null) {
+                    for (Item item : creature.getInventory().getItemsAsArray()) {
+                        if (workBook.isJobItem(item)) {
+                            jobItems.add(item);
+                            creature.getInventory().getItems().remove(item);
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void afterWearing(Creature creature) {
+                for (Item item : jobItems) {
+                    creature.getInventory().getItems().add(item);
+                }
+
+                jobItems.clear();
+            }
+        }, dbName);
 
         ModActions.registerAction(new AssignAction(contractTemplateId));
         ModActions.registerAction(new TradeAction());
@@ -471,7 +463,9 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         ModActions.registerAction(new ManageCrafterAction());
         new PlaceCrafterAction();
         PlaceNpcMenu.register();
-        CustomiserPlayerGiveAction.register();
+        CustomiserPlayerGiveAction.register(CrafterTemplate::isCrafter, (performer, source, target) ->
+                                performer.getPower() >= 2 || performer.getInventory().getItems().stream()
+                                     .anyMatch(it -> it.getTemplateId() == contractTemplateId && it.getData() == target.getWurmId()));
 
         try {
             Class<?> ServiceHandler = Class.forName("mod.wurmunlimited.npcs.CrafterAI");

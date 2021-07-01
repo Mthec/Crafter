@@ -86,6 +86,7 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                     }
 
                     Item item = job.getItem();
+                    job.mailToCustomer();
                     job.refundCustomer();
                     workBook.removeJob(item);
                     noJobs = false;

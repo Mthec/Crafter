@@ -1,6 +1,8 @@
 package com.wurmonline.server.questions;
 
 import com.wurmonline.server.Constants;
+import com.wurmonline.server.Items;
+import com.wurmonline.server.NoSuchItemException;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.CreatureTemplateFactory;
@@ -9,6 +11,7 @@ import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
+import com.wurmonline.server.items.WurmMail;
 import com.wurmonline.server.players.Player;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
@@ -437,9 +440,12 @@ class CrafterManagementQuestionTests {
     }
 
     @Test
-    void testStopButtonSelected() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+    void testStopButtonSelected() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull, NoSuchItemException {
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
-        workBook.addJob(1, factory.createNewItem(), 1, false, 100);
+        Item item = factory.createNewItem();
+        Player player = factory.createNewPlayer();
+        int price = 100;
+        workBook.addJob(player.getWurmId(), item, 1, false, price);
         CrafterManagementQuestion question = new CrafterManagementQuestion(owner, crafter);
         Properties properties = new Properties();
         properties.setProperty("stop", "true");
@@ -447,6 +453,23 @@ class CrafterManagementQuestionTests {
 
         assertEquals(0, workBook.todo());
         assertThat(owner, receivedMessageContaining("successfully refunded"));
+        assertTrue(item.isMailed());
+        List<WurmMail> mail = WurmMail.allMail;
+        assertEquals(2, mail.size());
+        Item one = Items.getItem(mail.get(0).itemId);
+        Item two = Items.getItem(mail.get(1).itemId);
+        assertEquals(player.getWurmId(), mail.get(0).ownerId);
+        assertEquals(player.getWurmId(), mail.get(1).ownerId);
+
+        if (one.getTemplateId() == item.getTemplateId()) {
+            assertEquals(item, one);
+            assertEquals(ItemList.jarPottery, two.getTemplateId());
+            assertThat(two.getItems(), containsCoinsOfValue(price));
+        } else {
+            assertEquals(item, two);
+            assertEquals(ItemList.jarPottery, one.getTemplateId());
+            assertThat(one.getItems(), containsCoinsOfValue(price));
+        }
     }
 
     @Test

@@ -431,31 +431,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     @Override
     public void onServerStarted() {
         faceSetter = new FaceSetter(CrafterTemplate::isCrafter, dbName);
-        modelSetter = new ModelSetter(CrafterTemplate::isCrafter, new WearItems() {
-            private final List<Item> jobItems = new ArrayList<>();
-
-            @Override
-            public void beforeWearing(Creature creature) {
-                WorkBook workBook = ((CrafterAIData)creature.getCreatureAIData()).getWorkBook();
-                if (workBook != null) {
-                    for (Item item : creature.getInventory().getItemsAsArray()) {
-                        if (workBook.isJobItem(item)) {
-                            jobItems.add(item);
-                            creature.getInventory().getItems().remove(item);
-                        }
-                    }
-                }
-            }
-
-            @Override
-            public void afterWearing(Creature creature) {
-                for (Item item : jobItems) {
-                    creature.getInventory().getItems().add(item);
-                }
-
-                jobItems.clear();
-            }
-        }, dbName);
+        modelSetter = new ModelSetter(CrafterTemplate::isCrafter, new CrafterWearItems(), dbName);
 
         ModActions.registerAction(new AssignAction(contractTemplateId));
         ModActions.registerAction(new TradeAction());

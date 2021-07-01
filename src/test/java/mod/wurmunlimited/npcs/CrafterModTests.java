@@ -226,25 +226,20 @@ class CrafterModTests {
     @Test
     void testJobItemsRemovedFromInventoryDuringWearItems() throws Throwable {
         CrafterMod crafterMod = new CrafterMod();
-        com.wurmonline.server.creatures.Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), crafterType, 50);
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), crafterType, 50);
         Item job = factory.createNewItem();
         crafter.getInventory().insertItem(job);
         WorkBook.getWorkBookFromWorker(crafter).addJob(1, job, 10, false, 1);
         crafter.getInventory().insertItem(factory.createNewItem(ItemList.plateJacket));
         crafter.getInventory().insertItem(factory.createNewItem(ItemList.hammerMetal));
 
-        InvocationHandler handler = crafterMod::wearItems;
-        Method method = mock(Method.class);
-        Object[] args = new Object[0];
-        when(method.invoke(crafter, args)).thenAnswer((Answer<Void>)i -> {
-            for (Item item : crafter.getInventory().getItems()) {
-                assertNotEquals(job, item);
-            }
-            return null;
-        });
+        CrafterWearItems wearItems = new CrafterWearItems();
 
-        assertNull(handler.invoke(crafter, method, args));
-        verify(method, times(1)).invoke(crafter, args);
+        wearItems.beforeWearing(crafter);
+        assertFalse(crafter.getInventory().getItems().contains(job));
+
+        wearItems.afterWearing(crafter);
+        assertTrue(crafter.getInventory().getItems().contains(job));
     }
 
     @Test

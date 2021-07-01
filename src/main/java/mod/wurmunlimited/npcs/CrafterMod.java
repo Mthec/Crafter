@@ -402,6 +402,11 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 "(Ljava/nio/ByteBuffer;)V",
                 () -> this::setFace);
 
+        manager.registerHook("com.wurmonline.server.items.Item",
+                "willLeaveServer",
+                "(ZZZ)Z",
+                () -> this::willLeaveServer);
+
         ModCreatures.init();
         ModCreatures.addCreature(new CrafterTemplate());
     }
@@ -420,11 +425,12 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                     }
                 }
 
-                // TODO - Try finally?
-                method.invoke(o, args);
-
-                for (Item item : jobItems) {
-                    creature.getInventory().getItems().add(item);
+                try {
+                    method.invoke(o, args);
+                } finally {
+                    for (Item item : jobItems) {
+                        creature.getInventory().getItems().add(item);
+                    }
                 }
                 return null;
             }
@@ -840,6 +846,27 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         }
 
         buf.reset();
+        return method.invoke(o, args);
+    }
+
+    Object willLeaveServer(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
+        Item item = (Item)o;
+        if (item.getTemplateId() == contractTemplateId) {
+            boolean leaving = (boolean)args[0];
+
+            if (item.getData() > 0) {
+                if (leaving) {
+                    item.setTransferred(true);
+                }
+                return false;
+            }
+
+            if (leaving) {
+                item.setTransferred(false);
+                return true;
+            }
+        }
+
         return method.invoke(o, args);
     }
 }

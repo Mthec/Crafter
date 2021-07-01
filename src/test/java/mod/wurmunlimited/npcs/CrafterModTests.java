@@ -1,5 +1,6 @@
 package mod.wurmunlimited.npcs;
 
+import com.wurmonline.server.Constants;
 import com.wurmonline.server.Servers;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.creatures.CrafterTradeHandler;
@@ -38,6 +39,7 @@ class CrafterModTests {
     @BeforeEach
     void setUp() throws Exception {
         factory = new CrafterObjectsFactory();
+        Constants.dbHost = ".";
         CrafterAI.assignedForges.clear();
         crafterType = new CrafterType(SkillList.SMITHING_BLACKSMITHING);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("removeDonationsAt"), Integer.MIN_VALUE);
@@ -521,7 +523,7 @@ class CrafterModTests {
 
         InvocationHandler handler = new CrafterMod()::creatureCreation;
         Method method = mock(Method.class);
-        Object[] args = new Object[] { new CreatureCreationQuestion(gm, "", "", wand.getWurmId(), tileX, tileY, -1, -10)};
+        Object[] args = new Object[] { new CreatureCreationQuestion(gm, "", "", wand.getWurmId(), tileX, tileY, -1, -10) };
         ((CreatureCreationQuestion)args[0]).sendQuestion();
         factory.getCommunicator(gm).clear();
         int templateIndex = -1;
@@ -556,7 +558,7 @@ class CrafterModTests {
 
         InvocationHandler handler = new CrafterMod()::creatureCreation;
         Method method = mock(Method.class);
-        Object[] args = new Object[] { new CreatureCreationQuestion(gm, "", "", wand.getWurmId(), tileX, tileY, -1, -10)};
+        Object[] args = new Object[] { new CreatureCreationQuestion(gm, "", "", wand.getWurmId(), tileX, tileY, -1, -10) };
         ((CreatureCreationQuestion)args[0]).sendQuestion();
         Properties answers = new Properties();
         answers.setProperty("data1", String.valueOf(0));
@@ -572,5 +574,50 @@ class CrafterModTests {
         verify(method, times(1)).invoke(null, args);
         assertEquals(0, factory.getAllCreatures().size());
         assertThat(gm, didNotReceiveMessageContaining("An error occurred"));
+    }
+
+    @Test
+    void testWillLeaveServerEmptyContract() throws Throwable {
+        Player gm = factory.createNewPlayer();
+
+        InvocationHandler handler = new CrafterMod()::willLeaveServer;
+        Item item = factory.createNewItem(CrafterMod.getContractTemplateId());
+        Method method = mock(Method.class);
+        Object[] args = new Object[] { true, false, false };
+
+        assertTrue((Boolean)handler.invoke(item, method, args));
+        assertFalse(item.isTransferred());
+        verify(method, never()).invoke(item, args);
+    }
+
+    @Test
+    void testWillLeaveServerUsedContract() throws Throwable {
+        Player gm = factory.createNewPlayer();
+
+        InvocationHandler handler = new CrafterMod()::willLeaveServer;
+        Item item = factory.createNewItem(CrafterMod.getContractTemplateId());
+        item.setData(gm.getWurmId());
+        Method method = mock(Method.class);
+        Object[] args = new Object[] { true, false, false };
+
+        assertFalse((Boolean)handler.invoke(item, method, args));
+        assertTrue(item.isTransferred());
+        verify(method, never()).invoke(item, args);
+    }
+
+    @Test
+    void testWillLeaveServerNotContract() throws Throwable {
+        Player gm = factory.createNewPlayer();
+
+        InvocationHandler handler = new CrafterMod()::willLeaveServer;
+        Item item = factory.createNewItem(ItemList.lunchbox);
+        item.setData(gm.getWurmId());
+        boolean isTransferred = item.isTransferred();
+        Method method = mock(Method.class);
+        Object[] args = new Object[] { true, false, false };
+
+        assertNull(handler.invoke(item, method, args));
+        assertEquals(isTransferred, item.isTransferred());
+        verify(method, times(1)).invoke(item, args);
     }
 }

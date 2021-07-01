@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class CrafterAITests extends CrafterTest {
-
     private CrafterAIData data;
     private WorkBook workBook;
     private Job job;
@@ -36,7 +35,7 @@ class CrafterAITests extends CrafterTest {
 
     @Override
     @BeforeEach
-    void setUp() throws Exception {
+    protected void setUp() throws Exception {
         super.setUp();
         data = (CrafterAIData)crafter.getCreatureAIData();
         workBook = data.getWorkBook();

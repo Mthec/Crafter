@@ -580,11 +580,11 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         }
     }
 
-    private Object getShop(Object o, Method method, Object[] args) throws IllegalAccessException, NoSuchFieldException {
+    private Object getShop(Object o, Method method, Object[] args) throws IllegalAccessException, NoSuchFieldException, InvocationTargetException {
         Creature creature = (Creature)args[0];
         boolean destroying = (boolean)args[1];
-        Shop tm = null;
-        if (creature.isNpcTrader() || creature.getTemplate().getTemplateId() == CrafterTemplate.getTemplateId()) {
+        if (creature.getTemplate().getTemplateId() == CrafterTemplate.getTemplateId()) {
+            Shop tm;
             ReentrantReadWriteLock SHOPS_RW_LOCK = ReflectionUtil.getPrivateField(null, Economy.class.getDeclaredField("SHOPS_RW_LOCK"));
             SHOPS_RW_LOCK.readLock().lock();
 
@@ -598,9 +598,11 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
             if (!destroying && tm == null) {
                 tm = Economy.getEconomy().createShop(creature.getWurmId());
             }
+
+            return tm;
         }
 
-        return tm;
+        return method.invoke(o, args);
     }
 
     Object getTradeHandler(Object o, Method method, Object[] args) throws NoSuchFieldException, InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InstantiationException {

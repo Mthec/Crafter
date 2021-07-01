@@ -144,11 +144,12 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                                  .If(CrafterMod.canUsePriceModifier(),
                                          b -> b.harray(b2 -> b2.label("Price Modifier: ").entry("price_modifier", Float.toString(shop.getPriceModifier()), 4)))
                                  .newLine()
-                                 .harray(b -> b.button("Send").spacer().button("dismiss", "Dismiss").confirm("You are about to dismiss " + crafter.getName() + ".", "Do you really want to do that?").spacer()
-                                                      .button("customise", "Appearance").spacer()
-                                                      .If(workBook.todo() > 0, b2 -> b2.button("stop", "Stop current job").confirm("Stop current job.", "Are you sure you wish to stop the current job?  This will refund the order and return the item to the customer.").spacer())
-                                                      .If(CrafterMod.canChangeSkill(), b2 -> b2.button("skills", "Modify skills").spacer())
-                                                      .button("restrict", "Restrict Materials"))
+                                 .harray(b -> b.button("Send").spacer()
+                                               .button("customise", "Appearance").spacer()
+                                               .If(CrafterMod.canChangeSkill(), b2 -> b2.button("skills", "Modify skills").spacer())
+                                               .button("restrict", "Restrict Materials"))
+                                 .harray(b -> b.If(workBook.todo() > 0, b2 -> b2.button("stop", "Stop current job").confirm("Stop current job.", "Are you sure you wish to stop the current job?  This will refund the order and return the item to the customer.").spacer())
+                                               .button("dismiss", "Dismiss").confirm("You are about to dismiss " + crafter.getName() + ".", "Do you really want to do that?").spacer())
                                  .build();
 
             getResponder().getCommunicator().sendBml(300, 400, false, true, bml, 200, 200, 200, title);

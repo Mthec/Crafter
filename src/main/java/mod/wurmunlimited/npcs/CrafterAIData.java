@@ -83,6 +83,10 @@ public class CrafterAIData extends CreatureAIData {
         }
     }
 
+    public boolean isTool(Item item) {
+        return tools.containsValue(item);
+    }
+
     private void assignItems() {
         for (Item item : crafter.getInventory().getItems()) {
             if (WorkBook.isWorkBook(item)) {
@@ -104,6 +108,8 @@ public class CrafterAIData extends CreatureAIData {
 
         for (Item item : crafter.getInventory().getItems()) {
             if (item.getOwnerId() != crafter.getWurmId() && item.getLastOwnerId() != crafter.getWurmId())
+                continue;
+            if (item.isArmour())
                 continue;
             if (workbook.isJobItem(item))
                 continue;

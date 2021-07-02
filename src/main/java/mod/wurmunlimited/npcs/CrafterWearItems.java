@@ -11,10 +11,11 @@ public class CrafterWearItems implements WearItems {
 
     @Override
     public void beforeWearing(Creature creature) {
-        WorkBook workBook = ((CrafterAIData)creature.getCreatureAIData()).getWorkBook();
+        CrafterAIData data = ((CrafterAIData)creature.getCreatureAIData());
+        WorkBook workBook = data.getWorkBook();
         if (workBook != null) {
             for (Item item : creature.getInventory().getItemsAsArray()) {
-                if (workBook.isJobItem(item)) {
+                if (workBook.isJobItem(item) || data.isTool(item)) {
                     jobItems.add(item);
                     creature.getInventory().getItems().remove(item);
                 }
@@ -29,5 +30,10 @@ public class CrafterWearItems implements WearItems {
         }
 
         jobItems.clear();
+    }
+
+    @Override
+    public boolean isApplicableCreature(Creature creature) {
+        return CrafterTemplate.isCrafter(creature);
     }
 }

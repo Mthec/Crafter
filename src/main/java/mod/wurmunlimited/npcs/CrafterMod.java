@@ -24,7 +24,6 @@ import org.gotti.wurmunlimited.modloader.interfaces.*;
 import org.gotti.wurmunlimited.modsupport.ItemTemplateBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 import org.gotti.wurmunlimited.modsupport.creatures.ModCreatures;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -389,7 +388,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 () -> this::willLeaveServer);
 
         FaceSetter.init(manager);
-        ModelSetter.init(manager);
+        ModelSetter.init(manager, new CrafterWearItems());
         DestroyHandler.addListener(creature -> {
             Creature crafter = (Creature)creature;
             if (CrafterTemplate.isCrafter(crafter)) {
@@ -464,7 +463,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     @Override
     public void onServerStarted() {
         faceSetter = new FaceSetter(CrafterTemplate::isCrafter, dbName);
-        modelSetter = new ModelSetter(CrafterTemplate::isCrafter, new CrafterWearItems(), dbName);
+        modelSetter = new ModelSetter(CrafterTemplate::isCrafter, dbName);
 
         ModActions.registerAction(new AssignAction(contractTemplateId));
         ModActions.registerAction(new TradeAction());
@@ -472,13 +471,9 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         ModActions.registerAction(new ManageCrafterAction());
         new PlaceCrafterAction();
         PlaceNpcMenu.register();
-        CustomiserPlayerGiveAction.register(CrafterTemplate::isCrafter, new CanGive() {
-            @Override
-            public boolean canGive(@NotNull Creature performer, @NotNull Item source, @NotNull Creature target) {
-                return isWearable(source) && performer.getPower() >= 2 || performer.getInventory().getItems().stream()
-                                                            .anyMatch(it -> it.getTemplateId() == contractTemplateId && it.getData() == target.getWurmId());
-            }
-        });
+        CrafterCanGiveRemove can = new CrafterCanGiveRemove();
+        CustomiserPlayerGiveAction.register(CrafterTemplate::isCrafter, can);
+        CustomiserPlayerRemoveAction.register(CrafterTemplate::isCrafter, can);
 
         try {
             Class<?> ServiceHandler = Class.forName("mod.wurmunlimited.npcs.CrafterAI");

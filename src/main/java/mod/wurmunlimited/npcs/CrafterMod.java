@@ -24,6 +24,7 @@ import org.gotti.wurmunlimited.modloader.interfaces.*;
 import org.gotti.wurmunlimited.modsupport.ItemTemplateBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 import org.gotti.wurmunlimited.modsupport.creatures.ModCreatures;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -389,6 +390,38 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
 
         FaceSetter.init(manager);
         ModelSetter.init(manager);
+        DestroyHandler.addListener(creature -> {
+            Creature crafter = (Creature)creature;
+            if (CrafterTemplate.isCrafter(crafter)) {
+                try {
+                    WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+                    workBook.iterator().forEachRemaining(job -> {
+                        try {
+                            job.mailToCustomer();
+                            job.refundCustomer();
+                        } catch (NoSuchTemplateException | FailedException e) {
+                            logger.warning("Error when destroying crafter and attempting refund.");
+                            e.printStackTrace();
+                        }
+                    });
+                    Shop shop = Economy.getEconomy().getShop(crafter);
+                    long ownerId = shop.getOwnerId();
+                    Creature owner = Creatures.getInstance().getCreature(ownerId);
+                    for (Item item : owner.getInventory().getItems()) {
+                        if (item.getTemplateId() == contractTemplateId && item.getData() == crafter.getWurmId()) {
+                            item.setData(-1);
+                            break;
+                        }
+                    }
+                    shop.delete();
+                } catch (WorkBook.NoWorkBookOnWorker e) {
+                    logger.warning("Could not find workbook when destroying crafter.");
+                    e.printStackTrace();
+                } catch (NoSuchCreatureException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
         ModCreatures.init();
         ModCreatures.addCreature(new CrafterTemplate());
     }
@@ -439,9 +472,13 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         ModActions.registerAction(new ManageCrafterAction());
         new PlaceCrafterAction();
         PlaceNpcMenu.register();
-        CustomiserPlayerGiveAction.register(CrafterTemplate::isCrafter, (performer, source, target) ->
-                                performer.getPower() >= 2 || performer.getInventory().getItems().stream()
-                                     .anyMatch(it -> it.getTemplateId() == contractTemplateId && it.getData() == target.getWurmId()));
+        CustomiserPlayerGiveAction.register(CrafterTemplate::isCrafter, new CanGive() {
+            @Override
+            public boolean canGive(@NotNull Creature performer, @NotNull Item source, @NotNull Creature target) {
+                return isWearable(source) && performer.getPower() >= 2 || performer.getInventory().getItems().stream()
+                                                            .anyMatch(it -> it.getTemplateId() == contractTemplateId && it.getData() == target.getWurmId());
+            }
+        });
 
         try {
             Class<?> ServiceHandler = Class.forName("mod.wurmunlimited.npcs.CrafterAI");

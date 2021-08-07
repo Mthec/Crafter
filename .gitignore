@@ -1,6 +1,7 @@
 /gradlew
 /gradlew.bat
 /worker*.log
+/crafter*.log
 /.gradle/
 /.idea/
 /build/

@@ -11,7 +11,13 @@ import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.players.Player;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class CrafterTest {
     protected CrafterObjectsFactory factory;
@@ -41,10 +47,25 @@ public class CrafterTest {
         forge = factory.createNewItem(ItemList.forge);
         setForgeWithoutPathing();
 
+        Field field = CrafterMod.class.getDeclaredField("output");
+        field.setAccessible(true);
+        field.set(field.getType().asSubclass(Enum.class), field.getType().getDeclaredMethod("valueOf", String.class).invoke(null, "save_and_print"));
+
         if (!init) {
             new PlaceCrafterAction();
             menu = PlaceNpcMenu.register();
             init = true;
+        }
+    }
+
+    @BeforeAll
+    private static void cleanLogs() {
+        try {
+            //noinspection ResultOfMethodCallIgnored
+            Files.walk(Paths.get(".")).filter(it -> (it.getFileName().toString().startsWith("worker") || it.getFileName().toString().startsWith("crafter_")) && it.getFileName().toString().endsWith("log"))
+                    .forEach(it -> it.toFile().delete());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

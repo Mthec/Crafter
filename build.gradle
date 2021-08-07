@@ -58,9 +58,9 @@ jar {
     from {
         project(':CreatureCustomiser').sourceSets.main.output
     }
-    exclude 'Trade.class'
-    exclude 'TradeHandler.class'
-    exclude 'TradingWindow.class'
+    exclude '**/Trade.class'
+    exclude '**/TradeHandler.class'
+    exclude '**/TradingWindow.class'
     includeEmptyDirs false
     archiveName $shortName + '.jar'
 

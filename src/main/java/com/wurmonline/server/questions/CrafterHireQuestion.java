@@ -102,6 +102,9 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
                 return;
             }
         }
+        if (skillCap >= CrafterMod.getMaxItemQL()) {
+            responder.getCommunicator().sendNormalServerMessage("Note: Skill cap is higher than the maximum item ql for crafters on this server.");
+        }
 
         if (locationIsValid(responder)) {
             try {

@@ -71,6 +71,9 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
                 return;
             }
         }
+        if (skillCap >= CrafterMod.getMaxItemQL()) {
+            responder.getCommunicator().sendNormalServerMessage("Note: Skill cap is higher than the maximum item ql for crafters on this server.");
+        }
 
         boolean removeDonationItems = wasSelected("rd");
         boolean refundItems = wasSelected("refund");
@@ -169,6 +172,6 @@ public class CrafterModifySkillsQuestion extends CrafterQuestionExtension {
                 .build();
 
 
-        getResponder().getCommunicator().sendBml(400, 400, false, true, bml, 200, 200, 200, title);
+        getResponder().getCommunicator().sendBml(400, 400, true, true, bml, 200, 200, 200, title);
     }
 }

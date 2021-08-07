@@ -230,6 +230,18 @@ class CrafterHireQuestionTests {
     }
 
     @Test
+    void testSkillCapOnlyMessageWhenAboveMaxItemQL() throws WorkBook.NoWorkBookOnWorker, NoSuchFieldException, IllegalAccessException {
+        int skillCap = 75;
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("maxItemQL"), (float)(skillCap - 1));
+        Properties properties = generateProperties();
+        properties.setProperty("skill_cap", Integer.toString(skillCap));
+        new CrafterHireQuestion(owner, contract.getWurmId()).answer(properties);
+
+        assertThat(owner, receivedMessageContaining("higher than the maximum item ql"));
+        assertEquals(skillCap, WorkBook.getWorkBookFromWorker(getNewlyCreatedCrafter()).getSkillCap());
+    }
+
+    @Test
     void testPriceModifierProperlySet() {
         float priceModifier = 0.5f;
         Properties properties = generateProperties();

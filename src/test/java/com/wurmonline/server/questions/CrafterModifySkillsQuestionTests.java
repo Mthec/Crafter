@@ -58,6 +58,7 @@ class CrafterModifySkillsQuestionTests {
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 1);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("minimumPriceModifier"), 0.0000001f);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("canLearn"), true);
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("maxItemQL"), 99.99999f);
         owner = factory.createNewPlayer();
         crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.COOKING_BAKING), 50);
     }
@@ -223,6 +224,25 @@ class CrafterModifySkillsQuestionTests {
         String bml = factory.getCommunicator(owner).lastBmlContent;
         assertTrue(bml.contains("input{text=\"50.0\";id=\"skill_cap\";"), bml);
         assertFalse(bml.contains("label{text=\"Skill Cap: \"};text{text="), bml);
+    }
+
+    @Test
+    void testSkillCapMaxItemQLProperlySet() throws WorkBook.NoWorkBookOnWorker, NoSuchFieldException, IllegalAccessException {
+        new CrafterModifySkillsQuestion(owner, crafter).sendQuestion();
+
+        assertThat(owner, receivedBMLContaining("Max Item QL: 99.99999\""));
+    }
+
+    @Test
+    void testSkillCapOnlyMessageWhenAboveMaxItemQL() throws WorkBook.NoWorkBookOnWorker, NoSuchFieldException, IllegalAccessException {
+        int skillCap = 75;
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("maxItemQL"), (float)(skillCap - 1));
+        Properties properties = generateProperties();
+        properties.setProperty("skill_cap", Integer.toString(skillCap));
+        new CrafterModifySkillsQuestion(owner, crafter).answer(properties);
+
+        assertThat(owner, receivedMessageContaining("higher than the maximum item ql"));
+        assertEquals(skillCap, WorkBook.getWorkBookFromWorker(crafter).getSkillCap());
     }
 
     @Test

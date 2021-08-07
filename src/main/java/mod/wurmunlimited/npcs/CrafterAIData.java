@@ -333,7 +333,7 @@ public class CrafterAIData extends CreatureAIData {
                         continue;
                     }
                 } else {
-                    if (item.getQualityLevel() >= job.targetQL || item.getQualityLevel() >= 99.999999f) {
+                    if (item.getQualityLevel() >= job.targetQL || item.getQualityLevel() >= CrafterMod.getMaxItemQL()) {
                         if (forge != null && forge.getItems().contains(item))
                             crafter.getInventory().insertItem(item);
                         workbook.setDone(job, crafter);

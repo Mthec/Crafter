@@ -69,6 +69,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private static int removeDonationsAt = Integer.MIN_VALUE;
     private static boolean singleSkill = false;
     private static boolean canChangeSkill = true;
+    private static float maxItemQL = 99.99999f;
     private static final List<Byte> restrictedMaterials = new ArrayList<>();
     private static final Map<Creature, Logger> crafterLoggers = new HashMap<>();
     private Properties properties;
@@ -141,7 +142,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     public static boolean destroyDonationItem(float currentSkill, float itemQL) {
         if (removeDonationsAt == Integer.MIN_VALUE)
             return false;
-        return currentSkill + removeDonationsAt <= itemQL || itemQL > 99.999999f;
+        return currentSkill + removeDonationsAt <= itemQL || itemQL > maxItemQL;
     }
 
     public static boolean useSingleSkill() {
@@ -158,6 +159,10 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
 
     public static boolean materialsRestrictedGlobally() {
         return restrictedMaterials.size() > 0;
+    }
+
+    public static float getMaxItemQL() {
+        return maxItemQL;
     }
 
     private OutputOption parseOutputOption(String value) {
@@ -254,6 +259,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         removeDonationsAt = getOption("remove_donations_at", removeDonationsAt);
         singleSkill = getOption("single_crafter_skill", singleSkill);
         canChangeSkill = getOption("change_skill_after_placement", canChangeSkill);
+        maxItemQL = getOption("max_item_ql", maxItemQL);
 
         skillPrices.put(SkillList.SMITHING_BLACKSMITHING, getOption("blacksmithing", 1.0f));
         skillPrices.put(SkillList.GROUP_SMITHING_WEAPONSMITHING, getOption("weaponsmithing", 1.0f));

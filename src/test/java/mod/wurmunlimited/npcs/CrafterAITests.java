@@ -88,6 +88,31 @@ class CrafterAITests extends CrafterTest {
     }
 
     @Test
+    void testFinishesAtDefaultMaxQL() throws WorkBook.WorkBookFull, NoSuchFieldException, IllegalAccessException {
+        crafter.getInventory().insertItem(tool);
+        tool.setQualityLevel(CrafterMod.getMaxItemQL());
+        ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("targetQL"), 100f);
+        assert workBook.todo() == 1;
+
+        data.sendNextAction();
+        assertEquals(0, workBook.todo());
+        assertEquals(1, workBook.done());
+    }
+
+    @Test
+    void testFinishesAtLowerMaxQL() throws WorkBook.WorkBookFull, NoSuchFieldException, IllegalAccessException {
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("maxItemQL"), 50f);
+        crafter.getInventory().insertItem(tool);
+        tool.setQualityLevel(CrafterMod.getMaxItemQL());
+        ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("targetQL"), 51f);
+        assert workBook.todo() == 1;
+
+        data.sendNextAction();
+        assertEquals(0, workBook.todo());
+        assertEquals(1, workBook.done());
+    }
+
+    @Test
     void testRemoveFromForgeWhenJobDone() throws NoSuchFieldException, IllegalAccessException {
         forge.insertItem(tool);
         tool.setQualityLevel(11);

@@ -53,8 +53,8 @@ public class MultipleSkillsBML extends SkillsBML {
                        }))
                .newLine()
                .If(CrafterMod.canLearn(),
-                       b -> b.harray(b2 -> b2.label("Skill Cap: ").entry("skill_cap", Float.toString(skillCap), 5).text("Max: " + CrafterMod.getSkillCap()).italic()),
-                       b -> b.harray(b2 -> b2.label("Skill Cap: ").text(Float.toString(CrafterMod.getSkillCap())))
+                       b -> b.harray(b2 -> b2.label("Skill Cap: ").entry("skill_cap", format(skillCap), 5).label("Max: " + format(CrafterMod.getSkillCap())).spacer().label("Max Item QL: " + format(CrafterMod.getMaxItemQL()))),
+                       b -> b.harray(b2 -> b2.label("Skill Cap: ").text(format(CrafterMod.getSkillCap())).spacer().label("Max Item QL: " + format(CrafterMod.getMaxItemQL())))
                );
     }
 

@@ -65,7 +65,7 @@ jar {
     archiveName $shortName + '.jar'
 
     manifest {
-        attributes('Implementation-Version': version)
+        attributes('Implementation-Version': archiveVersion)
     }
 }.dependsOn(test)
 

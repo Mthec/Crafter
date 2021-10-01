@@ -37,12 +37,7 @@ public class CrafterMaterialRestrictionQuestion extends CrafterQuestionExtension
         if (!wasSelected("cancel")) {
             if (wasSelected("save")) {
                 List<Byte> toRemove = new ArrayList<>();
-                for (int i = 0; i <= restrictedMaterials.size(); ++i) {
-                    String value = properties.getProperty("r" + i);
-                    if (value != null && value.equals("true")) {
-                        toRemove.add(restrictedMaterials.get(i));
-                    }
-                }
+                parseRemoved(restrictedMaterials, properties, toRemove);
 
                 restrictedMaterials.removeAll(toRemove);
 
@@ -71,9 +66,9 @@ public class CrafterMaterialRestrictionQuestion extends CrafterQuestionExtension
         String bml = new BMLBuilder(id)
                              .If(crafter == null,
                                      b -> b.text("Choose which materials all crafters will be allowed to use."),
-                                     b -> b.text("Choose which materials the crafter will be allowed to use."))
+                                     b -> b.text("Choose which materials this crafter will be allowed to use."))
                              .text("Empty list to allow all.")
-                             .table(new String[] { "Skill", "Remove?" }, restrictedMaterials,
+                             .table(new String[] { "Material", "Remove?" }, restrictedMaterials,
                                      (row, b) -> b.label(MaterialUtilities.getMaterialString(row))
                                                   .checkbox("r" + i.getAndIncrement(), ""))
                              .spacer()
@@ -83,5 +78,14 @@ public class CrafterMaterialRestrictionQuestion extends CrafterQuestionExtension
                              .build();
 
         getResponder().getCommunicator().sendBml(300, 400, true, true, bml, 200, 200, 200, title);
+    }
+
+    static <T> void parseRemoved(List<T> source, Properties properties, List<T> destination) {
+        for (int i = 0; i <= source.size(); ++i) {
+            String value = properties.getProperty("r" + i);
+            if (value != null && value.equals("true")) {
+                destination.add(source.get(i));
+            }
+        }
     }
 }

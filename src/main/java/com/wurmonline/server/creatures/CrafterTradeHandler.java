@@ -218,13 +218,13 @@ public class CrafterTradeHandler extends TradeHandler {
 
     private long priceCalculationSub70(float x) {
         // Curve gets messy when including values below 70.  Using simple curve instead.
-        // Thank you LibreOffice.
+        // Thank you, LibreOffice.
         return Math.round(0.190567 * Math.pow(x, 2.016126));
     }
 
     private long priceCalculation(float x) {
-        // Based on 70ql=10c, 80ql=30c, 90ql=90c, 91ql=1s - Thank you The House of Lords one stop shop thread.
-        // Thank you LibreOffice.
+        // Based on 70ql=10c, 80ql=30c, 90ql=90c, 91ql=1s - Thank you The House of Lords one-stop shop thread.
+        // Thank you, LibreOffice.
         return Math.round((0.779220779220503 * Math.pow(x, 3)) - (167.01298701292 * Math.pow(x, 2)) + (12083.1168831115 * x) - 293727.27272713);
         //return Math.pow(0.206161 * x, 2) - (28.9442 * x) + 1025.94;
     }
@@ -233,14 +233,20 @@ public class CrafterTradeHandler extends TradeHandler {
         TradingWindow offerWindow = trade.getTradingWindow(2);
         TradingWindow myWindow = trade.getCreatureTwoRequestWindow();
         boolean hasRestrictedMaterial = false;
+        boolean hasBlockedItems = false;
         for (Item item : offerWindow.getItems()) {
-            boolean restrictedMaterial = workBook.isRestrictedMaterial(item.getMaterial());
-            if (restrictedMaterial)
+            if (workBook.isRestrictedMaterial(item.getMaterial())) {
                 hasRestrictedMaterial = true;
+                continue;
+            }
+            if (workBook.isBlockedItem(item.getTemplateId())) {
+                hasBlockedItems = true;
+                continue;
+            }
 
             if (item.isCoin() ||
-                    (donating && workBook.getCrafterType().hasSkillToImprove(item) && !restrictedMaterial)
-                    || (item.getQualityLevel() < getTargetQL(item) && !restrictedMaterial && !item.isNoImprove() && item.isRepairable() && !item.isNewbieItem() && !item.isChallengeNewbieItem())) {
+                    (donating && workBook.getCrafterType().hasSkillToImprove(item))
+                    || (item.getQualityLevel() < getTargetQL(item) && !item.isNoImprove() && item.isRepairable() && !item.isNewbieItem() && !item.isChallengeNewbieItem())) {
                 offerWindow.removeItem(item);
                 myWindow.addItem(item);
             } else if (item.isWeaponBow() && targetQLs.containsKey(SkillList.GROUP_BOWYERY)) {
@@ -271,6 +277,8 @@ public class CrafterTradeHandler extends TradeHandler {
                             comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " is a new player item.'");
                         } else if (hasRestrictedMaterial) {
                             comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " is probably made of a restricted material.'");
+                        } else if (hasBlockedItems) {
+                            comm.sendNormalServerMessage(creature.getName() + " says 'The " + ignoredItem.getName() + " is on the blocked items list.'");
                         }
                     }
                 }
@@ -304,6 +312,35 @@ public class CrafterTradeHandler extends TradeHandler {
                 else
                     sb.append(", ");
             }
+            trade.creatureOne.getCommunicator().sendSafeServerMessage(sb.toString());
+        }
+
+        if (hasBlockedItems) {
+            Set<Integer> blocked = new HashSet<>();
+            blocked.addAll(CrafterMod.blockedItems);
+            blocked.addAll(workBook.getBlockedItems());
+            List<Integer> blockedItems = new ArrayList<>(blocked);
+
+            StringBuilder sb = new StringBuilder().append(creature.getName()).append(" says 'I cannot improve ");
+
+            int penultimate = -1;
+            if (blockedItems.size() > 1)
+                penultimate = blockedItems.get(blockedItems.size() - 2);
+            int last = blockedItems.get(blockedItems.size() - 1);
+
+            for (int templateId : blockedItems) {
+                ItemTemplate template = ItemTemplateFactory.getInstance().getTemplateOrNull(templateId);
+                if (template != null) {
+                    sb.append(template.getPlural());
+                    if (templateId == last)
+                        sb.append(".'");
+                    else if (templateId == penultimate)
+                        sb.append(", or ");
+                    else
+                        sb.append(", ");
+                }
+            }
+
             trade.creatureOne.getCommunicator().sendSafeServerMessage(sb.toString());
         }
     }

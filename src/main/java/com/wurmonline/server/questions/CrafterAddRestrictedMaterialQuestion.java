@@ -75,15 +75,13 @@ public class CrafterAddRestrictedMaterialQuestion extends CrafterQuestionExtensi
                     getResponder().getCommunicator().sendNormalServerMessage("Crafters will now accept " + MaterialUtilities.getMaterialString(material) + " items.");
                 } else {
                     workBook.updateRestrictedMaterials(restrictedMaterials);
-                    getResponder().getCommunicator().sendNormalServerMessage("Crafter will now accept " + MaterialUtilities.getMaterialString(material) + " items.");
+                    getResponder().getCommunicator().sendNormalServerMessage("This Crafter will now accept " + MaterialUtilities.getMaterialString(material) + " items.");
                 }
             }
 
             new CrafterMaterialRestrictionQuestion(getResponder(), crafter).sendQuestion();
         } catch (WorkBook.WorkBookFull e) {
-            logger.warning("Crafter workbook was full, this probably shouldn't have happened.");
-            e.printStackTrace();
-            getResponder().getCommunicator().sendNormalServerMessage("Crafter could not add to their list.");
+            getResponder().getCommunicator().sendNormalServerMessage("Crafter has run out fo space on their list.");
         } catch (WorkBook.NoWorkBookOnWorker e) {
             logger.warning("Crafter workbook was missing, this should have failed earlier.");
             e.printStackTrace();

@@ -25,6 +25,9 @@ import org.gotti.wurmunlimited.modsupport.ItemTemplateBuilder;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 import org.gotti.wurmunlimited.modsupport.creatures.ModCreatures;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -74,6 +77,8 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private static final Map<Creature, Logger> crafterLoggers = new HashMap<>();
     private Properties properties;
     public static Path globalRestrictionsPath = Paths.get("mods", "crafter", "global_restrictions");
+    public static Path globalBlockedItemsPath = Paths.get("mods", "crafter", "blocked_items");
+    public static final Set<Integer> blockedItems = new HashSet<>();
 
     private enum OutputOption {
         save,
@@ -286,10 +291,26 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                     }
                 }
             }
-
         } catch (NoSuchFileException ignored) {
         } catch (IOException e) {
             logger.warning("Error reading \"global_restrictions\":");
+            e.printStackTrace();
+        }
+
+        try (DataInputStream di = new DataInputStream(Files.newInputStream(globalBlockedItemsPath))) {
+            try {
+                //noinspection InfiniteLoopStatement
+                while (true) {
+                    int templateId = di.readInt();
+                    if (templateId > 0) {
+                        blockedItems.add(templateId);
+                    }
+                }
+            } catch (EOFException ignored) {
+            }
+        } catch (NoSuchFileException ignored) {
+        } catch (IOException e) {
+            logger.warning("Error reading \"blocked_items\":");
             e.printStackTrace();
         }
     }
@@ -309,6 +330,20 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
             Files.write(globalRestrictionsPath, bytes, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
         } catch (IOException e) {
             logger.warning("Error saving \"global_restrictions\", changes not saved:");
+            e.printStackTrace();
+        }
+    }
+
+    public static void saveBlockedItems(Collection<Integer> newBlockedItems) {
+        try (DataOutputStream ds = new DataOutputStream(Files.newOutputStream(globalBlockedItemsPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE))) {
+            blockedItems.clear();
+            blockedItems.addAll(newBlockedItems);
+
+            for (int blocked : blockedItems) {
+                ds.writeInt(blocked);
+            }
+        } catch (IOException e) {
+            logger.warning("Error saving \"blocked_items\", changes not saved:");
             e.printStackTrace();
         }
     }
@@ -683,6 +718,10 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
             } else if (player.getPower() >= 2 && message.equals("/restrictmaterials")) {
                 // Doesn't run if the question is called here directly.
                 QuestionWrapper.materialRestrictionQuestion(player);
+                return MessagePolicy.DISCARD;
+            } else //noinspection SpellCheckingInspection
+                if (player.getPower() >= 2 && message.equals("/blockcrafteritems")) {
+                QuestionWrapper.blockCrafterItems(player);
                 return MessagePolicy.DISCARD;
             }
         }

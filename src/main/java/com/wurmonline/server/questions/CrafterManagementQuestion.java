@@ -117,6 +117,14 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                 e.printStackTrace();
                 responder.getCommunicator().sendNormalServerMessage(crafter.getName() + " fumbles about and cannot find their workbook.");
             }
+        } else if (wasSelected("block")) {
+            try {
+                new CrafterBlockedItemsQuestion(getResponder(), crafter).sendQuestion();
+            } catch (WorkBook.NoWorkBookOnWorker e) {
+                logger.warning("Crafter workbook was missing.");
+                e.printStackTrace();
+                responder.getCommunicator().sendNormalServerMessage(crafter.getName() + " fumbles about and cannot find their workbook.");
+            }
         }
     }
 
@@ -148,6 +156,7 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                                                .button("customise", "Appearance").spacer()
                                                .If(CrafterMod.canChangeSkill(), b2 -> b2.button("skills", "Modify skills").spacer()))
                                  .harray(b -> b.button("restrict", "Restrict Materials").spacer()
+                                               .button("block", "Block Items").spacer()
                                                .If(workBook.todo() > 0, b2 -> b2.button("stop", "Stop current job").confirm("Stop current job.", "Are you sure you wish to stop the current job?  This will refund the order and return the item to the customer.").spacer())
                                                .button("dismiss", "Dismiss").confirm("You are about to dismiss " + crafter.getName() + ".", "Do you really want to do that?"))
                                  .build();

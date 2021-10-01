@@ -11,7 +11,7 @@ import com.wurmonline.server.zones.NoSuchZoneException;
 import com.wurmonline.server.zones.Zones;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import mod.wurmunlimited.npcs.CrafterAIData;
-import mod.wurmunlimited.npcs.CrafterTemplate;
+import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterType;
 import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 class AssignActionTests {
-    private static final int contractTemplateId = CrafterTemplate.getTemplateId();
+    private static final int contractTemplateId = CrafterMod.getContractTemplateId();
     private static final String assignMessageFragment = " assign this forge";
     private static final String unassignMessageFragment = "unassign this forge";
     private CrafterObjectsFactory factory;

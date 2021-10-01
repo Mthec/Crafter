@@ -234,7 +234,7 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         setNotBalanced();
         handler.balance();
 
-        assertEquals(new Change(handler.getTraderBuyPriceForItem(player.getInventory().getFirstContainedItem()) * numberOfItems).getChangeShortString(), getPriceFromMessage(factory.getCommunicator(player).getLastMessage()));
+        assertEquals(new Change((long)handler.getTraderBuyPriceForItem(player.getInventory().getFirstContainedItem()) * numberOfItems).getChangeShortString(), getPriceFromMessage(factory.getCommunicator(player).getLastMessage()));
     }
 
     @Test
@@ -951,54 +951,6 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         assertThat(player, receivedMessageContaining("cannot improve"));
     }
 
-    // For exploratory testing.
-//    @Test
-//    void testPrintOutAllAcceptedItems() {
-//        List<String> accepted = new ArrayList<>();
-//        List<Integer> allTypes = new ArrayList<>();
-//        Collections.addAll(allTypes, CrafterType.allMetal);
-//        Collections.addAll(allTypes, CrafterType.allWood);
-//        Collections.addAll(allTypes, CrafterType.allArmour);
-//        crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(allTypes.toArray(new Integer[0])), 50);
-//        makeNewCrafterTrade();
-//        makeHandler();
-//        handler.addItemsToTrade();
-//
-//        for (Item item : trade.getTradingWindow(1).getItems()) {
-//            if (item.getName().startsWith("Improve to 20")) {
-//                trade.getTradingWindow(1).removeItem(item);
-//                trade.getTradingWindow(3).addItem(item);
-//            }
-//        }
-//
-//        for (int i = 0; i < 10000; i++) {
-//            try {
-//                ItemTemplateFactory.getInstance().getTemplate(i);
-//            } catch (NoSuchTemplateException e) {
-//                continue;
-//            }
-//            Item item = factory.createNewItem(i);
-//            player.getInventory().insertItem(item, true);
-//
-//            setNotBalanced();
-//            for (Item it : trade.getTradingWindow(2).getItems())
-//                trade.getTradingWindow(2).removeItem(it);
-//            for (Item it : trade.getTradingWindow(4).getItems())
-//                trade.getTradingWindow(4).removeItem(it);
-//
-//            trade.getTradingWindow(2).addItem(item);
-//            handler.balance();
-//
-//            if (!factory.getCommunicator(player).getLastMessage().contains("cannot improve")) {
-//                accepted.add(item.getName());
-//            }
-//        }
-//
-//        for (String s : accepted) {
-//            System.out.println(s);
-//        }
-//    }
-
     @Test
     void testCrafterMoneyNotAffectedByTrade() throws WorkBook.NoWorkBookOnWorker {
         int startingMoney = 100;
@@ -1204,5 +1156,48 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         restricted.clear();
 
         assertThat(player, receivedMessageContaining("only improve copper items."));
+    }
+
+    @Test
+    void testGlobalBlockedItems() throws NoSuchFieldException, IllegalAccessException {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), 50);
+        Set<Integer> blocked = ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("blockedItems"));
+        blocked.add(ItemList.shovel);
+
+        makeNewCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+        selectOption("Improve to 20");
+        Item pickaxe = factory.createNewItem(ItemList.shovel);
+        trade.getTradingWindow(2).addItem(pickaxe);
+        handler.balance();
+        blocked.clear();
+
+        assertThat(player, receivedMessageContaining("cannot improve"));
+    }
+
+    @Test
+    void testGlobalBlockedItemsWithCrafterBlock() throws NoSuchFieldException, IllegalAccessException, WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), 50);
+        Set<Integer> blocked = ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("blockedItems"));
+        blocked.add(ItemList.pickAxe);
+        blocked.add(ItemList.hatchet);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.updateBlockedItems(Collections.singletonList(ItemList.shovel));
+
+        makeNewCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+        selectOption("Improve to 20");
+        Item pickaxe = factory.createNewItem(ItemList.pickAxe);
+        trade.getTradingWindow(2).addItem(pickaxe);
+        Item hatchet = factory.createNewItem(ItemList.hatchet);
+        trade.getTradingWindow(2).addItem(hatchet);
+        Item shovel = factory.createNewItem(ItemList.shovel);
+        trade.getTradingWindow(2).addItem(shovel);
+        handler.balance();
+        blocked.clear();
+
+        assertThat(player, receivedMessageContaining("cannot improve pickaxes, hatchets, or shovels."));
     }
 }

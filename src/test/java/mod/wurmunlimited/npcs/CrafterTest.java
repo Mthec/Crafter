@@ -11,6 +11,7 @@ import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.players.Player;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Set;
 
 public class CrafterTest {
     protected CrafterObjectsFactory factory;
@@ -39,6 +41,8 @@ public class CrafterTest {
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("basePrice"), 1);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("removeDonationsAt"), Integer.MIN_VALUE);
         ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("maxItemQL"), 99.99999f);
+        Set<Integer> blockedItems = ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("blockedItems"));
+        blockedItems.clear();
         player = factory.createNewPlayer();
         tool = factory.createNewItem(ItemList.pickAxe);
         player.getInventory().insertItem(tool);
@@ -60,7 +64,8 @@ public class CrafterTest {
     }
 
     @BeforeAll
-    private static void cleanLogs() {
+    @AfterAll
+    public static void cleanLogs() {
         try {
             //noinspection ResultOfMethodCallIgnored
             Files.walk(Paths.get(".")).filter(it -> (it.getFileName().toString().startsWith("worker") || it.getFileName().toString().startsWith("crafter_")) && it.getFileName().toString().endsWith("log"))

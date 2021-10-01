@@ -662,6 +662,32 @@ class WorkBookTests extends GlobalRestrictionsFileWrapper {
     }
 
     @Test
+    void testWorkBookInscriptionRestrictedMaterials() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull, WorkBook.InvalidWorkBookInscription {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+
+        assert workBook.getRestrictedMaterials().size() == 0;
+
+        workBook.updateRestrictedMaterials(Collections.singletonList(ItemMaterials.MATERIAL_IRON));
+
+        WorkBook workBook2 = new WorkBook(workBook.workBookItem);
+        assertEquals("20.0\n-10\nrestrict11\n10015", Objects.requireNonNull(workBook2.workBookItem.getItems().stream().filter(n -> n.getDescription().equals("Contents")).findAny().orElseThrow(RuntimeException::new).getInscription()).getInscription());
+    }
+
+    @Test
+    void testReadRestrictedMaterials() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull, WorkBook.InvalidWorkBookInscription {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        Item contents = workBook.workBookItem.getItems().stream().filter(n -> n.getDescription().equals("Contents")).findAny().orElseThrow(RuntimeException::new);
+        contents.setInscription("20.0\n-10\nrestrict7\n10015", "");
+
+        WorkBook workBook2 = new WorkBook(workBook.workBookItem);
+        List<Byte> restrictedMaterials = workBook2.getRestrictedMaterials();
+        assertEquals(1, restrictedMaterials.size());
+        assertEquals(ItemMaterials.MATERIAL_GOLD, restrictedMaterials.get(0));
+    }
+
+    @Test
     void testUpdateRestrictedMaterials() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
         Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
@@ -741,5 +767,113 @@ class WorkBookTests extends GlobalRestrictionsFileWrapper {
         restrictedMaterials.add(restricted);
 
         assertFalse(workBook.getRestrictedMaterials().contains(restricted));
+    }
+
+    @Test
+    void testLoadWorkBookWithBlockedItems() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+
+        assert workBook.getBlockedItems().size() == 0;
+
+        workBook.updateBlockedItems(Collections.singletonList(ItemList.pickAxe));
+
+        WorkBook workBook2 = WorkBook.getWorkBookFromWorker(crafter);
+        List<Integer> blockedItems = workBook2.getBlockedItems();
+        assertEquals(1, blockedItems.size());
+        assertEquals(ItemList.pickAxe, blockedItems.get(0));
+    }
+
+    @Test
+    void testWorkBookInscriptionBlockedItems() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull, WorkBook.InvalidWorkBookInscription {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+
+        workBook.updateBlockedItems(Collections.singletonList(ItemList.shovel));
+
+        WorkBook workBook2 = new WorkBook(workBook.workBookItem);
+        assertEquals("20.0\n-10\nblocked25\n10015", Objects.requireNonNull(workBook2.workBookItem.getItems().stream().filter(n -> n.getDescription().equals("Contents")).findAny().orElseThrow(RuntimeException::new).getInscription()).getInscription());
+    }
+
+    @Test
+    void testReadBlockedItems() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull, WorkBook.InvalidWorkBookInscription {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        Item contents = workBook.workBookItem.getItems().stream().filter(n -> n.getDescription().equals("Contents")).findAny().orElseThrow(RuntimeException::new);
+        contents.setInscription("20.0\n-10\nblocked7\n10015", "");
+
+        WorkBook workBook2 = new WorkBook(workBook.workBookItem);
+        List<Integer> blockedItems = workBook2.getBlockedItems();
+        assertEquals(1, blockedItems.size());
+        assertEquals(ItemList.hatchet, blockedItems.get(0));
+    }
+
+    @Test
+    void testUpdateBlockedItems() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.updateBlockedItems(Collections.singletonList(ItemList.hatchet));
+
+        WorkBook workBook2 = WorkBook.getWorkBookFromWorker(crafter);
+        workBook2.updateBlockedItems(Collections.singletonList(ItemList.shovel));
+
+        WorkBook workBook3 = WorkBook.getWorkBookFromWorker(crafter);
+        List<Integer> blockedItems = workBook3.getBlockedItems();
+        assertEquals(1, blockedItems.size());
+        assertEquals(ItemList.shovel, blockedItems.get(0));
+    }
+
+    @Test
+    void testIsNotBlockedWhenNoneBlocked() throws WorkBook.NoWorkBookOnWorker {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+
+        for (int x = 1; x <= CrafterMod.getContractTemplateId(); ++x) {
+            assertFalse(workBook.isBlockedItem(x));
+        }
+    }
+
+    @Test
+    void testIsBlockedItem() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        int blocked = ItemList.shovel;
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.updateBlockedItems(Collections.singletonList(blocked));
+
+        for (int x = 1; x <= CrafterMod.getContractTemplateId(); ++x) {
+            if (x == blocked)
+                assertTrue(workBook.isBlockedItem(x));
+            else
+                assertFalse(workBook.isBlockedItem(x));
+        }
+    }
+
+    @Test
+    void testIsBlockedItemAffectedByGlobal() throws WorkBook.NoWorkBookOnWorker, NoSuchFieldException, IllegalAccessException, WorkBook.WorkBookFull {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        int blocked = ItemList.pickAxe;
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        workBook.updateBlockedItems(Collections.singletonList(blocked));
+        int globalBlocked = ItemList.hatchet;
+        Set<Integer> blockedItems = ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("blockedItems"));
+        blockedItems.add(globalBlocked);
+
+        for (int x = 1; x <= CrafterMod.getContractTemplateId(); ++x) {
+            if (x == blocked || x == globalBlocked)
+                assertTrue(workBook.isBlockedItem(x), Integer.toString(x));
+            else
+                assertFalse(workBook.isBlockedItem(x));
+        }
+    }
+
+    @Test
+    void testGetBlockedItemsDoesNotIncludeOnlyGlobal() throws WorkBook.NoWorkBookOnWorker, NoSuchFieldException, IllegalAccessException, WorkBook.WorkBookFull {
+        Creature crafter = factory.createNewCrafter(factory.createNewPlayer(), new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        int blocked = ItemMaterials.MATERIAL_ADAMANTINE;
+        WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
+        Set<Integer> blockedItems = ReflectionUtil.getPrivateField(null, CrafterMod.class.getDeclaredField("blockedItems"));
+        blockedItems.add(blocked);
+
+        assertFalse(workBook.getBlockedItems().contains(blocked));
     }
 }

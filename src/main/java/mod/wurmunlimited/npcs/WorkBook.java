@@ -32,6 +32,7 @@ public class WorkBook implements Iterable<Job> {
     private final List<Job> jobs = new ArrayList<>();
     private final Map<Item, Job> jobItems = new HashMap<>();
     private final List<Byte> restrictedMaterials = new ArrayList<>();
+    private final List<Integer> blockedItems = new ArrayList<>();
 
     public static class NoWorkBookOnWorker extends WurmServerException {
         NoWorkBookOnWorker(String message) {
@@ -103,32 +104,41 @@ public class WorkBook implements Iterable<Job> {
             contentsInscription.setInscription(Joiner.on("\n").join(header));
         }
 
-        boolean hasRestricted = false;
-        if (header[2].startsWith("restrict")) {
-            hasRestricted = true;
-            for (String material : header[2].split(",")) {
-                if (!material.equals("restrict")) {
-                    try {
-                        restrictedMaterials.add(Byte.parseByte(material));
-                    } catch (NumberFormatException e) {
-                        logger.warning("Invalid restricted material in workbook (" + material + ") - Ignoring.");
-                    }
+        int nextHeader = 2;
+
+        if (header[nextHeader].startsWith("restrict")) {
+            for (String material : header[nextHeader].substring(8).split(",")) {
+                try {
+                    restrictedMaterials.add(Byte.parseByte(material));
+                } catch (NumberFormatException e) {
+                    logger.warning("Invalid restricted material in workbook (" + material + ") - Ignoring.");
                 }
             }
+            ++nextHeader;
+        }
+
+        if (header[nextHeader].startsWith("blocked")) {
+            for (String templateId : header[nextHeader].substring(7).split(",")) {
+                try {
+                    blockedItems.add(Integer.parseInt(templateId));
+                } catch (NumberFormatException e) {
+                    logger.warning("Invalid blocked template id in workbook (" + templateId + ") - Ignoring.");
+                }
+            }
+            ++nextHeader;
         }
 
         try {
             List<Integer> skills = new ArrayList<>();
 
-            int firstIndex = hasRestricted ? 3 : 2;
-            while (firstIndex < header.length) {
-                skills.add(Integer.parseInt(header[firstIndex]));
-                ++firstIndex;
+            while (nextHeader < header.length) {
+                skills.add(Integer.parseInt(header[nextHeader]));
+                ++nextHeader;
             }
 
             crafterType = new CrafterType(skills.toArray(new Integer[0]));
         } catch (IllegalArgumentException e) {
-            throw new InvalidWorkBookInscription("Invalid work book crafter type - " + header[0]);
+            throw new InvalidWorkBookInscription("Invalid work book crafter type - " + header[nextHeader]);
         }
 
         AtomicBoolean reSave = new AtomicBoolean(false);
@@ -164,7 +174,7 @@ public class WorkBook implements Iterable<Job> {
                                 logger.warning("Item recovery attempted successfully.  Maybe?");
                             }
                         } catch (NumberFormatException | NoSuchItemException ignored) {}
-                        // Re save workbook after loading the rest of the entries.
+                        // Re-save workbook after loading the rest of the entries.
                         reSave.set(true);
                         e.printStackTrace();
                     } catch (WorkBookFull ignored) {}
@@ -321,8 +331,14 @@ public class WorkBook implements Iterable<Job> {
             contentsSb.append((forge == null ? "-10" : forge.getWurmId())).append("\n");
             if (restrictedMaterials.size() > 0)
                 contentsSb.append("restrict").append(Joiner.on(",").join(restrictedMaterials)).append("\n");
+            if (blockedItems.size() > 0)
+                contentsSb.append("blocked").append(Joiner.on(",").join(blockedItems)).append("\n");
             contentsSb.append(Joiner.on("\n").join(crafterType.getAllTypes()));
-            contentsPage.setInscription(contentsSb.toString(), "");
+            String contents = contentsSb.toString();
+            if (contents.length() > 500) {
+                throw new WorkBookFull("Contents page does not have enough space.");
+            }
+            contentsPage.setInscription(contents, "");
 
             int pageNumber = 1;
             int length = 0;
@@ -471,5 +487,22 @@ public class WorkBook implements Iterable<Job> {
                 return true;
         }
         return restrictedMaterials.size() != 0 && !restrictedMaterials.contains(b);
+    }
+
+    public List<Integer> getBlockedItems() {
+        return new ArrayList<>(blockedItems);
+    }
+
+    public void updateBlockedItems(Collection<Integer> blocked) throws WorkBookFull {
+        blockedItems.clear();
+        blockedItems.addAll(blocked);
+        saveWorkBook();
+    }
+
+    public boolean isBlockedItem(int templateId) {
+        if (CrafterMod.blockedItems.contains(templateId)) {
+            return true;
+        }
+        return blockedItems.size() != 0 && blockedItems.contains(templateId);
     }
 }

@@ -35,8 +35,8 @@ class CrafterTradeHandlerPriceCalculationTests extends CrafterTradingTest {
         create(70);
         int basePrice = (int)(CrafterMod.getBasePriceForSkill(SkillList.SMITHING_BLACKSMITHING) * 70);
         assertEquals(
-                ReflectionUtil.callPrivateMethod(handler, CrafterTradeHandler.class.getDeclaredMethod("priceCalculationSub70", float.class), basePrice),
-                ReflectionUtil.callPrivateMethod(handler, CrafterTradeHandler.class.getDeclaredMethod("priceCalculation", float.class), basePrice)
+                (float)ReflectionUtil.callPrivateMethod(handler, CrafterTradeHandler.class.getDeclaredMethod("priceCalculationSub70", float.class), basePrice),
+                (float)ReflectionUtil.callPrivateMethod(handler, CrafterTradeHandler.class.getDeclaredMethod("priceCalculation", float.class), basePrice)
         );
     }
 

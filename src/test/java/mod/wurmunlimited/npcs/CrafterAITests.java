@@ -14,7 +14,6 @@ import com.wurmonline.shared.constants.ItemMaterials;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.internal.util.reflection.FieldSetter;
 
 import java.util.*;
 
@@ -483,7 +482,7 @@ class CrafterAITests extends CrafterTest {
     @Test
     void testCrafterNotPolledIfCanActionIsFalse() throws NoSuchFieldException, IllegalAccessException {
         CrafterAIData aiData = mock(CrafterAIData.class);
-        FieldSetter.setField(aiData, CrafterAIData.class.getDeclaredField("canAction"), false);
+        aiData.canAction = false;
         ReflectionUtil.setPrivateField(crafter, com.wurmonline.server.creatures.Creature.class.getDeclaredField("aiData"), aiData);
 
         crafter.getTemplate().getCreatureAI().pollCreature(crafter, 0);
@@ -493,7 +492,7 @@ class CrafterAITests extends CrafterTest {
     @Test
     void testCrafterPolledIfCanActionIsTrue() throws NoSuchFieldException, IllegalAccessException {
         CrafterAIData aiData = mock(CrafterAIData.class);
-        FieldSetter.setField(aiData, CrafterAIData.class.getDeclaredField("canAction"), true);
+        aiData.canAction = true;
         ReflectionUtil.setPrivateField(crafter, Creature.class.getDeclaredField("aiData"), aiData);
 
         crafter.getTemplate().getCreatureAI().pollCreature(crafter, 0);

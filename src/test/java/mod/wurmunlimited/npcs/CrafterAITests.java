@@ -532,4 +532,35 @@ class CrafterAITests extends CrafterTest {
         assertFalse(lump.isOnSurface());
         assertFalse(tool.isOnSurface());
     }
+
+    @Test
+    void testDestroyDonationItems100Plus() throws WorkBook.WorkBookFull, NoSuchSkillException, WorkBook.NoWorkBookOnWorker {
+        Properties properties = new Properties();
+        properties.setProperty("remove_donations_at", "12");
+        new CrafterMod().configure(properties);
+        float currentSkill = (float)crafter.getSkills().getSkill(SkillList.SMITHING_BLACKSMITHING).getKnowledge();
+        warmUp();
+        int forgeCount = workBook.forge.getItemCount();
+
+        workBook.removeJob(tool);
+
+        List<Item> donated = new ArrayList<>();
+        for (int i = 0; i < 110; i++) {
+            Item donation = factory.createNewItem(ItemList.pickAxe);
+            crafter.getInventory().insertItem(donation);
+            workBook.addDonation(donation);
+            donation.setQualityLevel(currentSkill + 12);
+            donated.add(donation);
+            workBook.forge.insertItem(donation, true);
+            donation.setTemperature(Short.MAX_VALUE);
+        }
+
+        data.sendNextAction();
+        for (Item donation : donated) {
+            assertFalse(BehaviourDispatcher.wasDispatched(donation, Actions.IMPROVE));
+            assertFalse(Items.exists(donation.getWurmId()));
+        }
+        assertEquals(forgeCount, workBook.forge.getItemCount());
+        assertEquals(0, WorkBook.getWorkBookFromWorker(crafter).donationsTodo());
+    }
 }

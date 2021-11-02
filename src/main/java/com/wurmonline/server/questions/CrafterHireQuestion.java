@@ -164,7 +164,7 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
                 .If(CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.for_owner,
                         b -> b.text("Under current laws the crafter will charge 10% for each order, you can retrieve the rest by visiting the crafter."))
                 .If(CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.tax_and_upkeep,
-                        b -> b.text("Under current laws the crafter will contribute" + CrafterMod.getUpkeepPercentage() + "% of each order to village upkeep.  The rest will go to the King."))
+                        b -> b.text("Under current laws the crafter will contribute " + (CrafterMod.getUpkeepPercentage() * 100) + "% of each order to village upkeep.  The rest will go to the King."))
                 .If(CrafterMod.getPaymentOption() == CrafterMod.PaymentOption.all_tax,
                         b -> b.text("Under current laws all proceeds will go to the King."))
                 .newLine();

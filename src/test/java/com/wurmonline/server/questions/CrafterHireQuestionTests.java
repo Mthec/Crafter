@@ -113,6 +113,17 @@ class CrafterHireQuestionTests {
     }
 
     @Test
+    void testUpkeepPercentageProperlyDisplayed() {
+        Properties properties = new Properties();
+        properties.setProperty("payment", "tax_and_upkeep");
+        properties.setProperty("upkeep_percentage", "50");
+        CrafterMod.mod.configure(properties);
+        new CrafterHireQuestion(owner, contract.getWurmId()).sendQuestion();
+
+        assertThat(owner, receivedBMLContaining(" 50.0% "));
+    }
+
+    @Test
     void testSpecialCrafterTypeProperlySet() throws WorkBook.NoWorkBookOnWorker {
         for (String type : new String[] { "all_metal", "all_wood", "all_armour" }) {
             new CrafterHireQuestion(owner, contract.getWurmId()).answer(generateProperties(type));

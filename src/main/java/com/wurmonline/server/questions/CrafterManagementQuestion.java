@@ -10,6 +10,10 @@ import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.NoSuchTemplateException;
 import com.wurmonline.server.players.Player;
+import com.wurmonline.server.villages.NoSuchRoleException;
+import com.wurmonline.server.villages.Village;
+import com.wurmonline.server.villages.VillageRole;
+import com.wurmonline.server.villages.VillageStatus;
 import com.wurmonline.shared.util.StringUtilities;
 import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.*;
@@ -125,6 +129,32 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                 e.printStackTrace();
                 responder.getCommunicator().sendNormalServerMessage(crafter.getName() + " fumbles about and cannot find their workbook.");
             }
+        } else if (wasSelected("invite")) {
+            Village village = responder.getCitizenVillage();
+            if (village == null) {
+                responder.getCommunicator().sendNormalServerMessage("You cannot invite " + crafter.getName() + " to your village because you do not belong to one.");
+                return;
+            }
+            if (village == crafter.getCitizenVillage()) {
+                responder.getCommunicator().sendNormalServerMessage(crafter.getName() + " is already a member of your village.");
+                return;
+            }
+            if (!village.getRoleFor(responder).mayInviteCitizens()) {
+                responder.getCommunicator().sendNormalServerMessage("You do not have permission to invite citizens to your village.");
+                return;
+            }
+            try {
+                VillageRole role = village.getRoleForStatus(VillageStatus.ROLE_CITIZEN);
+                village.addCitizen(crafter, role);
+                responder.getCommunicator().sendSafeServerMessage(crafter.getName() + " successfully joined " + village.getName() + ", make sure they have the \"Pickup\" permission if they will be using a forge.");
+            } catch (NoSuchRoleException e) {
+                responder.getCommunicator().sendAlertServerMessage("Could not find default citizen role, please report.");
+                logger.warning("Could not find default citizen role, pleases report.");
+            } catch (IOException e) {
+                responder.getCommunicator().sendAlertServerMessage("An error occurred in the rifts of the void.  Please report.");
+                logger.warning("Error when adding crafter to village, pleases report.");
+                e.printStackTrace();
+            }
         }
     }
 
@@ -154,11 +184,12 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                                  .newLine()
                                  .harray(b -> b.button("Send").spacer()
                                                .button("customise", "Appearance").spacer()
-                                               .If(CrafterMod.canChangeSkill(), b2 -> b2.button("skills", "Modify skills").spacer()))
-                                 .harray(b -> b.button("restrict", "Restrict Materials").spacer()
+                                               .If(responder.getCitizenVillage() != crafter.getCitizenVillage(), b2 -> b2.button("invite", "Invite to settlement").spacer()))
+                                 .harray(b -> b.If(CrafterMod.canChangeSkill(), b2 -> b2.button("skills", "Modify skills").spacer())
+                                               .button("restrict", "Restrict Materials").spacer()
                                                .button("block", "Block Items").spacer()
-                                               .If(workBook.todo() > 0, b2 -> b2.button("stop", "Stop current job").confirm("Stop current job.", "Are you sure you wish to stop the current job?  This will refund the order and return the item to the customer.").spacer())
-                                               .button("dismiss", "Dismiss").confirm("You are about to dismiss " + crafter.getName() + ".", "Do you really want to do that?"))
+                                               .If(workBook.todo() > 0, b2 -> b2.button("stop", "Stop current job").confirm("Stop current job.", "Are you sure you wish to stop the current job?  This will refund the order and return the item to the customer.").spacer()))
+                                 .harray(b -> b.button("dismiss", "Dismiss").confirm("You are about to dismiss " + crafter.getName() + ".", "Do you really want to do that?"))
                                  .build();
 
             getResponder().getCommunicator().sendBml(300, 400, false, true, bml, 200, 200, 200, title);

@@ -6,12 +6,13 @@ plugins {
 }
 
 group = 'mod.wurmunlimited.npcs.crafter'
-version = '0.5.6'
+version = '0.5.7'
 
 sourceCompatibility = 1.8
 def $shortName = 'crafter'
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -26,8 +27,10 @@ configurations {
 
 dependencies {
     testImplementation project(':WurmTestingHelper')
-    implementation fileTree(dir: 'E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/', includes: ["server.jar", "modlauncher.jar", "javassist.jar"])
-//    implementation fileTree(dir: 'E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/lib/', includes: ["annotations-16.0.2.jar",
+    implementation 'com.wurmonline:server:1.9'
+    implementation 'org.gotti.wurmunlimited:server-modlauncher:0.45'
+//    implementation fileTree(dir: 'F:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/', includes: ["server.jar", "modlauncher.jar", "javassist.jar"])
+//    implementation fileTree(dir: 'F:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/lib/', includes: ["annotations-16.0.2.jar",
 //            "annotations-2.0.1.jar", "ServerLauncher-0.43.jar", "WurmUnlimitedCommon-1.9.2.7.jar", "guava-18.0.jar", "javassist-3.23.1.jar",
 //            "sqlite-jdbc-3.8.11.2.jar"])
     implementation project(':BMLBuilder')
@@ -39,11 +42,11 @@ jar {
     doLast {
         copy {
             from jar
-            into 'E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/mods/crafter/'
+            into 'F:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/mods/crafter/'
         }
         copy {
             from $shortName + '.properties'
-            into 'E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/mods/'
+            into 'F:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher/mods/'
             expand(output: 'print')
             filter(FixCrLfFilter, eol: FixCrLfFilter.CrLf.newInstance('crlf'))
         }

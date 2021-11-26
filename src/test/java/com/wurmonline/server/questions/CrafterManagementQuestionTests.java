@@ -495,4 +495,52 @@ class CrafterManagementQuestionTests {
         new CreatureCustomiserQuestion(owner, crafter, CrafterMod.mod.faceSetter, CrafterMod.mod.modelSetter, modelOptions).sendQuestion();
         assertThat(owner, bmlEqual());
     }
+
+    @Test
+    void testInviteNoVillage() {
+        owner.citizenVillage.removeCitizen(owner);
+        crafter.citizenVillage.removeCitizen(crafter);
+        Properties properties = new Properties();
+        properties.setProperty("invite", "true");
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        assertThat(owner, receivedMessageContaining("cannot invite"));
+        assertNull(crafter.getCitizenVillage());
+    }
+
+    @Test
+    void testInviteAlreadyJoined() {
+        assert owner.citizenVillage == crafter.citizenVillage;
+        Properties properties = new Properties();
+        properties.setProperty("invite", "true");
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        assertThat(owner, receivedMessageContaining("is already"));
+        assertEquals(owner.getCitizenVillage(), crafter.getCitizenVillage());
+    }
+
+    @Test
+    void testInviteNoInvitePermission() {
+        crafter.citizenVillage.removeCitizen(crafter);
+        owner.getCitizenVillage().getRoleFor(owner).setCanInviteCitizens(false);
+        Properties properties = new Properties();
+        properties.setProperty("invite", "true");
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        assertThat(owner, receivedMessageContaining("not have permission"));
+        assertNull(crafter.getCitizenVillage());
+    }
+
+    @Test
+    void testInvited() {
+        crafter.citizenVillage.removeCitizen(crafter);
+        owner.getCitizenVillage().getRoleFor(owner).setCanInviteCitizens(true);
+        Properties properties = new Properties();
+        properties.setProperty("invite", "true");
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        assertThat(owner, receivedMessageContaining(crafter.getName() + " successfully joined"));
+        assert owner.getCitizenVillage() != null;
+        assertEquals(owner.getCitizenVillage(), crafter.getCitizenVillage());
+    }
 }

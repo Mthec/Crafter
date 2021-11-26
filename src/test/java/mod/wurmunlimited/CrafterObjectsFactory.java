@@ -5,7 +5,6 @@ import com.wurmonline.server.creatures.CreatureTemplateFactory;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.players.Player;
-import com.wurmonline.server.zones.Zones;
 import mod.wurmunlimited.npcs.*;
 
 public class CrafterObjectsFactory extends WurmObjectsFactory {
@@ -16,7 +15,6 @@ public class CrafterObjectsFactory extends WurmObjectsFactory {
         new CrafterMod().onItemTemplatesCreated();
         new CrafterTemplate().createCreateTemplateBuilder().build().setCreatureAI(new CrafterAI());
         assert CreatureTemplateFactory.getInstance().getTemplate(CrafterTemplate.getTemplateId()) != null;
-        Zones.resetStatic();
         CrafterAI.assignedForges.clear();
     }
 

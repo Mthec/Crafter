@@ -13,6 +13,9 @@ import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.items.WurmMail;
 import com.wurmonline.server.players.Player;
+import com.wurmonline.server.villages.NoSuchRoleException;
+import com.wurmonline.server.villages.VillageRole;
+import com.wurmonline.server.villages.VillageStatus;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
 import com.wurmonline.shared.util.StringUtilities;
@@ -535,6 +538,54 @@ class CrafterManagementQuestionTests {
     void testInvited() {
         crafter.citizenVillage.removeCitizen(crafter);
         owner.getCitizenVillage().getRoleFor(owner).setCanInviteCitizens(true);
+        Properties properties = new Properties();
+        properties.setProperty("invite", "true");
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        assertThat(owner, didNotReceiveMessageContaining(crafter.getName() + " successfully joined"));
+        assert owner.getCitizenVillage() != null;
+        assertEquals(owner.getCitizenVillage(), crafter.getCitizenVillage());
+    }
+
+    @Test
+    void testInvitedWithoutPermissions() throws NoSuchRoleException {
+        crafter.citizenVillage.removeCitizen(crafter);
+        owner.getCitizenVillage().getRoleFor(owner).setCanInviteCitizens(true);
+        VillageRole role = owner.getCitizenVillage().getRoleForStatus(VillageStatus.ROLE_CITIZEN);
+        role.setCanImproveRepair(false);
+        role.setCanPickup(false);
+        Properties properties = new Properties();
+        properties.setProperty("invite", "true");
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        assertThat(owner, receivedMessageContaining(crafter.getName() + " successfully joined"));
+        assert owner.getCitizenVillage() != null;
+        assertEquals(owner.getCitizenVillage(), crafter.getCitizenVillage());
+    }
+
+    @Test
+    void testInvitedWithPickupPermission() throws NoSuchRoleException {
+        crafter.citizenVillage.removeCitizen(crafter);
+        owner.getCitizenVillage().getRoleFor(owner).setCanInviteCitizens(true);
+        VillageRole role = owner.getCitizenVillage().getRoleForStatus(VillageStatus.ROLE_CITIZEN);
+        role.setCanImproveRepair(false);
+        role.setCanPickup(true);
+        Properties properties = new Properties();
+        properties.setProperty("invite", "true");
+        new CrafterManagementQuestion(owner, crafter).answer(properties);
+
+        assertThat(owner, receivedMessageContaining(crafter.getName() + " successfully joined"));
+        assert owner.getCitizenVillage() != null;
+        assertEquals(owner.getCitizenVillage(), crafter.getCitizenVillage());
+    }
+
+    @Test
+    void testInvitedWithImprovePermission() throws NoSuchRoleException {
+        crafter.citizenVillage.removeCitizen(crafter);
+        owner.getCitizenVillage().getRoleFor(owner).setCanInviteCitizens(true);
+        VillageRole role = owner.getCitizenVillage().getRoleForStatus(VillageStatus.ROLE_CITIZEN);
+        role.setCanImproveRepair(true);
+        role.setCanPickup(false);
         Properties properties = new Properties();
         properties.setProperty("invite", "true");
         new CrafterManagementQuestion(owner, crafter).answer(properties);

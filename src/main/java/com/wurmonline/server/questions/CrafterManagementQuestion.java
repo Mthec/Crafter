@@ -146,7 +146,9 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
             try {
                 VillageRole role = village.getRoleForStatus(VillageStatus.ROLE_CITIZEN);
                 village.addCitizen(crafter, role);
-                responder.getCommunicator().sendSafeServerMessage(crafter.getName() + " successfully joined " + village.getName() + ", make sure they have the \"Pickup\" permission if they will be using a forge.");
+                if (!role.mayPickup() || !role.mayImproveAndRepair()) {
+                    responder.getCommunicator().sendSafeServerMessage(crafter.getName() + " successfully joined " + village.getName() + ", make sure they have the \"Improve\" permission (and \"Pickup\" if they will be using a forge).");
+                }
             } catch (NoSuchRoleException e) {
                 responder.getCommunicator().sendAlertServerMessage("Could not find default citizen role, please report.");
                 logger.warning("Could not find default citizen role, pleases report.");

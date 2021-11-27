@@ -10,6 +10,8 @@ import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.server.villages.Village;
+import com.wurmonline.server.villages.VillageRole;
 import com.wurmonline.shared.util.MaterialUtilities;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.Job;
@@ -47,7 +49,27 @@ public class CrafterTradeHandler extends TradeHandler {
             priceModifier = 1.0f;
         ownerTrade = shop.getOwnerId() == trade.creatureOne.getWurmId();
         if (ownerTrade) {
-            trade.creatureOne.getCommunicator().sendSafeServerMessage(crafter.getName() + " says, 'Welcome back, " + trade.creatureOne.getName() + "!'");
+            StringBuilder sb = new StringBuilder();
+            sb.append(crafter.getName()).append(" says, 'Welcome back, ").append(trade.creatureOne.getName()).append("!'");
+
+            Village village = crafter.getCurrentVillage();
+            if (village != null) {
+                VillageRole role = village.getRoleFor(crafter);
+
+                if (!role.mayImproveAndRepair()) {
+                    sb.append(" I need permission to \"Improve\" in this village.");
+                }
+
+                if (!role.mayPickup()) {
+                    if (workBook.isForgeAssigned()) {
+                        sb.append(" I need permission to \"Pickup\" in this village.");
+                    } else {
+                        sb.append(" I would need permission to \"Pickup\" in this village to use a forge.");
+                    }
+                }
+            }
+
+            trade.creatureOne.getCommunicator().sendSafeServerMessage(sb.toString());
         } else {
             trade.creatureOne.getCommunicator().sendSafeServerMessage(crafter.getName() + " says, 'How can I help you today?'");
         }

@@ -5,11 +5,15 @@ import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.items.TradingWindow;
 import com.wurmonline.server.skills.SkillList;
+import com.wurmonline.server.villages.NoSuchRoleException;
+import com.wurmonline.server.villages.VillageRole;
+import com.wurmonline.server.villages.VillageStatus;
 import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.npcs.CrafterTradingTest;
 import mod.wurmunlimited.npcs.CrafterType;
 import mod.wurmunlimited.npcs.Job;
 import mod.wurmunlimited.npcs.WorkBook;
+import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -20,8 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static mod.wurmunlimited.Assert.containsCoinsOfValue;
-import static mod.wurmunlimited.Assert.hasCoinsOfValue;
+import static mod.wurmunlimited.Assert.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -350,5 +353,75 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
         assertFalse(owner.getInventory().getItems().contains(item));
         WorkBook workBook = WorkBook.getWorkBookFromWorker(crafter);
         assertEquals(1, workBook.todo());
+    }
+
+    private void setVillagePermissions(boolean improve, boolean pickup) {
+        factory.createVillageFor(owner);
+        crafter.currentVillage = owner.citizenVillage;
+        assert owner.citizenVillage != null;
+        assert crafter.getCurrentVillage() == owner.citizenVillage;
+        try {
+            VillageRole role = crafter.currentVillage.getRoleForStatus(VillageStatus.ROLE_EVERYBODY);
+            role.setCanImproveRepair(improve);
+            role.setCanPickup(pickup);
+        } catch (NoSuchRoleException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    void testWelcomeMessageNoPermissions() throws WorkBook.NoWorkBookOnWorker {
+        makeNewOwnerCrafterTrade();
+        setVillagePermissions(false, false);
+        assert !WorkBook.getWorkBookFromWorker(crafter).isForgeAssigned();
+        makeHandler();
+
+        assertThat(owner, receivedMessageContaining("permission to \"Improve\""));
+        assertThat(owner, receivedMessageContaining("permission to \"Pickup\" in this village to use a forge"));
+    }
+
+    @Test
+    void testWelcomeMessageImprovePermission() throws WorkBook.NoWorkBookOnWorker {
+        makeNewOwnerCrafterTrade();
+        setVillagePermissions(true, false);
+        assert !WorkBook.getWorkBookFromWorker(crafter).isForgeAssigned();
+        makeHandler();
+
+        assertThat(owner, didNotReceiveMessageContaining("permission to \"Improve\""));
+        assertThat(owner, receivedMessageContaining("permission to \"Pickup\" in this village to use a forge"));
+    }
+
+    @Test
+    void testWelcomeMessageNoPickupPermissionAndNoForge() throws WorkBook.NoWorkBookOnWorker, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        makeNewOwnerCrafterTrade();
+        setVillagePermissions(true, false);
+        ReflectionUtil.callPrivateMethod(WorkBook.getWorkBookFromWorker(crafter), WorkBook.class.getDeclaredMethod("setForge", Item.class), factory.createNewItem(ItemList.forge));
+        makeHandler();
+
+        assertThat(owner, didNotReceiveMessageContaining("permission to \"Improve\""));
+        assertThat(owner, didNotReceiveMessageContaining("permission to \"Pickup\" in this village to use a forge"));
+        assertThat(owner, receivedMessageContaining("permission to \"Pickup\""));
+    }
+
+    @Test
+    void testWelcomeMessagePickupButNoForge() throws WorkBook.NoWorkBookOnWorker, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        makeNewOwnerCrafterTrade();
+        setVillagePermissions(true, true);
+        assert !WorkBook.getWorkBookFromWorker(crafter).isForgeAssigned();
+        makeHandler();
+
+        assertThat(owner, didNotReceiveMessageContaining("permission to \"Improve\""));
+        assertThat(owner, didNotReceiveMessageContaining("permission to \"Pickup\""));
+    }
+
+    @Test
+    void testWelcomeMessagePickupAndForge() throws WorkBook.NoWorkBookOnWorker, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        makeNewOwnerCrafterTrade();
+        setVillagePermissions(true, true);
+        ReflectionUtil.callPrivateMethod(WorkBook.getWorkBookFromWorker(crafter), WorkBook.class.getDeclaredMethod("setForge", Item.class), factory.createNewItem(ItemList.forge));
+        makeHandler();
+
+        assertThat(owner, didNotReceiveMessageContaining("permission to \"Improve\""));
+        assertThat(owner, didNotReceiveMessageContaining("permission to \"Pickup\""));
     }
 }

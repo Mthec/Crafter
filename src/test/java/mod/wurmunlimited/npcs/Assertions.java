@@ -73,9 +73,11 @@ public class Assertions {
         private static final Pattern qlValue = Pattern.compile(".* ([\\d.]+)ql$");
         private final float maxQl;
         private final Set<String> required;
+        private final boolean includeDonations;
 
-        HasOptionsForQLUpTo(float maxQl) {
+        HasOptionsForQLUpTo(float maxQl, boolean includeDonations) {
             this.maxQl = maxQl;
+            this.includeDonations = includeDonations;
             assert maxQl >= 20;
             required = new HashSet<>();
             if (maxQl % 10 != 0)
@@ -91,7 +93,12 @@ public class Assertions {
         @Override
         protected boolean matchesSafely(TradingWindow window) {
             // Minus 2 for Mail and Donate options.
-            if (window.getItems().length - 2 != required.size())
+            int extra = 2;
+            if (!includeDonations) {
+                extra -= 1;
+            }
+
+            if (window.getItems().length - extra != required.size())
                 return false;
             for (Item item : window.getItems()) {
                 java.util.regex.Matcher match = qlValue.matcher(item.getName());
@@ -114,7 +121,11 @@ public class Assertions {
         }
     }
 
+    public static Matcher<TradingWindow> hasOptionsForQLUpTo(float maxQl, boolean includeDonations) {
+        return new HasOptionsForQLUpTo(maxQl, includeDonations);
+    }
+
     public static Matcher<TradingWindow> hasOptionsForQLUpTo(float maxQl) {
-        return new HasOptionsForQLUpTo(maxQl);
+        return hasOptionsForQLUpTo(maxQl, true);
     }
 }

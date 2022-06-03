@@ -124,6 +124,39 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
     }
 
     @Test
+    void testMaxCapBetweenQLIntervalsButCrafterSkillCapHigherThanMax() throws NoSuchFieldException, IllegalAccessException {
+        float skill = 55.54f;
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("skillCap"), 50f);
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), skill);
+
+        makeNewCrafterTrade();
+        makeHandler();
+
+        handler.addItemsToTrade();
+
+        TradingWindow window = trade.getTradingWindow(1);
+        assertThat(window, hasOptionsForQLUpTo(50, false));
+        // -1 for no donations option.
+        assertEquals(countOptions(50) - 1, window.getItems().length);
+    }
+
+    @Test
+    void testMaxCapBelowMaxItemQL() throws NoSuchFieldException, IllegalAccessException {
+        float skill = 60f;
+        ReflectionUtil.setPrivateField(null, CrafterMod.class.getDeclaredField("maxItemQL"), 50f);
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), skill);
+
+        makeNewCrafterTrade();
+        makeHandler();
+
+        handler.addItemsToTrade();
+
+        TradingWindow window = trade.getTradingWindow(1);
+        assertThat(window, hasOptionsForQLUpTo(50f));
+        assertEquals(countOptions(skill) - 1, window.getItems().length);
+    }
+
+    @Test
     void testItemsReadyToCollectAdded() {
         crafter = factory.createNewCrafter(owner, crafterType, 50);
 

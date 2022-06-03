@@ -26,6 +26,7 @@ public class CrafterTradeHandler extends TradeHandler {
     private final Creature creature;
     private final WorkBook workBook;
     private final float skillCap;
+    private final float qlCap;
     private final boolean ownerTrade;
     private final CrafterTrade trade;
     private final Map<Integer, Float> targetQLs = new HashMap<>();
@@ -42,6 +43,7 @@ public class CrafterTradeHandler extends TradeHandler {
         trade = _trade;
         workBook = _trade.getWorkBook();
         skillCap = workBook.getSkillCap();
+        qlCap = CrafterMod.getMaxItemQL();
         Shop shop = Economy.getEconomy().getShop(crafter);
         if (CrafterMod.canUsePriceModifier())
             priceModifier = shop.getPriceModifier();
@@ -107,17 +109,18 @@ public class CrafterTradeHandler extends TradeHandler {
             boolean atSkillCap = true;
             for (Skill skill : workBook.getCrafterType().getSkillsFor(creature)) {
                 int current = 20;
+
                 ItemTemplate template = skillIcons.get(skill.getNumber());
                 if (atSkillCap && skill.getKnowledge() < CrafterMod.getSkillCap())
                     atSkillCap = false;
                 if (template == null)
                     throw new NoSuchTemplateException("ItemTemplate not found for option icons.  Did buildSkillIcons fail?");
-                while (current <= skill.getKnowledge() && current <= skillCap && current <= CrafterMod.getSkillCap()) {
+                while (current <= skill.getKnowledge() && current <= skillCap && current <= qlCap) {
                     addOption("Improve to " + current + "ql", template, current);
                     current += 10;
                 }
-                if (current > skillCap && (float)current - 10.0f != skillCap)
-                    addOption(String.format("Improve to %.1fql", skillCap), template, current);
+                if (current > skillCap && skillCap <= qlCap && (float)current - 10.0f != skillCap)
+                    addOption(String.format("Improve to %.1fql", skillCap), template, skillCap);
             }
 
             if (trade.getTradingWindow(1).getItems().length == 0) {

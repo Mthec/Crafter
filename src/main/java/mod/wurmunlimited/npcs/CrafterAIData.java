@@ -444,6 +444,17 @@ public class CrafterAIData extends CreatureAIData {
                 capSkills();
 
                 try {
+                    if (!job.isDonation()) {
+                        double skill = -1.0;
+                        try {
+                            Skill requiredSkill = crafter.getSkills().getSkill(MethodsItems.getImproveSkill(item));
+                            skill = requiredSkill.getKnowledge();
+                        } catch (NoSuchSkillException e) {
+                            e.printStackTrace();
+                        }
+                        logger.info("Improving " + item.getName() + " - QL " + item.getQualityLevel() + "/" + job.targetQL + "/" + CrafterMod.getMaxItemQL() + " - Skill " + skill + "/" + workbook.getSkillCap() + "/" + CrafterMod.getSkillCap());
+                    }
+
                     BehaviourDispatcher.action(crafter, crafter.getCommunicator(), tool.getWurmId(), item.getWurmId(), Actions.IMPROVE);
                     logger.info("Improving " + item.getName() + " with " + tool.getName());
                 } catch (NoSuchPlayerException | NoSuchCreatureException | NoSuchItemException | NoSuchBehaviourException | NoSuchWallException | FailedException e) {

@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'mod.wurmunlimited.npcs.crafter'
-version = '0.5.8'
+version = '0.5.9-testing'
 
 sourceCompatibility = 1.8
 def $shortName = 'crafter'
@@ -70,7 +70,7 @@ jar {
     manifest {
         attributes('Implementation-Version': archiveVersion)
     }
-}.dependsOn(test)
+}
 
 test {
     useJUnitPlatform()

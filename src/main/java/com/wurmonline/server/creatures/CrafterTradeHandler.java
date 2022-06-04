@@ -20,6 +20,7 @@ import mod.wurmunlimited.npcs.WorkBook;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class CrafterTradeHandler extends TradeHandler {
     private static final Logger logger = Logger.getLogger(CrafterTradeHandler.class.getName());
@@ -270,8 +271,8 @@ public class CrafterTradeHandler extends TradeHandler {
             }
 
             if (item.isCoin() ||
-                    (donating && workBook.getCrafterType().hasSkillToImprove(item))
-                    || (item.getQualityLevel() < getTargetQL(item) && !item.isNoImprove() && item.isRepairable() && !item.isNewbieItem() && !item.isChallengeNewbieItem())) {
+                        (donating && workBook.getCrafterType().hasSkillToImprove(item))
+                        || (item.getQualityLevel() < getTargetQL(item) && !item.isNoImprove() && item.isRepairable() && !item.isNewbieItem() && !item.isChallengeNewbieItem())) {
                 offerWindow.removeItem(item);
                 myWindow.addItem(item);
             } else if (item.isWeaponBow() && targetQLs.containsKey(SkillList.GROUP_BOWYERY)) {
@@ -520,5 +521,10 @@ public class CrafterTradeHandler extends TradeHandler {
 
     public boolean isOptionItem(Item item) {
         return optionItems.contains(item);
+    }
+
+    // TODO - Temp.
+    public String getSelectedOptions() {
+        return Arrays.stream(trade.getCreatureOneRequestWindow().getItems()).filter(i -> !i.isCoin()).map(i -> i.getName() + " (" + i.getQualityLevel() + ")").collect(Collectors.joining(", "));
     }
 }

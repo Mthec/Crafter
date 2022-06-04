@@ -18,6 +18,7 @@ import com.wurmonline.server.players.Player;
 import com.wurmonline.server.villages.VillageStatus;
 import com.wurmonline.shared.constants.CreatureTypes;
 import com.wurmonline.shared.util.MaterialUtilities;
+import mod.wurmunlimited.npcs.CrafterAIData;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterTemplate;
 import mod.wurmunlimited.npcs.WorkBook;
@@ -473,6 +474,9 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
                         } else {
                             try {
                                 if (!handler.isDonating()) {
+                                    CrafterAIData data = ((CrafterAIData)watcher.getCreatureAIData());
+                                    data.log("Adding job to Crafter - " + item.getName() + " to " + handler.getTargetQL(item));
+                                    data.log(handler.getSelectedOptions());
                                     workBook.addJob(windowOwner.getWurmId(), item, handler.getTargetQL(item), handler.isMailOnDone(), watcher.getTradeHandler().getTraderBuyPriceForItem(item) + (handler.isMailOnDone() ? CrafterMod.mailPrice() : 0));
                                 } else {
                                     workBook.addDonation(item);

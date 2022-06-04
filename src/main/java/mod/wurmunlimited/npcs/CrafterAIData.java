@@ -47,6 +47,11 @@ public class CrafterAIData extends CreatureAIData {
 
     public boolean canAction = true;
 
+    // TODO - Temp.
+    public void log(String message) {
+        logger.info(message);
+    }
+
     @Override
     public void setCreature(@NotNull Creature crafter) {
         super.setCreature(crafter);

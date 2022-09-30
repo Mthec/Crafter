@@ -1233,4 +1233,33 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
 
         assertThat(player, receivedMessageContaining("cannot improve pickaxes, hatchets, or shovels."));
     }
+
+    @Test
+    void testRestrictedItemMaterialsCoinMaterialRestricted() throws WorkBook.NoWorkBookOnWorker, WorkBook.WorkBookFull {
+        crafter = factory.createNewCrafter(owner, new CrafterType(SkillList.SMITHING_BLACKSMITHING), 20);
+        WorkBook.getWorkBookFromWorker(crafter).updateRestrictedMaterials(Collections.singletonList(ItemMaterials.MATERIAL_IRON));
+
+        makeNewCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+
+        Item rake = player.getInventory().getFirstContainedItem();
+        rake.setMaterial(ItemMaterials.MATERIAL_IRON);
+        trade.getTradingWindow(2).addItem(rake);
+        selectOption("Improve");
+        handler.balance();
+
+        assertEquals(1, trade.getTradingWindow(4).getItems().length);
+
+        Item coin = factory.createNewItem(ItemList.coinSilverFive);
+        player.getInventory().insertItem(coin, true);
+        trade.getTradingWindow(2).addItem(coin);
+        setNotBalanced();
+        handler.balance();
+
+        assertThat(player, didNotReceiveMessageContaining("cannot improve that item."));
+        setSatisfied(player);
+
+        assertTrue(crafter.getInventory().getItems().contains(rake));
+    }
 }

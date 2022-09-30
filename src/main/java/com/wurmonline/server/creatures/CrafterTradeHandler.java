@@ -261,13 +261,15 @@ public class CrafterTradeHandler extends TradeHandler {
         boolean hasRestrictedMaterial = false;
         boolean hasBlockedItems = false;
         for (Item item : offerWindow.getItems()) {
-            if (workBook.isRestrictedMaterial(item.getMaterial())) {
-                hasRestrictedMaterial = true;
-                continue;
-            }
-            if (workBook.isBlockedItem(item.getTemplateId())) {
-                hasBlockedItems = true;
-                continue;
+            if (!item.isCoin()) {
+                if (workBook.isRestrictedMaterial(item.getMaterial())) {
+                    hasRestrictedMaterial = true;
+                    continue;
+                }
+                if (workBook.isBlockedItem(item.getTemplateId())) {
+                    hasBlockedItems = true;
+                    continue;
+                }
             }
 
             if (item.isCoin() ||

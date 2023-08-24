@@ -1,4 +1,4 @@
-import org.apache.tools.ant.filters.*
+import org.apache.tools.ant.filters.FixCrLfFilter
 
 plugins {
     id 'java'
@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'mod.wurmunlimited.npcs.crafter'
-version = '0.5.10'
+version = '0.5.11'
 
 sourceCompatibility = 1.8
 def $shortName = 'crafter'

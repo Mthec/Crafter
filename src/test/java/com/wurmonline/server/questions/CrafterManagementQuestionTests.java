@@ -594,4 +594,16 @@ class CrafterManagementQuestionTests {
         assert owner.getCitizenVillage() != null;
         assertEquals(owner.getCitizenVillage(), crafter.getCitizenVillage());
     }
+
+    @Test
+    void testPlayerNotShopOwner() {
+        Shop shop = crafter.getShop();
+        shop.setOwner(12345678L);
+
+        new CrafterManagementQuestion(owner, crafter);
+
+        assertEquals(shop.getOwnerId(), owner.getWurmId());
+        assertThat(owner, receivedMessageContaining("You were not in control"));
+        assertThat(crafter, receivedMessageContaining("Your employer was not registered as your shop owner"));
+    }
 }

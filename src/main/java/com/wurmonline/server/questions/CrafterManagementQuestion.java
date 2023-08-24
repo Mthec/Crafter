@@ -34,6 +34,14 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
         this.responder = responder;
         this.crafter = crafter;
         shop = Economy.getEconomy().getShop(crafter);
+        long player = responder.getWurmId();
+        long shopOwner = shop.getOwnerId();
+        if (shopOwner != player) {
+            logger.warning("Crafter shop owner (" + shopOwner + ") was not writ holder (" + responder.getName() + ": " + player + ").  If this keeps happening, please report.");
+            responder.getCommunicator().sendAlertServerMessage("You were not in control of " + crafter.getName() + ", fixing.");
+            crafter.getCommunicator().sendAlertServerMessage("Your employer was not registered as your shop owner.  Fixing.");
+            shop.setOwner(player);
+        }
     }
 
     @Override

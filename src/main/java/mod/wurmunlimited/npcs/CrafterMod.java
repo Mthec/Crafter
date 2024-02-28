@@ -74,6 +74,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private static boolean canChangeSkill = true;
     private static float maxItemQL = 99.99999f;
     private static final List<Byte> restrictedMaterials = new ArrayList<>();
+    private static boolean allow_threaten = false;
     private static final Map<Creature, Logger> crafterLoggers = new HashMap<>();
     private Properties properties;
     public static Path globalRestrictionsPath = Paths.get("mods", "crafter", "global_restrictions");
@@ -265,6 +266,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         singleSkill = getOption("single_crafter_skill", singleSkill);
         canChangeSkill = getOption("change_skill_after_placement", canChangeSkill);
         maxItemQL = getOption("max_item_ql", maxItemQL);
+        allow_threaten = getOption("allow_threatening", allow_threaten);
 
         skillPrices.put(SkillList.SMITHING_BLACKSMITHING, getOption("blacksmithing", 1.0f));
         skillPrices.put(SkillList.GROUP_SMITHING_WEAPONSMITHING, getOption("weaponsmithing", 1.0f));
@@ -510,6 +512,9 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         ModActions.registerAction(new TradeAction());
         ModActions.registerAction(new CrafterContractAction(contractTemplateId));
         ModActions.registerAction(new ManageCrafterAction());
+        if (allow_threaten) {
+            ModActions.registerAction(new ThreatenAction());
+        }
         new PlaceCrafterAction();
         PlaceNpcMenu.register();
         CrafterCanGiveRemove can = new CrafterCanGiveRemove();

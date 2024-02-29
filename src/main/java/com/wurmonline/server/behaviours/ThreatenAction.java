@@ -1,23 +1,33 @@
 package com.wurmonline.server.behaviours;
 
+import com.wurmonline.server.NoSuchItemException;
+import com.wurmonline.server.NoSuchPlayerException;
 import com.wurmonline.server.Server;
 import com.wurmonline.server.Servers;
 import com.wurmonline.server.creatures.Creature;
+import com.wurmonline.server.creatures.NoSuchCreatureException;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.server.villages.Village;
+import com.wurmonline.server.zones.NoSuchZoneException;
+import mod.wurmunlimited.npcs.CrafterAIData;
 import mod.wurmunlimited.npcs.CrafterTemplate;
+import mod.wurmunlimited.npcs.Job;
+import mod.wurmunlimited.npcs.WorkBook;
 import org.gotti.wurmunlimited.modsupport.actions.*;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 public class ThreatenAction implements ModAction, ActionPerformer, BehaviourProvider {
     private static final Logger logger = Logger.getLogger(ThreatenAction.class.getName());
     private final short actionId;
     private final ActionEntry actionEntry;
+    private static final List<ActionEntry> empty = Collections.emptyList();
 
     public ThreatenAction() {
         actionId = (short) ModActions.getNextActionId();
@@ -31,7 +41,7 @@ public class ThreatenAction implements ModAction, ActionPerformer, BehaviourProv
         if (Servers.localServer.PVPSERVER && Servers.localServer.isChallengeOrEpicServer() && !Servers.localServer.HOMESERVER && target.getTemplate().getTemplateId() == CrafterTemplate.getTemplateId() && !target.isFriendlyKingdom(performer.getKingdomId())) {
             return Collections.singletonList(actionEntry);
         }
-        return null;
+        return empty;
     }
 
     @Override
@@ -73,7 +83,22 @@ public class ThreatenAction implements ModAction, ActionPerformer, BehaviourProv
                         } else {
                             performer.getCommunicator().sendNormalServerMessage(target.getNameWithGenus() + " looks really scared and fetches " + target.getHisHerItsString() + " job items.");
                             Server.getInstance().broadCastAction(performer.getNameWithGenus() + " scares " + target.getNameWithGenus() + " into fetching " + target.getHisHerItsString() + " job items.", performer, 10);
-                            // TODO - Hand over items.
+
+                            // Hand over items.
+                            CrafterAIData data = (CrafterAIData) target.getCreatureAIData();
+                            WorkBook workBook = data.getWorkBook();
+                            Set<Item> removed = new HashSet<>();
+                            for (Job job : workBook) {
+                                try {
+                                    Item item = job.getItem();
+                                    item.putItemInfrontof(performer);
+                                    removed.add(item);
+                                } catch (NoSuchCreatureException | NoSuchItemException | NoSuchPlayerException | NoSuchZoneException e) {
+                                    logger.info(target.getName() + " : " + e);
+                                }
+                            }
+
+                            removed.forEach(workBook::removeJob);
                         }
 
                         return true;

@@ -38,7 +38,7 @@ public class ThreatenAction implements ModAction, ActionPerformer, BehaviourProv
 
     @Override
     public List<ActionEntry> getBehavioursFor(Creature performer, Creature target) {
-        if (Servers.localServer.PVPSERVER && Servers.localServer.isChallengeOrEpicServer() && !Servers.localServer.HOMESERVER && target.getTemplate().getTemplateId() == CrafterTemplate.getTemplateId() && !target.isFriendlyKingdom(performer.getKingdomId())) {
+        if (Servers.localServer.PVPSERVER && !Servers.localServer.HOMESERVER && target.getTemplate().getTemplateId() == CrafterTemplate.getTemplateId() && !target.isFriendlyKingdom(performer.getKingdomId())) {
             return Collections.singletonList(actionEntry);
         }
         return empty;
@@ -51,7 +51,7 @@ public class ThreatenAction implements ModAction, ActionPerformer, BehaviourProv
 
     @Override
     public boolean action(Action action, Creature performer, Creature target, short num, float counter) {
-        if (Servers.localServer.PVPSERVER && Servers.localServer.isChallengeOrEpicServer() && !Servers.localServer.HOMESERVER) {
+        if (Servers.localServer.PVPSERVER && !Servers.localServer.HOMESERVER) {
             if (target.getFloorLevel() == performer.getFloorLevel() && performer.getMountVehicle() == null) {
                 if (target.isFriendlyKingdom(performer.getKingdomId())) {
                     performer.getCommunicator().sendNormalServerMessage("You can't rob " + target.getName() + "!");

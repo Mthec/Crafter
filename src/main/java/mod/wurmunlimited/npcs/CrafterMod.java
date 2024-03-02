@@ -75,6 +75,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private static float maxItemQL = 99.99999f;
     private static final List<Byte> restrictedMaterials = new ArrayList<>();
     private static boolean allow_threaten = false;
+    private static boolean send_event_messages = true;
     private static final Map<Creature, Logger> crafterLoggers = new HashMap<>();
     private Properties properties;
     public static Path globalRestrictionsPath = Paths.get("mods", "crafter", "global_restrictions");
@@ -169,6 +170,10 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
 
     public static float getMaxItemQL() {
         return maxItemQL;
+    }
+
+    public static boolean eventMessagesEnabled() {
+        return send_event_messages;
     }
 
     private OutputOption parseOutputOption(String value) {
@@ -267,6 +272,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         canChangeSkill = getOption("change_skill_after_placement", canChangeSkill);
         maxItemQL = getOption("max_item_ql", maxItemQL);
         allow_threaten = getOption("allow_threatening", allow_threaten);
+        send_event_messages = getOption("send_event_messages", send_event_messages);
 
         skillPrices.put(SkillList.SMITHING_BLACKSMITHING, getOption("blacksmithing", 1.0f));
         skillPrices.put(SkillList.GROUP_SMITHING_WEAPONSMITHING, getOption("weaponsmithing", 1.0f));
@@ -429,6 +435,11 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 "willLeaveServer",
                 "(ZZZ)Z",
                 () -> this::willLeaveServer);
+
+        manager.registerHook("com.wurmonline.server.MessageServer",
+                "broadcastAction",
+                "public static void broadCastAction(Ljava/lang/String;Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/creatures/Creature;IZ)V",
+                () -> this::broadcastAction);
 
         FaceSetter.init(manager);
         ModelSetter.init(manager, new CrafterWearItems());
@@ -834,6 +845,15 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 item.setTransferred(false);
                 return true;
             }
+        }
+
+        return method.invoke(o, args);
+    }
+
+    Object broadcastAction(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
+        Creature performer = (Creature)args[1];
+        if (CrafterTemplate.isCrafter(performer) && !send_event_messages) {
+            return null;
         }
 
         return method.invoke(o, args);

@@ -6,17 +6,16 @@ import com.wurmonline.server.NoSuchItemException;
 import com.wurmonline.server.economy.Change;
 import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.MonetaryConstants;
-import com.wurmonline.server.items.Item;
-import com.wurmonline.server.items.ItemList;
-import com.wurmonline.server.items.ItemTemplate;
-import com.wurmonline.server.items.TradingWindow;
+import com.wurmonline.server.items.*;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.npcs.*;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
+import org.gotti.wurmunlimited.modsupport.ItemTemplateBuilder;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -30,6 +29,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class CrafterTradeHandlerTests extends CrafterTradingTest {
     private static final Pattern priceMessageCost = Pattern.compile("need ([\\d\\s\\w,]+) more");
     private static final Pattern priceDenominations = Pattern.compile("([\\d]+)([\\w])");
+    private static int moddedHead = -10;
+    private static int moddedBlade = -10;
 
     private int countOptions(float skill) {
         int current = 20;
@@ -1261,5 +1262,60 @@ class CrafterTradeHandlerTests extends CrafterTradingTest {
         setSatisfied(player);
 
         assertTrue(crafter.getInventory().getItems().contains(rake));
+    }
+
+    private int moddedBlade() throws IOException {
+        if (moddedBlade == -10) {
+            moddedBlade = new ItemTemplateBuilder("mod.test.blade")
+                    .name("", "", "")
+                    .modelName("")
+                    .itemTypes(new short[]{ItemTypes.ITEM_TYPE_REPAIRABLE, ItemTypes.ITEM_TYPE_WEAPON})
+                    .material(ItemMaterials.MATERIAL_IRON)
+                    .build().getTemplateId();
+            CreationEntryCreator.createSimpleEntry(SkillList.SMITHING_WEAPON_BLADES, ItemList.anvilSmall, ItemMaterials.MATERIAL_IRON, moddedBlade, false, true, 0.0f, false, false, CreationCategories.WEAPONS);
+        }
+        return moddedBlade;
+    }
+
+    private int moddedHead() throws IOException {
+        if (moddedHead == -10) {
+            moddedHead = new ItemTemplateBuilder("mod.test.head")
+                    .name("", "", "")
+                    .modelName("")
+                    .itemTypes(new short[]{ItemTypes.ITEM_TYPE_REPAIRABLE, ItemTypes.ITEM_TYPE_WEAPON})
+                    .material(ItemMaterials.MATERIAL_IRON)
+                    .build().getTemplateId();
+            CreationEntryCreator.createSimpleEntry(SkillList.SMITHING_WEAPON_BLADES, ItemList.anvilSmall, ItemMaterials.MATERIAL_IRON, moddedHead, false, true, 0.0f, false, false, CreationCategories.WEAPONS);
+        }
+        return moddedHead;
+    }
+
+    @Test
+    void testImproveModdedWeaponsUsingHeadOrBladeSmithing() throws IOException {
+        crafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allMetal), 50);
+
+        makeNewCrafterTrade();
+        makeHandler();
+
+        handler.addItemsToTrade();
+
+        TradingWindow window = trade.getTradingWindow(1);
+        Item option = null;
+        for (Item item : window.getItems()) {
+            if (item.getName().startsWith("Improve to 20") && item.getTemplateId() == ItemList.swordLong) {
+                option = item;
+                break;
+            }
+        }
+        assert option != null;
+        window.removeItem(option);
+        trade.getCreatureOneRequestWindow().addItem(option);
+        Item blade = factory.createNewItem(moddedBlade());
+        Item head = factory.createNewItem(moddedHead());
+
+        handler.balance();
+
+        assertNotEquals(0, handler.getTargetQL(blade), 0.0);
+        assertNotEquals(0, handler.getTargetQL(head), 0.0);
     }
 }

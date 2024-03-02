@@ -507,7 +507,11 @@ public class CrafterTradeHandler extends TradeHandler {
     }
 
     public float getTargetQL(Item item) {
-        Float targetQL = targetQLs.get(MethodsItems.getImproveSkill(item));
+        int skill = MethodsItems.getImproveSkill(item);
+        if ((skill == SkillList.SMITHING_WEAPON_HEADS || skill == SkillList.SMITHING_WEAPON_BLADES) && item.isWeapon()) {
+            skill = SkillList.GROUP_SMITHING_WEAPONSMITHING;
+        }
+        Float targetQL = targetQLs.get(skill);
         if (targetQL == null)
             return 0;
         return targetQL;

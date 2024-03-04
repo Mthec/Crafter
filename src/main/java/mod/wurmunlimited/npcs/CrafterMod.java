@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configurable, ItemTemplatesCreatedListener, ServerStartedListener, PlayerMessageListener {
     private static final Logger logger = Logger.getLogger(CrafterMod.class.getName());
-    private static final String dbName = "crafter.db";
+    public static final String dbName = "crafter.db";
     public static CrafterMod mod;
     public FaceSetter faceSetter;
     public ModelSetter modelSetter;
@@ -63,7 +63,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private final static Map<Integer, Float> skillPrices = new HashMap<>();
     // Do not set at 100.  Skill.setKnowledge will not set the skill level if so.
     private static float skillCap = 99.99999f;
-    private static float startingSkill = 20;
+    private static double startingSkill = 20;
     private static float crafterSkillGainRate = 1;
     private static boolean usePriceModifier = true;
     private static float minimumPriceModifier = 0.0000001f;
@@ -76,6 +76,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private static final List<Byte> restrictedMaterials = new ArrayList<>();
     private static boolean allow_threaten = false;
     private static boolean send_event_messages = true;
+    private static boolean allowSavedSkills = true;
     private static final Map<Creature, Logger> crafterLoggers = new HashMap<>();
     private Properties properties;
     public static Path globalRestrictionsPath = Paths.get("mods", "crafter", "global_restrictions");
@@ -110,7 +111,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         return contractTemplateId;
     }
 
-    public static float getStartingSkillLevel() {
+    public static double getStartingSkillLevel() {
         return startingSkill;
     }
 
@@ -174,6 +175,10 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
 
     public static boolean eventMessagesEnabled() {
         return send_event_messages;
+    }
+
+    public static boolean allowSavedSkills() {
+        return allowSavedSkills;
     }
 
     private OutputOption parseOutputOption(String value) {
@@ -257,7 +262,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         upkeepPercentage = getOption("upkeep_percentage", upkeepPercentage);
         basePrice = getOption("base_price", basePrice);
         mailPrice = getOption("mail_price", mailPrice);
-        startingSkill = getOption("starting_skill", startingSkill);
+        startingSkill = getOption("starting_skill", (float)startingSkill);
         skillCap = Math.min(getOption("max_skill", skillCap), skillCap);
         if (startingSkill > skillCap) {
             logger.warning("starting_skill should not be higher than max_skill, capping value.");
@@ -273,6 +278,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         maxItemQL = getOption("max_item_ql", maxItemQL);
         allow_threaten = getOption("allow_threatening", allow_threaten);
         send_event_messages = getOption("send_event_messages", send_event_messages);
+        allowSavedSkills = getOption("allow_saved_skills", allowSavedSkills);
 
         skillPrices.put(SkillList.SMITHING_BLACKSMITHING, getOption("blacksmithing", 1.0f));
         skillPrices.put(SkillList.GROUP_SMITHING_WEAPONSMITHING, getOption("weaponsmithing", 1.0f));

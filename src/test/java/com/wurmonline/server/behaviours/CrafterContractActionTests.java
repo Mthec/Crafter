@@ -85,14 +85,14 @@ class CrafterContractActionTests {
     @Test
     void testActionManage() {
         assertTrue(action.action(act, owner, contract, action.getActionId(), 0));
-        new CrafterManagementQuestion(owner, crafter).sendQuestion();
+        new CrafterManagementQuestion(owner, crafter, contract).sendQuestion();
         assertThat(owner, bmlEqual());
     }
 
     @Test
     void testActionManageActiveItem() {
         assertTrue(action.action(act, owner, factory.createNewItem(), contract, action.getActionId(), 0));
-        new CrafterManagementQuestion(owner, crafter).sendQuestion();
+        new CrafterManagementQuestion(owner, crafter, contract).sendQuestion();
         assertThat(owner, bmlEqual());
     }
 

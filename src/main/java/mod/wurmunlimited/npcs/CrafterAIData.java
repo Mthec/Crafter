@@ -487,7 +487,7 @@ public class CrafterAIData extends CreatureAIData {
         workbook.removeJob(item);
     }
 
-    public static Creature createNewCrafter(Creature owner, String name, byte sex, CrafterType crafterType, float skillCap, float priceModifier) throws Exception {
+    public static Creature createNewCrafter(Creature owner, String name, byte sex, CrafterType crafterType, float skillCap, float priceModifier, Map<Integer, Double> skills) throws Exception {
         skillCap = Math.min(skillCap, CrafterMod.getSkillCap());
         VolaTile tile = owner.getCurrentTile();
         Creature crafter = Creature.doNew(CrafterTemplate.getTemplateId(), (float)(tile.getTileX() << 2) + 2.0F, (float)(tile.getTileY() << 2) + 2.0F, 180.0F, owner.getLayer(), name, sex, owner.getKingdomId());
@@ -500,7 +500,12 @@ public class CrafterAIData extends CreatureAIData {
         crafter.getInventory().insertItem(WorkBook.createNewWorkBook(crafterType, skillCap).workBookItem);
         Economy.getEconomy().createShop(crafter.getWurmId(), owner.getWurmId()).setPriceModifier(priceModifier);
         for (Skill skill : crafterType.getSkillsFor(crafter)) {
-            skill.setKnowledge(CrafterMod.getStartingSkillLevel(), false);
+            double knowledge = CrafterMod.getStartingSkillLevel();
+            double saved = skills.getOrDefault(skill.getNumber(), -10.0);
+            if (saved > knowledge) {
+                knowledge = Math.min(skillCap, saved);
+            }
+            skill.setKnowledge(knowledge, false);
             // Parent skills.
             for (int skillId : skill.getDependencies()) {
                 crafter.getSkills().getSkillOrLearn(skillId);

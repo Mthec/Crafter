@@ -13,6 +13,7 @@ import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.items.WurmMail;
 import com.wurmonline.server.players.Player;
+import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.server.villages.NoSuchRoleException;
 import com.wurmonline.server.villages.VillageRole;
 import com.wurmonline.server.villages.VillageStatus;
@@ -21,6 +22,7 @@ import com.wurmonline.server.zones.Zones;
 import com.wurmonline.shared.util.StringUtilities;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import mod.wurmunlimited.npcs.*;
+import mod.wurmunlimited.npcs.db.CrafterDatabase;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -33,6 +35,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -73,15 +76,19 @@ class CrafterManagementQuestionTests {
         new CrafterMod();
         CrafterMod.mod.faceSetter = new FaceSetter(CrafterTemplate::isCrafter, dbName);
         CrafterMod.mod.modelSetter = new ModelSetter(CrafterTemplate::isCrafter, dbName);
+        Properties options = new Properties();
+        options.setProperty("allow_saved_skills", "true");
+        CrafterMod.mod.configure(options);
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws NoSuchFieldException, IllegalAccessException {
         File file = new File("./sqlite/" + dbName);
         if (file.exists()) {
             //noinspection ResultOfMethodCallIgnored
             file.delete();
         }
+        ReflectionUtil.setPrivateField(null, CrafterDatabase.class.getDeclaredField("created"), false);
     }
 
     private void setFakeCrafter() {
@@ -368,6 +375,37 @@ class CrafterManagementQuestionTests {
         new CrafterManagementQuestion(owner, crafter).answer(properties);
 
         assertThat(owner, receivedMessageContaining("You dismiss"));
+    }
+
+    @Test
+    void testDismissWithContractSkillSave() throws SQLException {
+        assert CrafterMod.allowSavedSkills();
+        Properties properties = new Properties();
+        properties.setProperty("dismiss", "true");
+        Item contract = factory.createWritFor(owner, crafter);
+        crafter.getSkills().getSkillOrLearn(SkillList.SMITHING_GOLDSMITHING).setKnowledge(98.0, false);
+        new CrafterManagementQuestion(owner, crafter, contract).answer(properties);
+
+        assertThat(owner, receivedMessageContaining("You dismiss"));
+        Map<Integer, Double> skills = CrafterDatabase.loadSkillsFor(contract);
+        assertEquals(98.0, skills.get(SkillList.SMITHING_GOLDSMITHING));
+    }
+
+    @Test
+    void testDismissWithoutContractSkillSave() throws SQLException {
+        Properties options = new Properties();
+        options.setProperty("allow_saved_skills", "false");
+        CrafterMod.mod.configure(options);
+        assert !CrafterMod.allowSavedSkills();
+        Properties properties = new Properties();
+        properties.setProperty("dismiss", "true");
+        Item contract = factory.createWritFor(owner, crafter);
+        crafter.getSkills().getSkillOrLearn(SkillList.SMITHING_GOLDSMITHING).setKnowledge(98.0, false);
+        new CrafterManagementQuestion(owner, crafter, contract).answer(properties);
+
+        assertThat(owner, receivedMessageContaining("You dismiss"));
+        Map<Integer, Double> skills = CrafterDatabase.loadSkillsFor(contract);
+        assertFalse(skills.containsKey(SkillList.SMITHING_GOLDSMITHING));
     }
 
     @Test

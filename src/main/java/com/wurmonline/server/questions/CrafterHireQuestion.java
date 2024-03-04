@@ -19,11 +19,9 @@ import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.CrafterAIData;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterType;
+import mod.wurmunlimited.npcs.db.CrafterDatabase;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 public class CrafterHireQuestion extends CrafterQuestionExtension {
     static final ModelOption[] modelOptions = new ModelOption[] { ModelOption.HUMAN, ModelOption.TRADER, ModelOption.CUSTOM };
@@ -108,8 +106,14 @@ public class CrafterHireQuestion extends CrafterQuestionExtension {
 
         if (locationIsValid(responder)) {
             try {
+                Map<Integer, Double> loadedSkills;
+                if (CrafterMod.allowSavedSkills()) {
+                    loadedSkills = CrafterDatabase.loadSkillsFor(contract);
+                } else {
+                    loadedSkills = Collections.emptyMap();
+                }
                 Creature crafter = CrafterAIData.createNewCrafter(responder,
-                        name, sex, crafterType, skillCap, priceModifier);
+                        name, sex, crafterType, skillCap, priceModifier, loadedSkills);
                 contract.setData(crafter.getWurmId());
                 Village v = responder.getCitizenVillage();
                 if (v != null) {

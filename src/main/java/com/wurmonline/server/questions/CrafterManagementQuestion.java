@@ -17,6 +17,7 @@ import com.wurmonline.server.villages.VillageStatus;
 import com.wurmonline.shared.util.StringUtilities;
 import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.*;
+import mod.wurmunlimited.npcs.db.CrafterDatabase;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -28,6 +29,7 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
     private final Player responder;
     private final Creature crafter;
     private final Shop shop;
+    private Item writ = null;
 
     public CrafterManagementQuestion(Player responder, Creature crafter) {
         super(responder, "Crafter Details", "", QuestionTypes.MANAGETRADER, crafter.getWurmId());
@@ -42,6 +44,11 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
             crafter.getCommunicator().sendAlertServerMessage("Your employer was not registered as your shop owner.  Fixing.");
             shop.setOwner(player);
         }
+    }
+
+    public CrafterManagementQuestion(Player responder, Creature crafter, Item writ) {
+        this(responder, crafter);
+        this.writ = writ;
     }
 
     @Override
@@ -235,6 +242,15 @@ public class CrafterManagementQuestion extends CrafterQuestionExtension {
                 } catch (NoSuchTemplateException | FailedException e) {
                     logger.warning("Could not create refund package while dismissing Crafter, customers were not compensated.");
                     e.printStackTrace();
+                }
+
+                if (CrafterMod.allowSavedSkills() && writ != null) {
+                    try {
+                        CrafterDatabase.saveSkillsFor(crafter, writ);
+                    } catch (CrafterDatabase.FailedToSaveSkills e) {
+                        logger.warning("An error occurred when attempting to save Crafter skills.  Skills were not saved.");
+                        e.printStackTrace();
+                    }
                 }
 
                 CrafterAI.assignedForges.remove(crafter);

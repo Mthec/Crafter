@@ -8,12 +8,15 @@ import com.wurmonline.server.items.Item;
 import com.wurmonline.server.players.Player;
 import com.wurmonline.server.questions.skills.MultipleSkillsBML;
 import com.wurmonline.server.questions.skills.SingleSkillBML;
+import com.wurmonline.server.skills.NoSuchSkillException;
+import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.server.villages.Villages;
 import mod.wurmunlimited.CrafterObjectsFactory;
 import mod.wurmunlimited.bml.BML;
 import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.*;
+import mod.wurmunlimited.npcs.db.CrafterDatabase;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,18 +54,20 @@ class CrafterHireQuestionTests {
         contract = factory.createNewItem(CrafterMod.getContractTemplateId());
         Properties crafterModProperties = new Properties();
         crafterModProperties.setProperty("name_prefix", "");
+        crafterModProperties.setProperty("allow_saved_skills", "true");
         new CrafterMod().configure(crafterModProperties);
         CrafterMod.mod.faceSetter = new FaceSetter(CrafterTemplate::isCrafter, dbName);
         CrafterMod.mod.modelSetter = new ModelSetter(CrafterTemplate::isCrafter, dbName);
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws NoSuchFieldException, IllegalAccessException {
         File file = new File("./sqlite/" + dbName);
         if (file.exists()) {
             //noinspection ResultOfMethodCallIgnored
             file.delete();
         }
+        ReflectionUtil.setPrivateField(null, CrafterDatabase.class.getDeclaredField("created"), false);
     }
 
     private Properties generateProperties() {
@@ -411,5 +416,48 @@ class CrafterHireQuestionTests {
         assertEquals(1, getCrafterCount());
         assertThat(owner, didNotReceiveMessageContaining("invalid"));
         assertEquals(0, factory.getCommunicator(owner).getBml().length);
+    }
+
+    @Test
+    void testSkillsLoadedProperly() throws CrafterDatabase.FailedToSaveSkills {
+        assert CrafterMod.allowSavedSkills();
+        Creature tempCrafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allSkills), 100);
+        tempCrafter.getSkills().getSkillOrLearn(SkillList.SMITHING_GOLDSMITHING).setKnowledge(98.0, false);
+        CrafterDatabase.saveSkillsFor(tempCrafter, contract);
+        new CrafterHireQuestion(owner, contract.getWurmId()).answer(generateProperties(new Integer[0]));
+
+        Creature crafter = getNewlyCreatedCrafter();
+        assertDoesNotThrow(() -> crafter.getSkills().getSkill(SkillList.SMITHING_GOLDSMITHING));
+        try {
+            Skill skill = crafter.getSkills().getSkill(SkillList.SMITHING_GOLDSMITHING);
+            assertEquals(98.0, skill.getKnowledge());
+        } catch (NoSuchSkillException e) {
+            fail();
+        }
+    }
+
+    @Test
+    void testSkillsLoadedProperlyDoesNotExist() throws CrafterDatabase.FailedToSaveSkills, NoSuchSkillException {
+        assert CrafterMod.allowSavedSkills();
+        new CrafterHireQuestion(owner, contract.getWurmId()).answer(generateProperties(new Integer[] { SkillList.SMITHING_GOLDSMITHING }));
+
+        Creature crafter = getNewlyCreatedCrafter();
+        assertEquals(CrafterMod.getStartingSkillLevel(), crafter.getSkills().getSkill(SkillList.SMITHING_GOLDSMITHING).getKnowledge());
+    }
+
+    @Test
+    void testSkillsNotLoadedIfDisabledEvenIfExists() throws CrafterDatabase.FailedToSaveSkills, NoSuchSkillException {
+        Properties options = new Properties();
+        options.setProperty("allow_saved_skills", "false");
+        CrafterMod.mod.configure(options);
+        assert !CrafterMod.allowSavedSkills();
+        Creature tempCrafter = factory.createNewCrafter(owner, new CrafterType(CrafterType.allSkills), 100);
+        tempCrafter.getSkills().getSkillOrLearn(SkillList.SMITHING_GOLDSMITHING).setKnowledge(98.0, false);
+        CrafterDatabase.saveSkillsFor(tempCrafter, contract);
+        tempCrafter.destroy();
+        new CrafterHireQuestion(owner, contract.getWurmId()).answer(generateProperties(new Integer[] { SkillList.SMITHING_GOLDSMITHING }));
+
+        Creature crafter = getNewlyCreatedCrafter();
+        assertEquals(CrafterMod.getStartingSkillLevel(), crafter.getSkills().getSkill(SkillList.SMITHING_GOLDSMITHING).getKnowledge());
     }
 }

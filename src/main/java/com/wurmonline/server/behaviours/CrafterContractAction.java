@@ -52,7 +52,7 @@ public class CrafterContractAction implements ModAction, ActionPerformer, Behavi
                 new CrafterHireQuestion(performer, target.getWurmId()).sendQuestion();
             } else {
                 try {
-                    new CrafterManagementQuestion((Player)performer, Creatures.getInstance().getCreature(target.getData())).sendQuestion();
+                    new CrafterManagementQuestion((Player)performer, Creatures.getInstance().getCreature(target.getData()), target).sendQuestion();
                 } catch (NoSuchCreatureException e) {
                     performer.getCommunicator().sendNormalServerMessage("You attempt to manage the crafter, but they don't exist for some reason.");
                     logger.warning("Could not get crafter creature for some reason.");

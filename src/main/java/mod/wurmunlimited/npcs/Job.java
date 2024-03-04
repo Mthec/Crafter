@@ -93,7 +93,9 @@ public class Job {
                 box.insertItem(coin, true);
             }
 
-            mailToCustomer(box);
+            if (!hasBeenMailed) {
+                mailToCustomer(box);
+            }
         }
     }
 }

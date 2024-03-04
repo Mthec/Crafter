@@ -443,8 +443,8 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 () -> this::willLeaveServer);
 
         manager.registerHook("com.wurmonline.server.MessageServer",
-                "broadcastAction",
-                "public static void broadCastAction(Ljava/lang/String;Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/creatures/Creature;IZ)V",
+                "broadCastAction",
+                "(Ljava/lang/String;Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/creatures/Creature;IZ)V",
                 () -> this::broadcastAction);
 
         FaceSetter.init(manager);

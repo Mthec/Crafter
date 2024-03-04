@@ -67,7 +67,7 @@ public class Job {
     }
 
     private void mailToCustomer(Item itemToMail) {
-        if (hasBeenMailed)
+        if (hasBeenMailed && itemToMail == item)
             logger.warning("Trying to mail when job already done.");
         itemToMail.setBusy(false);
         WurmMail mail = new WurmMail(CrafterMod.MAIL_TYPE_CRAFTER, itemToMail.getWurmId(), 1, customerId, 0, System.currentTimeMillis() + TimeConstants.MINUTE_MILLIS, System.currentTimeMillis() + (Servers.isThisATestServer() ? 3600000L : 14515200000L), Servers.localServer.id, false, false);
@@ -77,7 +77,9 @@ public class Job {
         itemToMail.setMailed(true);
         itemToMail.setMailTimes((byte)(itemToMail.getMailTimes() + 1));
 
-        hasBeenMailed = true;
+        if (itemToMail == item) {
+            hasBeenMailed = true;
+        }
     }
 
     public void mailToCustomer() {
@@ -93,9 +95,7 @@ public class Job {
                 box.insertItem(coin, true);
             }
 
-            if (!hasBeenMailed) {
-                mailToCustomer(box);
-            }
+            mailToCustomer(box);
         }
     }
 }

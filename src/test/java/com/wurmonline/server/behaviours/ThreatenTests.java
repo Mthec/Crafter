@@ -13,18 +13,22 @@ import com.wurmonline.server.structures.BridgePart;
 import com.wurmonline.server.structures.Fence;
 import com.wurmonline.server.structures.Floor;
 import com.wurmonline.server.structures.Wall;
+import com.wurmonline.server.villages.Village;
+import com.wurmonline.server.villages.WarDeclaration;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
 import mod.wurmunlimited.npcs.CrafterAIData;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.CrafterTest;
 import mod.wurmunlimited.npcs.WorkBook;
+import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -58,8 +62,11 @@ public class ThreatenTests extends CrafterTest {
         foe.setKingdomId((byte)(crafter.getKingdomId() + 1));
         assert !foe.isFriendlyKingdom(crafter.getKingdomId());
         Properties properties = new Properties();
-        properties.setProperty("allow_threatening", "true");
-        new CrafterMod().configure(properties);
+        properties.setProperty("threatening", "kingdom");
+        if (CrafterMod.mod == null) {
+            new CrafterMod();
+        }
+        CrafterMod.mod.configure(properties);
         wasPVP = Servers.localServer.PVPSERVER;
         Servers.localServer.PVPSERVER = true;
         wasHomeServer = Servers.localServer.HOMESERVER;
@@ -132,7 +139,7 @@ public class ThreatenTests extends CrafterTest {
             atom.set(i.getArgument(0));
             return null;
         }).when(action).setTimeLeft(anyInt());
-        assertFalse(threaten.action(action, friend, crafter, threaten.getActionId(), 1f));
+        assertTrue(threaten.action(action, friend, crafter, threaten.getActionId(), 1f));
         assertEquals(0, atom.get());
         assertThat(friend, receivedMessageContaining("You can't rob"));
         assertFalse(threaten.action(action, foe, crafter, threaten.getActionId(), 1f));
@@ -190,5 +197,52 @@ public class ThreatenTests extends CrafterTest {
         assertEquals(crafter.getInventory(), tool.getParentOrNull());
         assertNull(job.getParentOrNull());
         assertEquals(0, workBook.todo());
+    }
+
+    @Test
+    public void testActionDisabled() {
+        Properties properties = new Properties();
+        properties.setProperty("threatening", "disabled");
+        CrafterMod.mod.configure(properties);
+        Action action = mock(Action.class);
+        AtomicInteger atom = new AtomicInteger(0);
+        when(action.getTimeLeft()).thenAnswer(i -> atom.get());
+        doAnswer(i -> {
+            atom.set(i.getArgument(0));
+            return null;
+        }).when(action).setTimeLeft(anyInt());
+        assertTrue(threaten.action(action, friend, crafter, threaten.getActionId(), 1f));
+        assertEquals(0, atom.get());
+        assertThat(friend, receivedMessageContaining("You can't rob"));
+        assertTrue(threaten.action(action, foe, crafter, threaten.getActionId(), 1f));
+        assertEquals(0, atom.get());
+        assertThat(foe, receivedMessageContaining("You can't rob"));
+    }
+
+    @Test
+    public void testActionVillageAlliance() throws InstantiationException, IllegalAccessException, NoSuchFieldException, NoSuchMethodException, InvocationTargetException {
+        Properties properties = new Properties();
+        properties.setProperty("threatening", "village_alliance");
+        CrafterMod.mod.configure(properties);
+        Action action = mock(Action.class);
+        AtomicInteger atom = new AtomicInteger(0);
+        when(action.getTimeLeft()).thenAnswer(i -> atom.get());
+        doAnswer(i -> {
+            atom.set(i.getArgument(0));
+            return null;
+        }).when(action).setTimeLeft(anyInt());
+        Village village1 = factory.createVillageFor(friend, crafter);
+        Village village2 = factory.createVillageFor(foe);
+        WarDeclaration declaration = ReflectionUtil.callPrivateConstructor(WarDeclaration.class.getDeclaredConstructor(Village.class, Village.class), village1, village2);
+        friend.getCommunicator().setInvulnerable(false);
+        foe.getCommunicator().setInvulnerable(false);
+        assert !friend.getCitizenVillage().isEnemy(crafter);
+        assert crafter.getCitizenVillage().isEnemy(foe);
+        assertTrue(threaten.action(action, friend, crafter, threaten.getActionId(), 1f));
+        assertEquals(0, atom.get());
+        assertThat(friend, receivedMessageContaining("You can't rob"));
+        assertFalse(threaten.action(action, foe, crafter, threaten.getActionId(), 1f));
+        assertTrue(atom.get() > 0);
+        assertThat(foe, receivedMessageContaining("You start to rob"));
     }
 }

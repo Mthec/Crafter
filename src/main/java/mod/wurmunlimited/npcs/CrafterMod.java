@@ -15,6 +15,7 @@ import com.wurmonline.server.questions.Question;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.server.skills.Skills;
+import com.wurmonline.server.villages.Village;
 import com.wurmonline.shared.constants.IconConstants;
 import com.wurmonline.shared.constants.ItemMaterials;
 import javassist.*;
@@ -74,7 +75,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
     private static boolean canChangeSkill = true;
     private static float maxItemQL = 99.99999f;
     private static final List<Byte> restrictedMaterials = new ArrayList<>();
-    private static boolean allow_threaten = false;
+    private static ThreatenOption threatening = ThreatenOption.disabled;
     private static boolean send_event_messages = true;
     private static boolean allowSavedSkills = true;
     private static final Map<Creature, Logger> crafterLoggers = new HashMap<>();
@@ -93,6 +94,12 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         tax_and_upkeep,
         for_owner,
         all_tax
+    }
+
+    public enum ThreatenOption {
+        disabled,
+        kingdom,
+        village_alliance
     }
 
     public CrafterMod() {
@@ -181,6 +188,23 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         return allowSavedSkills;
     }
 
+    public static boolean allowThreatening(Creature one, Creature two) {
+        switch (threatening) {
+            default:
+            case disabled:
+                return false;
+            case kingdom:
+                return !two.isFriendlyKingdom(one.getKingdomId());
+            case village_alliance:
+                Village v = one.getCitizenVillage();
+                if (v == null) {
+                    return true;
+                } else {
+                    return v.isEnemy(two, true);
+                }
+        }
+    }
+
     private OutputOption parseOutputOption(String value) {
         OutputOption option = output;
         if (value != null && value.length() > 0) {
@@ -199,6 +223,19 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
                 option = PaymentOption.valueOf(value);
             } catch (IllegalArgumentException e) {
                 logger.warning("Invalid PaymentOption - " + value);
+                e.printStackTrace();
+            }
+        }
+        return option;
+    }
+
+    private ThreatenOption parseThreateningOption(String value) {
+        ThreatenOption option = threatening;
+        if (value != null && value.length() > 0) {
+            try {
+                option = ThreatenOption.valueOf(value);
+            } catch (IllegalArgumentException e) {
+                logger.warning("Invalid ThreateningOption - " + value);
                 e.printStackTrace();
             }
         }
@@ -276,7 +313,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         singleSkill = getOption("single_crafter_skill", singleSkill);
         canChangeSkill = getOption("change_skill_after_placement", canChangeSkill);
         maxItemQL = getOption("max_item_ql", maxItemQL);
-        allow_threaten = getOption("allow_threatening", allow_threaten);
+        threatening = parseThreateningOption(properties.getProperty("threatening"));
         send_event_messages = getOption("send_event_messages", send_event_messages);
         allowSavedSkills = getOption("allow_saved_skills", allowSavedSkills);
 
@@ -529,7 +566,7 @@ public class CrafterMod implements WurmServerMod, PreInitable, Initable, Configu
         ModActions.registerAction(new TradeAction());
         ModActions.registerAction(new CrafterContractAction(contractTemplateId));
         ModActions.registerAction(new ManageCrafterAction());
-        if (allow_threaten) {
+        if (threatening != ThreatenOption.disabled) {
             ModActions.registerAction(new ThreatenAction());
         }
         new PlaceCrafterAction();

@@ -11,10 +11,7 @@ import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.server.villages.Village;
 import com.wurmonline.server.zones.NoSuchZoneException;
-import mod.wurmunlimited.npcs.CrafterAIData;
-import mod.wurmunlimited.npcs.CrafterTemplate;
-import mod.wurmunlimited.npcs.Job;
-import mod.wurmunlimited.npcs.WorkBook;
+import mod.wurmunlimited.npcs.*;
 import org.gotti.wurmunlimited.modsupport.actions.*;
 
 import java.util.Collections;
@@ -53,7 +50,7 @@ public class ThreatenAction implements ModAction, ActionPerformer, BehaviourProv
     public boolean action(Action action, Creature performer, Creature target, short num, float counter) {
         if (Servers.localServer.PVPSERVER && !Servers.localServer.HOMESERVER) {
             if (target.getFloorLevel() == performer.getFloorLevel() && performer.getMountVehicle() == null) {
-                if (target.isFriendlyKingdom(performer.getKingdomId())) {
+                if (!CrafterMod.allowThreatening(performer, target)) {
                     performer.getCommunicator().sendNormalServerMessage("You can't rob " + target.getName() + "!");
                 } else if (target.getTemplate().getTemplateId() != CrafterTemplate.getTemplateId()) {
                     performer.getCommunicator().sendNormalServerMessage(target.getName() + " snorts at you and refuses to yield.");
@@ -74,6 +71,7 @@ public class ThreatenAction implements ModAction, ActionPerformer, BehaviourProv
                         performer.sendActionControl("threatening", true, time);
                         action.setTimeLeft(time);
                         performer.getStatus().modifyStamina(-500f);
+                        return false;
                     }
 
                     if (!(counter * 10f <= (float)time)) {
@@ -109,7 +107,7 @@ public class ThreatenAction implements ModAction, ActionPerformer, BehaviourProv
                 return true;
             }
         }
-        return false;
+        return true;
     }
 
     @Override

@@ -27,10 +27,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class CrafterAIData extends CreatureAIData {
@@ -41,13 +38,155 @@ public class CrafterAIData extends CreatureAIData {
     private Creature crafter;
     private boolean atWorkLocation;
     private PathTile workLocation;
-    private final Map<Integer, Item> tools = new HashMap<>();
+    final Tools tools = new Tools();
     // Nearby equipment
     private Item forge;
 
     public boolean canAction = true;
 
-    // TODO - Temp.
+    class Tools {
+        private final Map<Integer, Item> tools = new HashMap<>();
+        private final Map<Integer, List<Item>> donatedTools = new HashMap<>();
+
+        private Tools() {}
+
+        void addDonatedTool(Item item) {
+            List<Item> t = donatedTools.computeIfAbsent(item.getTemplateId(), ArrayList::new);
+            if (t.contains(item)) {
+                logger.warning("Donated tools list already contained that tool.");
+                return;
+            }
+            t.add(item);
+        }
+
+        @Nullable
+        Item getPreferredTool(int templateId, float targetQL) {
+            List<Item> options = donatedTools.get(templateId);
+            if (options == null || options.isEmpty()) {
+                Item tool = tools.get(templateId);
+                if (tool != null) {
+                    repairTool(tool, targetQL);
+                }
+                return tool;
+            }
+
+            Item tool = null;
+            for (Item item : options) {
+                if (tool == null) {
+                    tool = item;
+                    continue;
+                }
+
+                if (item.getQualityLevel() > tool.getQualityLevel()) {
+                    tool = item;
+                }
+            }
+
+            if (tool.getDamage() > 0f) {
+                tool.repair(crafter, (short)0, tool.getDamage());
+            }
+
+            return tool;
+        }
+
+        Item createMissingItem(int templateId) throws NoSuchTemplateException, FailedException {
+            float skillLevel = workbook.getSkillCap();
+            if (skillLevel > 100)
+                skillLevel = 100;
+            Item item;
+
+            if (ItemTemplateFactory.getInstance().getTemplate(templateId).isLiquid()) {
+                Item barrel = ItemFactory.createItem(ItemList.barrelSmall, skillLevel, "");
+                item = ItemFactory.createItem(ItemList.water, 99.0f, "");
+                barrel.insertItem(item);
+                crafter.getInventory().insertItem(barrel);
+            } else {
+                item = ItemFactory.createItem(templateId, skillLevel, "");
+                crafter.getInventory().insertItem(item);
+            }
+
+            // Extra details
+            if (templateId == ItemList.pelt) {
+                item.setData2(CreatureTemplateIds.RAT_LARGE_CID);
+            } else if (templateId == ItemList.log) {
+                item.setMaterial(ItemMaterials.MATERIAL_WOOD_BIRCH);
+            }
+
+            tools.put(templateId, item);
+            return item;
+        }
+
+        private void repairTool(Item item, float ql) {
+            ql += 10;
+            if (ql > 100)
+                ql = 100;
+            if (item.isBodyPart())
+                return;
+            if (item.getDamage() != 0)
+                item.setDamage(0);
+            if (item.getQualityLevel() < ql || item.getQualityLevel() > 100)
+                item.setQualityLevel(ql);
+            if (item.isLiquid())
+                item.setWeight(5000, false);
+            else if (item.isCombine() && item.isMetal())
+                item.setWeight(1000, false);
+            else
+                item.setWeight(item.getTemplate().getWeightGrams(), false);
+        }
+
+        public boolean isTool(Item item) {
+            if (tools.containsValue(item)) {
+                return true;
+            }
+            List<Item> t = donatedTools.get(item.getTemplateId());
+            return t != null && t.contains(item);
+        }
+
+        private void assignItems() {
+            for (Item item : crafter.getInventory().getItems()) {
+                if (WorkBook.isWorkBook(item)) {
+                    try {
+                        workbook = new WorkBook(item);
+                    } catch (WorkBook.InvalidWorkBookInscription e) {
+                        e.printStackTrace();
+                        workbook = null;
+                    }
+                }
+            }
+            if (workbook == null) {
+                logger.warning("No workbook found on creature (" + crafter.getWurmId() + ")");
+                return;
+            }
+            setForge(workbook.forge);
+            if (forge != null)
+                Arrays.asList(forge.getItemsAsArray()).forEach(crafter.getInventory()::insertItem);
+
+            for (Item item : crafter.getInventory().getItems()) {
+                if (item.getOwnerId() != crafter.getWurmId() && item.getLastOwnerId() != crafter.getWurmId())
+                    continue;
+                if (item.isArmour())
+                    continue;
+                if (workbook.isJobItem(item))
+                    continue;
+                if (item.getTemplateId() == ItemList.barrelSmall) {
+                    item = item.getFirstContainedItem();
+                    if (item != null && item.getTemplateId() == ItemList.water)
+                        tools.put(ItemList.water, item);
+                    continue;
+                }
+
+                tools.put(item.getTemplateId(), item);
+            }
+
+            try {
+                Item hand = crafter.getBody().getBodyPart(13);
+                tools.put(hand.getTemplateId(), hand);
+            } catch (NoSpaceException e) {
+                logger.warning("Could not find hand item.");
+            }
+        }
+    }
+
     public void log(String message) {
         logger.info(message);
     }
@@ -59,7 +198,7 @@ public class CrafterAIData extends CreatureAIData {
         logger = CrafterMod.getCrafterLogger(crafter);
         CrafterAI.allCrafters.add(crafter);
         if (crafter.getInventory().getItemCount() != 0)
-            assignItems();
+            tools.assignItems();
         if (workbook != null && workbook.isForgeAssigned()) {
             float x = workbook.forge.getPosX();
             float y = workbook.forge.getPosY();
@@ -86,99 +225,6 @@ public class CrafterAIData extends CreatureAIData {
                 Items.destroyItem(item.getWurmId());
             }
         }
-    }
-
-    public boolean isTool(Item item) {
-        return tools.containsValue(item);
-    }
-
-    private void assignItems() {
-        for (Item item : crafter.getInventory().getItems()) {
-            if (WorkBook.isWorkBook(item)) {
-                try {
-                    workbook = new WorkBook(item);
-                } catch (WorkBook.InvalidWorkBookInscription e) {
-                    e.printStackTrace();
-                    workbook = null;
-                }
-            }
-        }
-        if (workbook == null) {
-            logger.warning("No workbook found on creature (" + crafter.getWurmId() + ")");
-            return;
-        }
-        setForge(workbook.forge);
-        if (forge != null)
-            Arrays.asList(forge.getItemsAsArray()).forEach(crafter.getInventory()::insertItem);
-
-        for (Item item : crafter.getInventory().getItems()) {
-            if (item.getOwnerId() != crafter.getWurmId() && item.getLastOwnerId() != crafter.getWurmId())
-                continue;
-            if (item.isArmour())
-                continue;
-            if (workbook.isJobItem(item))
-                continue;
-            if (item.getTemplateId() == ItemList.barrelSmall) {
-                item = item.getFirstContainedItem();
-                if (item != null && item.getTemplateId() == ItemList.water)
-                    tools.put(ItemList.water, item);
-                continue;
-            }
-
-            tools.put(item.getTemplateId(), item);
-        }
-
-        try {
-            Item hand = crafter.getBody().getBodyPart(13);
-            tools.put(hand.getTemplateId(), hand);
-        } catch (NoSpaceException e) {
-            logger.warning("Could not find hand item.");
-        }
-    }
-
-    Item createMissingItem(int templateId) throws NoSuchTemplateException, FailedException {
-        float skillLevel = workbook.getSkillCap();
-        if (skillLevel > 100)
-            skillLevel = 100;
-        Item item;
-
-        if (ItemTemplateFactory.getInstance().getTemplate(templateId).isLiquid()) {
-            Item barrel = ItemFactory.createItem(ItemList.barrelSmall, skillLevel, "");
-            item = ItemFactory.createItem(ItemList.water, 99.0f, "");
-            barrel.insertItem(item);
-            crafter.getInventory().insertItem(barrel);
-        } else {
-            item = ItemFactory.createItem(templateId, skillLevel, "");
-            crafter.getInventory().insertItem(item);
-        }
-
-        // Extra details
-        if (templateId == ItemList.pelt) {
-            item.setData2(CreatureTemplateIds.RAT_LARGE_CID);
-        } else if (templateId == ItemList.log) {
-            item.setMaterial(ItemMaterials.MATERIAL_WOOD_BIRCH);
-        }
-
-        tools.put(templateId, item);
-        return item;
-    }
-
-    private void repairTool(Item item, float ql) {
-        ql += 10;
-        if (ql > 100)
-            ql = 100;
-        if (item.isBodyPart())
-            return;
-        if (item.getDamage() != 0)
-            item.setDamage(0);
-        if (item.getQualityLevel() < ql || item.getQualityLevel() > 100)
-            item.setQualityLevel(ql);
-        if (item.isLiquid())
-            item.setWeight(5000, false);
-        else if (item.isCombine() && item.isMetal())
-            item.setWeight(1000, false);
-        else
-            item.setWeight(item.getTemplate().getWeightGrams(), false);
     }
 
     private void capSkills() {
@@ -384,17 +430,17 @@ public class CrafterAIData extends CreatureAIData {
                     }
 
                     int lumpId = MethodsItems.getImproveTemplateId(item);
-                    Item lump = tools.get(lumpId);
+                    Item lump = tools.getPreferredTool(lumpId, job.item.getCurrentQualityLevel());
                     if (lump == null) {
                         try {
-                            lump = createMissingItem(lumpId);
+                            lump = tools.createMissingItem(lumpId);
                         } catch (NoSuchTemplateException | FailedException e) {
                             logger.warning("Could not create required improving item (template id - " + lumpId + ").  Reason follows:");
                             e.printStackTrace();
                             continue;
                         }
                     }
-                    if (lump != null && !forge.getItems().contains(lump)) {
+                    if (!forge.getItems().contains(lump)) {
                         forge.insertItem(lump);
                         // Bug where item is put on surface when inserted.
                         lump.setParentId(forge.getWurmId(), forge.isOnSurface());
@@ -418,13 +464,13 @@ public class CrafterAIData extends CreatureAIData {
                     toolTemplateId = MethodsItems.getImproveTemplateId(item);
                 }
 
-                Item tool = tools.get(toolTemplateId);
+                Item tool = tools.getPreferredTool(toolTemplateId, job.item.getCurrentQualityLevel());
                 if (tool == null) {
                     try {
                         if (toolTemplateId == ItemList.bodyHand)
                             throw new NoSpaceException("Hand was null.");
                         else
-                            tool = createMissingItem(toolTemplateId);
+                            tool = tools.createMissingItem(toolTemplateId);
                     } catch (NoSuchTemplateException | FailedException e) {
                         logger.warning("Could not create required improving item (template id - " + toolTemplateId + ").  Reason follows:");
                         e.printStackTrace();
@@ -445,7 +491,6 @@ public class CrafterAIData extends CreatureAIData {
                     }
                 }
 
-                repairTool(tool, job.item.getCurrentQualityLevel());
                 capSkills();
 
                 try {

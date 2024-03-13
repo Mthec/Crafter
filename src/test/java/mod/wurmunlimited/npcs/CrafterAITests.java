@@ -40,11 +40,11 @@ class CrafterAITests extends CrafterTest {
         workBook = data.getWorkBook();
         workBook.addJob(player.getWurmId(), tool, 10, false, 100);
         job = workBook.iterator().next();
-        lump = data.createMissingItem(ItemList.ironBar);
-        hammer = data.createMissingItem(ItemList.hammerMetal);
-        pelt = data.createMissingItem(ItemList.pelt);
-        water = data.createMissingItem(ItemList.water);
-        whetstone = data.createMissingItem(ItemList.whetStone);
+        lump = data.tools.createMissingItem(ItemList.ironBar);
+        hammer = data.tools.createMissingItem(ItemList.hammerMetal);
+        pelt = data.tools.createMissingItem(ItemList.pelt);
+        water = data.tools.createMissingItem(ItemList.water);
+        whetstone = data.tools.createMissingItem(ItemList.whetStone);
 
         assert workBook != null && lump != null && hammer != null && pelt != null && water != null && whetstone != null;
     }
@@ -224,7 +224,7 @@ class CrafterAITests extends CrafterTest {
 
     @Test
     void testSpecialLumpWeightRestoredBeforeUse() throws NoSuchTemplateException, FailedException {
-        lump = data.createMissingItem(ItemList.bronzeBar);
+        lump = data.tools.createMissingItem(ItemList.bronzeBar);
         tool.setMaterial(ItemMaterials.MATERIAL_BRONZE);
         warmUp();
 

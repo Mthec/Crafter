@@ -15,7 +15,7 @@ public class CrafterWearItems implements WearItems {
         WorkBook workBook = data.getWorkBook();
         if (workBook != null) {
             for (Item item : creature.getInventory().getItemsAsArray()) {
-                if (workBook.isJobItem(item) || data.isTool(item)) {
+                if (workBook.isJobItem(item) || data.tools.isTool(item)) {
                     jobItems.add(item);
                     creature.getInventory().getItems().remove(item);
                 }

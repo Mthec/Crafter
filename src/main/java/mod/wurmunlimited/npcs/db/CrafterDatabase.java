@@ -9,9 +9,7 @@ import mod.wurmunlimited.npcs.CrafterMod;
 
 import java.sql.*;
 import java.time.Clock;
-import java.util.Currency;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class CrafterDatabase {
@@ -39,6 +37,12 @@ public class CrafterDatabase {
                     "skill_id INTEGER," +
                     "skill_level REAL," +
                     "UNIQUE (contract_id, skill_id) ON CONFLICT REPLACE" +
+                    ");").execute();
+
+            conn.prepareStatement("CREATE TABLE IF NOT EXISTS donated_tools (" +
+                    "crafter_id INTEGER," +
+                    "item_id INTEGER," +
+                    "UNIQUE (crafter_id, item_id) ON CONFLICT REPLACE" +
                     ");").execute();
         }
 
@@ -103,5 +107,42 @@ public class CrafterDatabase {
             e.printStackTrace();
             throw new FailedToSaveSkills();
         }
+    }
+
+    @SuppressWarnings("SqlResolve")
+    public static Set<Long> getDonatedToolsFor(Creature crafter) throws SQLException {
+        Set<Long> tools = new HashSet<>();
+
+        execute(db -> {
+            PreparedStatement ps = db.prepareStatement("SELECT item_id FROM donated_tools WHERE crafter_id=?;");
+            ps.setLong(1, crafter.getWurmId());
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                tools.add(rs.getLong(1));
+            }
+        });
+
+        return tools;
+    }
+
+    @SuppressWarnings("SqlResolve")
+    public static void addDonatedToolFor(Creature crafter, Item tool) throws SQLException {
+        execute(db -> {
+            PreparedStatement ps = db.prepareStatement("INSERT INTO donated_tools VALUES(?, ?);");
+            ps.setLong(1, crafter.getWurmId());
+            ps.setLong(2, tool.getWurmId());
+            ps.executeUpdate();
+        });
+    }
+
+    @SuppressWarnings("SqlResolve")
+    public static void removeDonatedToolFor(Creature crafter, Item tool) throws SQLException {
+        execute(db -> {
+            PreparedStatement ps = db.prepareStatement("DELETE FROM donated_tools WHERE crafter_id=? AND item_id=?;");
+            ps.setLong(1, crafter.getWurmId());
+            ps.setLong(2, tool.getWurmId());
+            ps.executeUpdate();
+        });
     }
 }

@@ -70,16 +70,30 @@ public class CrafterAIData extends CreatureAIData {
                 return tool;
             }
 
+            // Donated tool > targetQL
+            // Donated tool < targetQL + 20
             Item tool = null;
-            for (Item item : options) {
-                if (tool == null) {
-                    tool = item;
-                    continue;
+            if (options.size() == 1) {
+                Item maybeTool = options.get(0);
+                float ql = maybeTool.getCurrentQualityLevel();
+                if (ql > targetQL && ql <= targetQL + 20) {
+                    tool = maybeTool;
                 }
+            } else {
+                for (Item item : options) {
+                    float ql = item.getCurrentQualityLevel();
+                    if ((tool == null  || ql > tool.getCurrentQualityLevel()) && ql > targetQL && ql <= targetQL + 20) {
+                        tool = item;
+                    }
+                }
+            }
 
-                if (item.getQualityLevel() > tool.getQualityLevel()) {
-                    tool = item;
+            if (tool == null) {
+                tool = tools.get(templateId);
+                if (tool != null) {
+                    repairTool(tool, targetQL);
                 }
+                return tool;
             }
 
             if (tool.getDamage() > 0f) {

@@ -13,6 +13,7 @@ import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.server.villages.Village;
 import com.wurmonline.server.villages.VillageRole;
 import com.wurmonline.shared.util.MaterialUtilities;
+import mod.wurmunlimited.npcs.CrafterAIData;
 import mod.wurmunlimited.npcs.CrafterMod;
 import mod.wurmunlimited.npcs.Job;
 import mod.wurmunlimited.npcs.WorkBook;
@@ -33,11 +34,15 @@ public class CrafterTradeHandler extends TradeHandler {
     private final Map<Integer, Float> targetQLs = new HashMap<>();
     private boolean balanced = false;
     private boolean mailWhenDone = false;
-    private boolean donating = false;
+    private DonationType donating = DonationType.not;
     private final float priceModifier;
     private final List<Item> optionItems = new ArrayList<>();
     private static final BiMap<Integer, ItemTemplate> skillIcons = HashBiMap.create();
     private final Set<Item> coinsToCollect = new HashSet<>();
+
+    public enum DonationType {
+        donating, giving, not
+    }
 
     public CrafterTradeHandler(Creature crafter, CrafterTrade _trade) {
         creature = crafter;
@@ -78,7 +83,7 @@ public class CrafterTradeHandler extends TradeHandler {
         }
         if (trade.creatureOne.getPower() >= 3) {
             String changeString = (new Change(shop.getMoney())).getChangeShortString();
-            trade.creatureOne.getCommunicator().sendSafeServerMessage(crafter.getName() + " says, 'I have " + (changeString.length() > 0 ? changeString : "0i") + ".'");
+            trade.creatureOne.getCommunicator().sendSafeServerMessage(crafter.getName() + " says, 'I have " + (!changeString.isEmpty() ? changeString : "0i") + ".'");
         }
 
         if (skillIcons.isEmpty())
@@ -125,7 +130,7 @@ public class CrafterTradeHandler extends TradeHandler {
             }
 
             if (trade.getTradingWindow(1).getItems().length == 0) {
-                if (workBook.getCrafterType().getSkillsFor(creature).size() == 0) {
+                if (workBook.getCrafterType().getSkillsFor(creature).isEmpty()) {
                     trade.creatureOne.getCommunicator().sendAlertServerMessage(creature.getName() + " says 'I don't have any skills that would be of use.'");
                 } else {
                     trade.creatureOne.getCommunicator().sendAlertServerMessage(creature.getName() + " says 'I can't remember what my skills are.'");
@@ -135,6 +140,8 @@ public class CrafterTradeHandler extends TradeHandler {
             addOption("Mail to me when done", ItemTemplateFactory.getInstance().getTemplate(ItemList.mailboxWood), CrafterMod.mailPrice(), 1);
             if (CrafterMod.canLearn() && !atSkillCap)
                 addOption("Donate Items", ItemTemplateFactory.getInstance().getTemplate(ItemList.backPack), 0, 1);
+            if (ownerTrade || trade.creatureOne.getPower() >= 2)
+                addOption("Give tools", ItemTemplateFactory.getInstance().getTemplate(ItemList.satchel), 0, 1);
         } catch (IOException | NoSuchTemplateException e) {
             logger.warning("Could not add menu option to trade window.  Reason follows:");
             e.printStackTrace();
@@ -167,6 +174,12 @@ public class CrafterTradeHandler extends TradeHandler {
             for (Item coin : Economy.getEconomy().getCoinsFor(creature.getShop().getMoney())) {
                 offerWindow.addItem(coin);
                 coinsToCollect.add(coin);
+            }
+        }
+        if (ownerTrade || trade.creatureOne.getPower() >= 2) {
+            CrafterAIData data = (CrafterAIData)creature.getCreatureAIData();
+            for (Item tool : data.tools.getGivenTools()) {
+                offerWindow.addItem(tool);
             }
         }
     }
@@ -273,7 +286,7 @@ public class CrafterTradeHandler extends TradeHandler {
             }
 
             if (item.isCoin() ||
-                        (donating && workBook.getCrafterType().hasSkillToImprove(item))
+                        (donating != DonationType.not && workBook.getCrafterType().hasSkillToImprove(item))
                         || (item.getQualityLevel() < getTargetQL(item) && !item.isNoImprove() && item.isRepairable() && !item.isNewbieItem() && !item.isChallengeNewbieItem())) {
                 offerWindow.removeItem(item);
                 myWindow.addItem(item);
@@ -376,7 +389,7 @@ public class CrafterTradeHandler extends TradeHandler {
     private void setOptions() {
         Item mailWhenDoneItem = null;
         Map<Integer, Item> currentHighest = new HashMap<>();
-        donating = false;
+        donating = DonationType.not;
         mailWhenDone = false;
 
         TradingWindow myOffers = trade.getTradingWindow(1);
@@ -385,9 +398,11 @@ public class CrafterTradeHandler extends TradeHandler {
             if (!optionItems.contains(item)) {
                 continue;
             }
-            if (!donating) {
-                if (item.getName().startsWith("Donate")) {
-                    donating = true;
+            if (donating == DonationType.not) {
+                boolean isDonating = item.getName().startsWith("Donate");
+                boolean isGiving = item.getName().startsWith("Give");
+
+                if (isDonating || isGiving) {
                     if (!currentHighest.isEmpty()) {
                         for (Item it : currentHighest.values()) {
                             jobDetailsWindow.removeItem(it);
@@ -401,6 +416,13 @@ public class CrafterTradeHandler extends TradeHandler {
                         mailWhenDone = false;
                         mailWhenDoneItem = null;
                     }
+                }
+
+                if (isDonating) {
+                    donating = DonationType.donating;
+                    continue;
+                } else if (isGiving) {
+                    donating = DonationType.giving;
                     continue;
                 } else if (item.getName().startsWith("Mail")) {
                     mailWhenDoneItem = item;
@@ -456,7 +478,7 @@ public class CrafterTradeHandler extends TradeHandler {
                 }
             }
 
-            if (!donating) {
+            if (donating == DonationType.not) {
                 int cost = 0;
                 int money = 0;
                 for (Item item : playerWindow.getItems()) {
@@ -483,7 +505,7 @@ public class CrafterTradeHandler extends TradeHandler {
                 }
                 trade.setMoneyAdded(money);
                 trade.setOrderTotal(cost);
-            } else {
+            } else if (donating == DonationType.donating) {
                 for (Item item : playerWindow.getItems()) {
                     if (item.isCoin()) {
                         playerWindow.removeItem(item);
@@ -492,6 +514,15 @@ public class CrafterTradeHandler extends TradeHandler {
                 }
                 if (trade.getTradingWindow(4).getItems().length > 0)
                     player.getCommunicator().sendSafeServerMessage(creature.getName() + " says 'If you wish to donate these items, I'll be happy to take them to improve my skills.'");
+            } else {
+                for (Item item : playerWindow.getItems()) {
+                    if (item.isCoin()) {
+                        playerWindow.removeItem(item);
+                        trade.getTradingWindow(2).addItem(item);
+                    }
+                }
+                if (trade.getTradingWindow(4).getItems().length > 0)
+                    player.getCommunicator().sendSafeServerMessage(creature.getName() + " says 'I'll be happy to use these tools in my work'.'");
             }
 
             trade.setSatisfied(creature, true, trade.getCurrentCounter());
@@ -521,7 +552,7 @@ public class CrafterTradeHandler extends TradeHandler {
         return mailWhenDone;
     }
 
-    public boolean isDonating() {
+    public DonationType typeOfDonating() {
         return donating;
     }
 

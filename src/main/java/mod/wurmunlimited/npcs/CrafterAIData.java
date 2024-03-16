@@ -22,11 +22,13 @@ import com.wurmonline.server.structures.NoSuchWallException;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
 import com.wurmonline.shared.constants.ItemMaterials;
+import mod.wurmunlimited.npcs.db.CrafterDatabase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -38,30 +40,49 @@ public class CrafterAIData extends CreatureAIData {
     private Creature crafter;
     private boolean atWorkLocation;
     private PathTile workLocation;
-    final Tools tools = new Tools();
+    public final Tools tools = new Tools();
     // Nearby equipment
     private Item forge;
 
     public boolean canAction = true;
 
-    class Tools {
+    public class Tools {
         private final Map<Integer, Item> tools = new HashMap<>();
-        private final Map<Integer, List<Item>> donatedTools = new HashMap<>();
+        private final Map<Integer, List<Item>> givenTools = new HashMap<>();
 
         private Tools() {}
 
-        void addDonatedTool(Item item) {
-            List<Item> t = donatedTools.computeIfAbsent(item.getTemplateId(), ArrayList::new);
+        public void addGivenTool(Item item) {
+            List<Item> t = givenTools.computeIfAbsent(item.getTemplateId(), ArrayList::new);
             if (t.contains(item)) {
                 logger.warning("Donated tools list already contained that tool.");
                 return;
             }
             t.add(item);
+            try {
+                CrafterDatabase.addGivenToolFor(crafter, item);
+            } catch (SQLException e) {
+                logger.warning("Could not add given tool " + item.getWurmId() + " to the database.  This tool won't work following next server restart.");
+                e.printStackTrace();
+            }
+        }
+
+        public void removeGivenTool(Item item) {
+            try {
+                List<Item> items = givenTools.get(item.getTemplateId());
+                if (items != null) {
+                    items.remove(item);
+                }
+                CrafterDatabase.removeGivenToolFor(crafter, item);
+            } catch (SQLException e) {
+                logger.warning("Could not remove given tool " + item.getWurmId() + " from the database.");
+                e.printStackTrace();
+            }
         }
 
         @Nullable
         Item getPreferredTool(int templateId, float targetQL) {
-            List<Item> options = donatedTools.get(templateId);
+            List<Item> options = givenTools.get(templateId);
             if (options == null || options.isEmpty()) {
                 Item tool = tools.get(templateId);
                 if (tool != null) {
@@ -152,7 +173,7 @@ public class CrafterAIData extends CreatureAIData {
             if (tools.containsValue(item)) {
                 return true;
             }
-            List<Item> t = donatedTools.get(item.getTemplateId());
+            List<Item> t = givenTools.get(item.getTemplateId());
             return t != null && t.contains(item);
         }
 
@@ -198,6 +219,49 @@ public class CrafterAIData extends CreatureAIData {
             } catch (NoSpaceException e) {
                 logger.warning("Could not find hand item.");
             }
+        }
+
+        public Iterable<Item> getGivenTools() {
+            return new Iterable<Item>() {
+                @NotNull
+                @Override
+                public Iterator<Item> iterator() {
+                    return new Iterator<Item>() {
+                        private final Iterator<List<Item>> tools = givenTools.values().iterator();
+                        private Iterator<Item> current = null;
+
+                        @Override
+                        public boolean hasNext() {
+                            if (current == null || !current.hasNext()) {
+                                if (!tools.hasNext()) {
+                                    return false;
+                                }
+
+                                current = tools.next().iterator();
+
+                                while (!current.hasNext()) {
+                                    if (!tools.hasNext()) {
+                                        return false;
+                                    }
+
+                                    current = tools.next().iterator();
+                                }
+                            }
+
+                            return true;
+                        }
+
+                        @Override
+                        public Item next() {
+                            if (current == null) {
+                                throw new NoSuchElementException();
+                            }
+
+                            return current.next();
+                        }
+                    };
+                }
+            };
         }
     }
 

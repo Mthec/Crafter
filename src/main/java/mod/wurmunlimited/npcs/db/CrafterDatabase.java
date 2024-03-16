@@ -110,7 +110,7 @@ public class CrafterDatabase {
     }
 
     @SuppressWarnings("SqlResolve")
-    public static Set<Long> getDonatedToolsFor(Creature crafter) throws SQLException {
+    public static Set<Long> getGivenToolsFor(Creature crafter) throws SQLException {
         Set<Long> tools = new HashSet<>();
 
         execute(db -> {
@@ -127,7 +127,7 @@ public class CrafterDatabase {
     }
 
     @SuppressWarnings("SqlResolve")
-    public static void addDonatedToolFor(Creature crafter, Item tool) throws SQLException {
+    public static void addGivenToolFor(Creature crafter, Item tool) throws SQLException {
         execute(db -> {
             PreparedStatement ps = db.prepareStatement("INSERT INTO donated_tools VALUES(?, ?);");
             ps.setLong(1, crafter.getWurmId());
@@ -137,7 +137,7 @@ public class CrafterDatabase {
     }
 
     @SuppressWarnings("SqlResolve")
-    public static void removeDonatedToolFor(Creature crafter, Item tool) throws SQLException {
+    public static void removeGivenToolFor(Creature crafter, Item tool) throws SQLException {
         execute(db -> {
             PreparedStatement ps = db.prepareStatement("DELETE FROM donated_tools WHERE crafter_id=? AND item_id=?;");
             ps.setLong(1, crafter.getWurmId());

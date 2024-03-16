@@ -9,17 +9,18 @@ import com.wurmonline.server.villages.NoSuchRoleException;
 import com.wurmonline.server.villages.VillageRole;
 import com.wurmonline.server.villages.VillageStatus;
 import com.wurmonline.shared.constants.ItemMaterials;
-import mod.wurmunlimited.npcs.CrafterTradingTest;
-import mod.wurmunlimited.npcs.CrafterType;
-import mod.wurmunlimited.npcs.Job;
-import mod.wurmunlimited.npcs.WorkBook;
+import mod.wurmunlimited.npcs.*;
+import mod.wurmunlimited.npcs.db.CrafterDatabase;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -423,5 +424,102 @@ class CrafterTradeHandlerOwnerTests extends CrafterTradingTest {
 
         assertThat(owner, didNotReceiveMessageContaining("permission to \"Improve\""));
         assertThat(owner, didNotReceiveMessageContaining("permission to \"Pickup\""));
+    }
+
+    @Test
+    void testGiveOptionAddedIfOwner() {
+        makeNewOwnerCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+
+        assertTrue(Arrays.stream(trade.getTradingWindow(1).getItems()).anyMatch(it -> it.getName().startsWith("Give")));
+    }
+
+    @Test
+    void testGiveOptionAddedIfGM() throws IOException {
+        makeNewCrafterTrade();
+        player.setPower((byte)2);
+        makeHandler();
+        handler.addItemsToTrade();
+
+        assertTrue(Arrays.stream(trade.getTradingWindow(1).getItems()).anyMatch(it -> it.getName().startsWith("Give")));
+    }
+
+    @Test
+    void testGiveOptionNotAddedIfNotOwner() {
+        makeNewCrafterTrade();
+        assert player.getPower() == 0;
+        makeHandler();
+        handler.addItemsToTrade();
+
+        assertFalse(Arrays.stream(trade.getTradingWindow(1).getItems()).anyMatch(it -> it.getName().startsWith("Give")), Arrays.stream(trade.getTradingWindow(1).getItems()).map(Item::getName).collect(Collectors.joining()));
+    }
+
+    @Test
+    void testOnlyOneOfGiveAndDonateAccepted() {
+        makeNewOwnerCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+
+        selectOption("Donate");
+        selectOption("Give");
+        assertEquals(2, trade.getTradingWindow(3).getItems().length);
+        handler.balance();
+        assertEquals(1, trade.getTradingWindow(3).getItems().length);
+    }
+
+    @Test
+    void testGivenToolsAddedProperly() throws SQLException {
+        Item item = factory.createNewItem(ItemList.hammerMetal);
+        owner.getInventory().insertItem(item);
+
+        makeNewOwnerCrafterTrade();
+        makeHandler();
+        handler.addItemsToTrade();
+
+        selectOption("Give");
+        trade.getTradingWindow(2).addItem(item);
+
+        handler.balance();
+
+        assertEquals(1, trade.getTradingWindow(3).getItems().length);
+        assertEquals(1, trade.getTradingWindow(4).getItems().length);
+        assertTrue(Arrays.stream(trade.getTradingWindow(3).getItems()).anyMatch(it -> it.getName().startsWith("Give")));
+
+        setSatisfied(owner);
+        assertFalse(owner.getInventory().getItems().contains(item));
+        assertTrue(crafter.getInventory().getItems().contains(item));
+        Iterator<Item> iter = ((CrafterAIData)crafter.getCreatureAIData()).tools.getGivenTools().iterator();
+        assertTrue(iter.hasNext());
+        assertEquals(item, iter.next());
+        assertTrue(CrafterDatabase.getGivenToolsFor(crafter).contains(item.getWurmId()));
+    }
+
+    @Test
+    void testGivenToolsRemovedProperly() throws SQLException {
+        makeNewOwnerCrafterTrade();
+        Item item = factory.createNewItem(ItemList.hammerMetal);
+        crafter.getInventory().insertItem(item);
+        CrafterAIData data = (CrafterAIData)crafter.getCreatureAIData();
+        data.tools.addGivenTool(item);
+
+        makeHandler();
+        handler.addItemsToTrade();
+
+        selectOption("hammer");
+        trade.getTradingWindow(2).addItem(item);
+
+        handler.balance();
+
+        assertEquals(1, trade.getTradingWindow(3).getItems().length);
+        assertEquals(0, trade.getTradingWindow(4).getItems().length);
+        assertTrue(Arrays.stream(trade.getTradingWindow(3).getItems()).anyMatch(it -> it.getName().contains("hammer")));
+
+        setSatisfied(owner);
+        assertTrue(owner.getInventory().getItems().contains(item));
+        assertFalse(crafter.getInventory().getItems().contains(item));
+        System.out.println(StreamSupport.stream(data.tools.getGivenTools().spliterator(), false).map(Item::getName).collect(Collectors.joining()));
+        assertThrows(NoSuchElementException.class, () -> data.tools.getGivenTools().iterator().next(), StreamSupport.stream(data.tools.getGivenTools().spliterator(), false).map(Item::getName).collect(Collectors.joining()));
+        assertTrue(CrafterDatabase.getGivenToolsFor(crafter).isEmpty());
     }
 }

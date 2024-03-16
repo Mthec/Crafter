@@ -473,13 +473,19 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
                             Economy.getEconomy().returnCoin(item, "CrafterTrade");
                         } else {
                             try {
-                                if (!handler.isDonating()) {
-                                    CrafterAIData data = ((CrafterAIData)watcher.getCreatureAIData());
-                                    data.log("Adding job to Crafter - " + item.getName() + " to " + handler.getTargetQL(item));
-                                    data.log(handler.getSelectedOptions());
-                                    workBook.addJob(windowOwner.getWurmId(), item, handler.getTargetQL(item), handler.isMailOnDone(), watcher.getTradeHandler().getTraderBuyPriceForItem(item) + (handler.isMailOnDone() ? CrafterMod.mailPrice() : 0));
-                                } else {
-                                    workBook.addDonation(item);
+                                CrafterAIData data = (CrafterAIData)watcher.getCreatureAIData();
+                                switch (handler.typeOfDonating()) {
+                                    case donating:
+                                        workBook.addDonation(item);
+                                        break;
+                                    case giving:
+                                        data.tools.addGivenTool(item);
+                                        break;
+                                    case not:
+                                        data.log("Adding job to Crafter - " + item.getName() + " to " + handler.getTargetQL(item));
+                                        data.log(handler.getSelectedOptions());
+                                        workBook.addJob(windowOwner.getWurmId(), item, handler.getTargetQL(item), handler.isMailOnDone(), watcher.getTradeHandler().getTraderBuyPriceForItem(item) + (handler.isMailOnDone() ? CrafterMod.mailPrice() : 0));
+                                        break;
                                 }
                             } catch (WorkBook.WorkBookFull e) {
                                 // This should never happen because it should be cleared by CrafterTrade.makeTrade().
@@ -501,7 +507,12 @@ public class CrafterTradingWindow extends TradingWindow implements MiscConstants
                             moneyLost += Economy.getValueFor(item.getTemplateId());
                             getLogger(shop.getWurmId()).log(Level.INFO, this.watcher.getName() + " received " + MaterialUtilities.getMaterialString(item.getMaterial()) + " " + item.getName() + ", id: " + item.getWurmId() + ", QL: " + item.getQualityLevel());
                         } else {
-                            workBook.removeJob(item);
+                            CrafterAIData data = (CrafterAIData)windowOwner.getCreatureAIData();
+                            if (data.tools.isTool(item)) {
+                                data.tools.removeGivenTool(item);
+                            } else {
+                                workBook.removeJob(item);
+                            }
                         }
                     }
                 }

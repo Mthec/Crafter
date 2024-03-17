@@ -233,31 +233,37 @@ public class CrafterAIData extends CreatureAIData {
                         @Override
                         public boolean hasNext() {
                             if (current == null || !current.hasNext()) {
+                                return moveOn();
+                            }
+
+                            return false;
+                        }
+
+                        @Override
+                        public Item next() {
+                            if (current == null || !current.hasNext()) {
+                                moveOn();
+                            }
+
+                            return current.next();
+                        }
+
+                        private boolean moveOn() {
+                            if (!tools.hasNext()) {
+                                return false;
+                            }
+
+                            current = tools.next().iterator();
+
+                            while (!current.hasNext()) {
                                 if (!tools.hasNext()) {
                                     return false;
                                 }
 
                                 current = tools.next().iterator();
-
-                                while (!current.hasNext()) {
-                                    if (!tools.hasNext()) {
-                                        return false;
-                                    }
-
-                                    current = tools.next().iterator();
-                                }
                             }
 
                             return true;
-                        }
-
-                        @Override
-                        public Item next() {
-                            if (current == null) {
-                                throw new NoSuchElementException();
-                            }
-
-                            return current.next();
                         }
                     };
                 }

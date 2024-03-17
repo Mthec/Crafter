@@ -11,10 +11,12 @@ import com.wurmonline.server.skills.NoSuchSkillException;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.shared.constants.ItemMaterials;
+import mod.wurmunlimited.npcs.db.CrafterDatabase;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
 import java.util.*;
 
 import static mod.wurmunlimited.Assert.didNotReceiveMessageContaining;
@@ -564,5 +566,94 @@ class CrafterAITests extends CrafterTest {
         }
         assertEquals(forgeCount, workBook.forge.getItemCount());
         assertEquals(0, WorkBook.getWorkBookFromWorker(crafter).donationsTodo());
+    }
+
+    @Test
+    void testAddGivenTool() throws SQLException {
+        Item tool = factory.createNewItem(ItemList.hammerMetal);
+
+        data.tools.addGivenTool(tool);
+        assertEquals(tool, data.tools.getGivenTools().iterator().next());
+        assertEquals(tool.getWurmId(), CrafterDatabase.getGivenToolsFor(crafter).iterator().next());
+    }
+
+    @Test
+    void testRemoveGivenTool() throws SQLException {
+        Item tool = factory.createNewItem(ItemList.hammerMetal);
+
+        data.tools.addGivenTool(tool);
+        assert CrafterDatabase.getGivenToolsFor(crafter).iterator().next() == tool.getWurmId();
+
+        data.tools.removeGivenTool(tool);
+        assertThrows(NoSuchElementException.class, () -> data.tools.getGivenTools().iterator().next());
+        assertEquals(0, CrafterDatabase.getGivenToolsFor(crafter).size());
+    }
+
+    @Test
+    void testPreferredToolUsed() throws SQLException {
+        Item preferredTool = factory.createNewItem(ItemList.hammerMetal);
+        preferredTool.setQualityLevel(15f);
+        data.tools.addGivenTool(preferredTool);
+        assert CrafterDatabase.getGivenToolsFor(crafter).iterator().next() == preferredTool.getWurmId();
+
+        this.tool.creationState = (byte)2;
+        warmUp();
+
+        data.sendNextAction();
+        assertEquals(preferredTool, BehaviourDispatcher.getLastDispatchSubject());
+    }
+
+    @Test
+    void testPreferredToolNotUsedIfQLTooHigh() throws SQLException {
+        Item preferredTool = factory.createNewItem(ItemList.hammerMetal);
+        preferredTool.setQualityLevel(tool.getQualityLevel() + 20.1f);
+        data.tools.addGivenTool(preferredTool);
+        assert CrafterDatabase.getGivenToolsFor(crafter).iterator().next() == preferredTool.getWurmId();
+
+        this.tool.creationState = (byte)2;
+        warmUp();
+
+        data.sendNextAction();
+        assertEquals(hammer, BehaviourDispatcher.getLastDispatchSubject());
+    }
+
+    @Test
+    void testPreferredToolSelectLowerFromMany() throws SQLException {
+        Item preferredTool = factory.createNewItem(ItemList.hammerMetal);
+        preferredTool.setQualityLevel(tool.getQualityLevel() + 20f);
+        data.tools.addGivenTool(preferredTool);
+        Item otherTool = factory.createNewItem(ItemList.hammerMetal);
+        otherTool.setQualityLevel(tool.getQualityLevel() + 20.1f);
+        data.tools.addGivenTool(otherTool);
+        Iterator<Item> iter = data.tools.getGivenTools().iterator();
+        assert iter.next() == preferredTool;
+        assert iter.next() == otherTool;
+
+        this.tool.creationState = (byte)2;
+        warmUp();
+
+        data.sendNextAction();
+        assertEquals(preferredTool, BehaviourDispatcher.getLastDispatchSubject());
+    }
+
+    @Test
+    void testPreferredToolSelectHigherFromManyIfInCap() throws SQLException, NoSuchFieldException, IllegalAccessException {
+        Item preferredTool = factory.createNewItem(ItemList.hammerMetal);
+        preferredTool.setQualityLevel(100);
+        data.tools.addGivenTool(preferredTool);
+        Item otherTool = factory.createNewItem(ItemList.hammerMetal);
+        otherTool.setQualityLevel(99);
+        data.tools.addGivenTool(otherTool);
+        Iterator<Item> iter = data.tools.getGivenTools().iterator();
+        assert iter.next() == preferredTool;
+        assert iter.next() == otherTool;
+
+        tool.setQualityLevel(90);
+        ReflectionUtil.setPrivateField(job, Job.class.getDeclaredField("targetQL"), 100f);
+        tool.creationState = (byte)2;
+        warmUp();
+
+        data.sendNextAction();
+        assertEquals(preferredTool, BehaviourDispatcher.getLastDispatchSubject());
     }
 }

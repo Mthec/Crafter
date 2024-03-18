@@ -116,7 +116,7 @@ public class CrafterTradeHandler extends TradeHandler {
                 if (atSkillCap && skill.getKnowledge() < CrafterMod.getSkillCap())
                     atSkillCap = false;
                 if (template == null)
-                    throw new NoSuchTemplateException("ItemTemplate not found for option icons.  Did buildSkillIcons fail?");
+                    throw new NoSuchTemplateException("ItemTemplate not found for option icons.  Did buildSkillIcons fail? (" + skill.getNumber() + ")");
                 while (current <= skill.getKnowledge() && current <= skillCap && current <= qlCap) {
                     addOption("Improve to " + current + "ql", template, current);
                     current += 10;

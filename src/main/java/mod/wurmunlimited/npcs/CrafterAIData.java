@@ -17,7 +17,6 @@ import com.wurmonline.server.items.*;
 import com.wurmonline.server.players.Player;
 import com.wurmonline.server.skills.NoSuchSkillException;
 import com.wurmonline.server.skills.Skill;
-import com.wurmonline.server.skills.SkillSystem;
 import com.wurmonline.server.structures.NoSuchWallException;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
@@ -326,9 +325,13 @@ public class CrafterAIData extends CreatureAIData {
 
     private void capSkills() {
         double cap = workbook.getSkillCap();
+        double starting = CrafterMod.getStartingSkillLevel();
         for (Skill skill : crafter.getSkills().getSkills()) {
-            if (skill.getKnowledge() > cap) {
+            double knowledge = skill.getKnowledge();
+            if (knowledge > cap) {
                 skill.setKnowledge(cap, false);
+            } else if (knowledge < starting) {
+                skill.setKnowledge(starting, false);
             }
         }
     }
@@ -465,13 +468,7 @@ public class CrafterAIData extends CreatureAIData {
                     }
 
                     int skillNum = MethodsItems.getImproveSkill(item);
-                    float currentSkill;
-                    try {
-                        currentSkill = (float)crafter.getSkills().getSkill(skillNum).getKnowledge();
-                    } catch (NoSuchSkillException e) {
-                        logger.warning(crafter.getName() + "(" + crafter.getWurmId() + ") was missing " + SkillSystem.getNameFor(skillNum) + " skill.");
-                        continue;
-                    }
+                    float currentSkill = (float)crafter.getSkills().getSkillOrLearn(skillNum).getKnowledge();
 
                     if (CrafterMod.destroyDonationItem(currentSkill, job.item.getQualityLevel())) {
                         workbook.removeJob(job.item);

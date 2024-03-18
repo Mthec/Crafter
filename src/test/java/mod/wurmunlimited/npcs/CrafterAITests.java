@@ -4,6 +4,7 @@ import com.wurmonline.server.FailedException;
 import com.wurmonline.server.Items;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.BehaviourDispatcher;
+import com.wurmonline.server.behaviours.MethodsItems;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.CreaturePos;
 import com.wurmonline.server.items.*;
@@ -11,6 +12,7 @@ import com.wurmonline.server.skills.NoSuchSkillException;
 import com.wurmonline.server.skills.Skill;
 import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.shared.constants.ItemMaterials;
+import mod.wurmunlimited.npcs.craftertypes.TestItemTemplates;
 import mod.wurmunlimited.npcs.db.CrafterDatabase;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -243,6 +245,21 @@ class CrafterAITests extends CrafterTest {
 
         data.sendNextAction();
         assertTrue(crafter.getSkills().getSkills()[0].getKnowledge() < workBook.getSkillCap() + 1);
+    }
+
+    @Test
+    void testSkillsIncreasedToStartingCapBeforeUse() throws WorkBook.WorkBookFull {
+        assert CrafterMod.getStartingSkillLevel() > 0;
+        Item nonStandardSkillTool = TestItemTemplates.createWarhammer(factory);
+        int skill = MethodsItems.getImproveSkill(nonStandardSkillTool);
+        assert !workBook.getCrafterType().hasSkill(skill);
+        assert workBook.getCrafterType().hasSkillToImprove(nonStandardSkillTool);
+        workBook.addJob(player.getWurmId(), nonStandardSkillTool, 10, false, 100);
+        warmUp();
+        crafter.getSkills().getSkillOrLearn(skill).setKnowledge(0, false);
+
+        data.sendNextAction();
+        assertEquals(CrafterMod.getStartingSkillLevel(), crafter.getSkills().getSkillOrLearn(skill).getKnowledge());
     }
 
     @Test

@@ -196,6 +196,15 @@ public class CrafterAIData extends CreatureAIData {
             if (forge != null)
                 Arrays.asList(forge.getItemsAsArray()).forEach(crafter.getInventory()::insertItem);
 
+            Set<Long> givenToolIds;
+            try {
+                givenToolIds = CrafterDatabase.getGivenToolsFor(crafter);
+            } catch (SQLException e) {
+                logger.warning("Failed to load tools give to the crafter from database.");
+                e.printStackTrace();
+                givenToolIds = Collections.emptySet();
+            }
+
             for (Item item : crafter.getInventory().getItems()) {
                 if (item.getOwnerId() != crafter.getWurmId() && item.getLastOwnerId() != crafter.getWurmId())
                     continue;
@@ -210,7 +219,11 @@ public class CrafterAIData extends CreatureAIData {
                     continue;
                 }
 
-                tools.put(item.getTemplateId(), item);
+                if (givenToolIds.contains(item.getWurmId())) {
+                    givenTools.computeIfAbsent(item.getTemplateId(), ArrayList::new).add(item);
+                } else {
+                    tools.put(item.getTemplateId(), item);
+                }
             }
 
             try {

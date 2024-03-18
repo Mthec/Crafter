@@ -278,12 +278,10 @@ class CrafterAITests extends CrafterTest {
         Set<Integer> skills = new HashSet<>();
         WorkBook.getWorkBookFromWorker(crafter).getCrafterType().getSkillsFor(crafter).forEach(s -> skills.add(s.getNumber()));
 
-        assertEquals(8, skills.size());
+        assertEquals(6, skills.size());
         assertTrue(skills.contains(SkillList.SMITHING_BLACKSMITHING));
         assertTrue(skills.contains(SkillList.SMITHING_GOLDSMITHING));
         assertTrue(skills.contains(SkillList.GROUP_SMITHING_WEAPONSMITHING));
-        assertTrue(skills.contains(SkillList.SMITHING_WEAPON_BLADES));
-        assertTrue(skills.contains(SkillList.SMITHING_WEAPON_HEADS));
         assertTrue(skills.contains(SkillList.SMITHING_ARMOUR_CHAIN));
         assertTrue(skills.contains(SkillList.SMITHING_ARMOUR_PLATE));
         assertTrue(skills.contains(SkillList.SMITHING_SHIELDS));

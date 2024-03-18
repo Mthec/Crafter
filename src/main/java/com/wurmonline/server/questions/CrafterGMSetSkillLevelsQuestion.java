@@ -12,6 +12,7 @@ import mod.wurmunlimited.bml.BMLBuilder;
 import mod.wurmunlimited.npcs.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -67,7 +68,7 @@ public class CrafterGMSetSkillLevelsQuestion extends CrafterQuestionExtension {
 
                 workBook.updateSkillsSettings(crafterType, skillCap);
 
-                for (Skill skill : crafterType.getSkillsFor(crafter)) {
+                for (Skill skill : crafter.getSkills().getSkills()) {
                     float newSkillLevel = getFloatOrDefault(String.valueOf(skill.getNumber()), (float)skill.getKnowledge());
                     skill.setKnowledge(newSkillLevel, false);
 
@@ -142,6 +143,9 @@ public class CrafterGMSetSkillLevelsQuestion extends CrafterQuestionExtension {
     public void sendQuestion() {
         CrafterAIData data = (CrafterAIData)crafter.getCreatureAIData();
         WorkBook workBook = data.getWorkBook();
+        List<Skill> assignedSkills = workBook.getCrafterType().getSkillsFor(crafter);
+        List<Skill> allSkills = new ArrayList<>(Arrays.asList(crafter.getSkills().getSkills()));
+        allSkills.removeAll(assignedSkills);
 
         String bml = new BMLBuilder(id)
                              .text("Name - " + crafter.getName())
@@ -150,7 +154,11 @@ public class CrafterGMSetSkillLevelsQuestion extends CrafterQuestionExtension {
                                      b -> b.harray(b2 -> b2.label("Skill Cap: ").entry("skill_cap", Float.toString(workBook.getSkillCap()), 5).text("Max: " + CrafterMod.getSkillCap()).italic()),
                                      b -> b.text("Skills will be capped at " + CrafterMod.getSkillCap() + "."))
                              .newLine()
-                             .table(new String[] { "Skill", "Current", "New" }, workBook.getCrafterType().getSkillsFor(crafter),
+                             .table(new String[] { "Skill", "Current", "New" }, assignedSkills,
+                                     (skill, b) -> b.label(skill.getName()).label(String.format("%.2f", skill.getKnowledge())).entry(String.valueOf(skill.getNumber()), "", 7))
+                             .newLine()
+                             .text("Other skills").bold()
+                             .table(new String[] { "Skill", "Current", "New" }, allSkills,
                                      (skill, b) -> b.label(skill.getName()).label(String.format("%.2f", skill.getKnowledge())).entry(String.valueOf(skill.getNumber()), "", 7))
                              .newLine()
                              .checkbox("rd", "Remove unneeded donation items", true)

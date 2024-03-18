@@ -42,10 +42,8 @@ public class MultipleSkillsBML extends SkillsBML {
                        Arrays.asList(
                                new int[] { SkillList.SMITHING_BLACKSMITHING, SkillList.CARPENTRY, SkillList.LEATHERWORKING },
                                new int[] { SkillList.GROUP_SMITHING_WEAPONSMITHING, SkillList.CARPENTRY_FINE, SkillList.CLOTHTAILORING },
-                               new int[] { SkillList.SMITHING_WEAPON_BLADES, SkillList.GROUP_FLETCHING, SkillList.STONECUTTING },
-                               new int[] { SkillList.SMITHING_WEAPON_HEADS, SkillList.GROUP_BOWYERY, SkillList.POTTERY },
-                               new int[] { SkillList.SMITHING_GOLDSMITHING, 0, 0 },
-                               new int[] { SkillList.SMITHING_ARMOUR_CHAIN, 0, 0 },
+                               new int[] { SkillList.SMITHING_GOLDSMITHING, SkillList.GROUP_FLETCHING, SkillList.STONECUTTING },
+                               new int[] { SkillList.SMITHING_ARMOUR_CHAIN, SkillList.GROUP_BOWYERY, SkillList.POTTERY },
                                new int[] { SkillList.SMITHING_ARMOUR_PLATE, 0, 0 },
                                new int[] { SkillList.SMITHING_SHIELDS, 0, 0 }
 

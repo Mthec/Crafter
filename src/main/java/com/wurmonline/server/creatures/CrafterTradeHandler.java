@@ -518,7 +518,7 @@ public class CrafterTradeHandler extends TradeHandler {
                     }
                 }
                 if (trade.getTradingWindow(4).getItems().length > 0)
-                    player.getCommunicator().sendSafeServerMessage(creature.getName() + " says 'I'll be happy to use these tools in my work.'");
+                    player.getCommunicator().sendSafeServerMessage(creature.getName() + " says 'I'll be happy to use any tools you give me in my work.'");
             }
 
             trade.setSatisfied(creature, true, trade.getCurrentCounter());

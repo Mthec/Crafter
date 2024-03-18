@@ -10,6 +10,7 @@ import com.wurmonline.server.creatures.ai.CreatureAIData;
 import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
+import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.server.villages.Village;
 import com.wurmonline.shared.exceptions.WurmServerException;
 
@@ -128,6 +129,8 @@ public class WorkBook implements Iterable<Job> {
             ++nextHeader;
         }
 
+        AtomicBoolean reSave = new AtomicBoolean(false);
+
         try {
             List<Integer> skills = new ArrayList<>();
 
@@ -136,12 +139,20 @@ public class WorkBook implements Iterable<Job> {
                 ++nextHeader;
             }
 
+            if (skills.contains(SkillList.SMITHING_WEAPON_BLADES)) {
+                skills.remove(new Integer(SkillList.SMITHING_WEAPON_BLADES));
+                reSave.set(true);
+            }
+            if (skills.contains(SkillList.SMITHING_WEAPON_HEADS)) {
+                skills.remove(new Integer(SkillList.SMITHING_WEAPON_HEADS));
+                reSave.set(true);
+            }
+
             crafterType = new CrafterType(skills.toArray(new Integer[0]));
         } catch (IllegalArgumentException e) {
             throw new InvalidWorkBookInscription("Invalid work book crafter type - " + header[nextHeader]);
         }
 
-        AtomicBoolean reSave = new AtomicBoolean(false);
         pages.forEachRemaining(page -> {
             InscriptionData inscription = page.getInscription();
             if (inscription == null) {

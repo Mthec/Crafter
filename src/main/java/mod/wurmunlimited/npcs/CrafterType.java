@@ -43,7 +43,7 @@ public class CrafterType {
     }
 
     public boolean hasSkillToImprove(Item item) {
-        int improveSkill = MethodsItems.getImproveSkill(item);
+        int improveSkill = getNearestSkill(item);
         return skills.contains(improveSkill);
     }
 
@@ -93,5 +93,40 @@ public class CrafterType {
     @Override
     public boolean equals(Object obj) {
         return obj instanceof CrafterType && ((CrafterType)obj).skills.equals(skills);
+    }
+
+    /**
+     * Returns the skill provided by MethodsItems.getImproveSkill(item), except it coerces some skills into the ones
+     * used by the Crafter type system.  To enable compatibility with some modded items.
+     */
+    public static int getNearestSkill(Item item) {
+        int skill = MethodsItems.getImproveSkill(item);
+        switch (skill) {
+            case SkillList.SMITHING_WEAPON_BLADES:
+            case SkillList.SMITHING_WEAPON_HEADS:
+                skill = SkillList.GROUP_SMITHING_WEAPONSMITHING;
+                break;
+            case SkillList.FIREMAKING:
+            case SkillList.TOYMAKING:
+                skill = SkillList.CARPENTRY;
+                break;
+            case SkillList.GROUP_SMITHING:
+            case SkillList.SMITHING_LOCKSMITHING:
+                skill = SkillList.SMITHING_BLACKSMITHING;
+                break;
+            case SkillList.MASONRY:
+            case SkillList.PAVING:
+                skill = SkillList.STONECUTTING;
+                break;
+            case SkillList.GROUP_TAILORING:
+                if (item.isLeather()) {
+                    skill = SkillList.LEATHERWORKING;
+                } else if (item.isCloth()) {
+                    skill = SkillList.CLOTHTAILORING;
+                }
+                break;
+        }
+
+        return skill;
     }
 }

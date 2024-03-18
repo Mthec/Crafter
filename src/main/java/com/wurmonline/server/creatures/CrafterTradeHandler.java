@@ -3,7 +3,6 @@ package com.wurmonline.server.creatures;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.wurmonline.server.Items;
-import com.wurmonline.server.behaviours.MethodsItems;
 import com.wurmonline.server.economy.Change;
 import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.Shop;
@@ -13,10 +12,7 @@ import com.wurmonline.server.skills.SkillList;
 import com.wurmonline.server.villages.Village;
 import com.wurmonline.server.villages.VillageRole;
 import com.wurmonline.shared.util.MaterialUtilities;
-import mod.wurmunlimited.npcs.CrafterAIData;
-import mod.wurmunlimited.npcs.CrafterMod;
-import mod.wurmunlimited.npcs.Job;
-import mod.wurmunlimited.npcs.WorkBook;
+import mod.wurmunlimited.npcs.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -241,7 +237,7 @@ public class CrafterTradeHandler extends TradeHandler {
     }
 
     private int getPriceForImproveOption(Item item, float ql) {
-        float basePrice = CrafterMod.getBasePriceForSkill(MethodsItems.getImproveSkill(item)) * priceModifier;
+        float basePrice = CrafterMod.getBasePriceForSkill(CrafterType.getNearestSkill(item)) * priceModifier;
         float itemQL = item.getQualityLevel();
         double current = itemQL >= 70 ? basePrice * priceCalculation(itemQL) : basePrice * priceCalculationSub70(itemQL);
         double target = ql >= 70 ? basePrice * priceCalculation(ql) : basePrice * priceCalculationSub70(ql);
@@ -538,10 +534,7 @@ public class CrafterTradeHandler extends TradeHandler {
     }
 
     public float getTargetQL(Item item) {
-        int skill = MethodsItems.getImproveSkill(item);
-        if ((skill == SkillList.SMITHING_WEAPON_HEADS || skill == SkillList.SMITHING_WEAPON_BLADES) && item.isWeapon()) {
-            skill = SkillList.GROUP_SMITHING_WEAPONSMITHING;
-        }
+        int skill = CrafterType.getNearestSkill(item);
         Float targetQL = targetQLs.get(skill);
         if (targetQL == null)
             return 0;
